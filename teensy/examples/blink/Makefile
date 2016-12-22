@@ -70,7 +70,7 @@ $(TARGET).elf: $(OBJS) $(MCUPATH)
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
 upload:
-	sudo $(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=mk20dx256 -wv $(TARGET).hex
+	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=mk20dx256 -wv $(TARGET).hex
 
 # compiler generated dependency info
 -include $(OBJS:.o=.d)
