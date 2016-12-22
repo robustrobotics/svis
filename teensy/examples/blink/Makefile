@@ -20,10 +20,6 @@ OPTIONS += -D__$(MCU)__ -DARDUINO=10613 -DTEENSYDUINO=132
 TOOLSPATH = $(abspath $(ARDUINOPATH)/hardware/tools)
 $(info TOOLSPATH: ${TOOLSPATH})
 
-# path location for Arduino libraries (currently not used)
-LIBRARYPATH = $(abspath $(ARDUINOPATH)/libraries)
-$(info LIBRARYPATH: ${LIBRARYPATH})
-
 # path location for the arm-none-eabi compiler
 COMPILERPATH = $(abspath $(ARDUINOPATH)/hardware/tools/arm/bin)
 $(info COMPILERPATH: ${COMPILERPATH})
