@@ -3,10 +3,11 @@ TARGET = main
 
 # Path to your arduino installation
 PROJECTPATH = /home/fla/svis
+# $(info PROJECTPATH: ${PROJECTPATH})
 
 # Path location for the arm-none-eabi compiler
 COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
-$(info COMPILERPATH: ${COMPILERPATH})
+# $(info COMPILERPATH: ${COMPILERPATH})
 
 #************************************************************************
 # Location of utilities within project
@@ -14,11 +15,11 @@ $(info COMPILERPATH: ${COMPILERPATH})
 
 # Path for Teensy Loader, teensy_post_compile and teensy_reboot (on Linux)
 TOOLSPATH = $(abspath $(PROJECTPATH)/teensy/tools)
-$(info TOOLSPATH: ${TOOLSPATH})
+# $(info TOOLSPATH: ${TOOLSPATH})
 
 # Path for the mk20dx256 library
 MCUPATH = $(abspath $(PROJECTPATH)/teensy/tools/mk20dx256.ld)
-$(info MCUPATH: ${MCUPATH})
+# $(info MCUPATH: ${MCUPATH})
 
 #************************************************************************
 # Settings below this point usually do not need to be edited
