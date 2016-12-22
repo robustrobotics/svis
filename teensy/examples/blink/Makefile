@@ -1,14 +1,8 @@
 # The name of your project (used to name the compiled .hex file)
 TARGET = main
 
-# Those that specify a NO_ARDUINO environment variable will
-# be able to use this Makefile with no Arduino dependency.
-# Please note that if ARDUINOPATH was set, it will override
-# the NO_ARDUINO behaviour.
-ifndef NO_ARDUINO
 # Path to your arduino installation
 ARDUINOPATH = /home/fla/arduino-1.6.13
-endif
 
 # configurable options
 OPTIONS = -DF_CPU=48000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
