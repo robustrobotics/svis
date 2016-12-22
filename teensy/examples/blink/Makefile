@@ -10,6 +10,17 @@ COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
 # $(info COMPILERPATH: ${COMPILERPATH})
 
 #************************************************************************
+# Define processor
+#************************************************************************
+
+# set your MCU type here, or make command line `make MCU=MK20DX256`
+MCU=MK20DX256
+
+# make it lower case
+LOWER_MCU := $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$(MCU)))))))))))))))))))))))))))
+MCU_LD = $(LOWER_MCU).ld
+
+#************************************************************************
 # Location of utilities within project
 #************************************************************************
 
@@ -17,8 +28,8 @@ COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
 TOOLSPATH = $(abspath $(PROJECTPATH)/teensy/tools)
 # $(info TOOLSPATH: ${TOOLSPATH})
 
-# Path for the mk20dx256 library
-MCUPATH = $(abspath $(PROJECTPATH)/teensy/tools/mk20dx256.ld)
+# Path for the MCU library
+MCUPATH = $(abspath $(PROJECTPATH)/teensy/tools/$(MCU_LD))
 # $(info MCUPATH: ${MCUPATH})
 
 #************************************************************************
@@ -70,7 +81,7 @@ $(TARGET).elf: $(OBJS) $(MCUPATH)
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
 upload:
-	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=mk20dx256 -wv $(TARGET).hex
+	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(LOWER_MCU) -wv $(TARGET).hex
 
 # compiler generated dependency info
 -include $(OBJS:.o=.d)
