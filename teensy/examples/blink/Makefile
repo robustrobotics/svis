@@ -68,10 +68,9 @@ $(TARGET).elf: $(OBJS) $(MCUPATH)
 %.hex: %.elf
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
-# ifneq (,$(wildcard $(TOOLSPATH)))
-# 	$(TOOLSPATH)/teensy_post_compile -file=$(basename $@) -path=$(shell pwd) -tools=$(TOOLSPATH)
-# 	-$(TOOLSPATH)/teensy_reboot
-# endif
+
+upload:
+	sudo $(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=mk20dx256 -wv $(TARGET).hex
 
 # compiler generated dependency info
 -include $(OBJS:.o=.d)
