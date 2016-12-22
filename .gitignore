@@ -1,5 +1,8 @@
 teensy/tools/teensy_loader_cli/teensy_loader_cli
 
+# Emacs files
+*.*~
+
 # Object files
 *.o
 *.ko
