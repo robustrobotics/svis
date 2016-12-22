@@ -2,35 +2,33 @@
 TARGET = main
 
 # Path to your arduino installation
-ARDUINOPATH = /home/fla/arduino-1.6.13
+PROJECTPATH = /home/fla/svis
+
+# Path location for the arm-none-eabi compiler
+COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
+$(info COMPILERPATH: ${COMPILERPATH})
+
+#************************************************************************
+# Location of utilities within project
+#************************************************************************
+
+# Path for Teensy Loader, teensy_post_compile and teensy_reboot (on Linux)
+TOOLSPATH = $(abspath $(PROJECTPATH)/teensy/tools)
+$(info TOOLSPATH: ${TOOLSPATH})
+
+# Path for the mk20dx256 library
+MCUPATH = $(abspath $(PROJECTPATH)/teensy/tools/mk20dx256.ld)
+$(info MCUPATH: ${MCUPATH})
+
+#************************************************************************
+# Settings below this point usually do not need to be edited
+#************************************************************************
 
 # configurable options
 OPTIONS = -DF_CPU=48000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
 
 # options needed by many Arduino libraries to configure for Teensy 3.0
 OPTIONS += -D__$(MCU)__ -DARDUINO=10613 -DTEENSYDUINO=132
-
-#************************************************************************
-# Location of Teensyduino utilities, Toolchain, and Arduino Libraries.
-# To use this makefile without Arduino, copy the resources from these
-# locations and edit the pathnames.  The rest of Arduino is not needed.
-#************************************************************************
-
-# path location for Teensy Loader, teensy_post_compile and teensy_reboot (on Linux)
-TOOLSPATH = $(abspath $(ARDUINOPATH)/hardware/tools)
-$(info TOOLSPATH: ${TOOLSPATH})
-
-# path location for the arm-none-eabi compiler
-COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
-$(info COMPILERPATH: ${COMPILERPATH})
-
-# path location for the mk20dx256 library
-MCUPATH = $(abspath $(ARDUINOPATH)/hardware/teensy/avr/cores/teensy3/mk20dx256.ld)
-$(info MCUPATH: ${MCUPATH})
-
-#************************************************************************
-# Settings below this point usually do not need to be edited
-#************************************************************************
 
 # CPPFLAGS = compiler options for C and C++
 CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -MMD $(OPTIONS) -I.
@@ -47,7 +45,6 @@ LDFLAGS = -Os -Wl,--gc-sections,--defsym=__rtc_localtime=0 --specs=nano.specs -m
 # additional libraries to link
 LIBS = -lm
 
-
 # names for the compiler programs
 CC = $(COMPILERPATH)/arm-none-eabi-gcc
 CXX = $(COMPILERPATH)/arm-none-eabi-g++
@@ -59,7 +56,6 @@ SIZE = $(COMPILERPATH)/arm-none-eabi-size
 C_FILES := $(wildcard *.c)
 CPP_FILES := $(wildcard *.cpp)
 OBJS := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o)
-
 
 # the actual makefile rules (all .o files built by GNU make's default implicit rules)
 
