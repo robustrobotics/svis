@@ -21,7 +21,7 @@ TOOLSPATH = $(abspath $(ARDUINOPATH)/hardware/tools)
 $(info TOOLSPATH: ${TOOLSPATH})
 
 # path location for the arm-none-eabi compiler
-COMPILERPATH = $(abspath $(ARDUINOPATH)/hardware/tools/arm/bin)
+COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
 $(info COMPILERPATH: ${COMPILERPATH})
 
 # path location for the mk20dx256 library
