@@ -14,9 +14,7 @@ PROJECT_PATH = /home/fla/svis
 SRC_PATH := src
 BUILD_PATH := build
 BIN_PATH := $(BUILD_PATH)/bin
-$(info BIN_PATH: ${BIN_PATH})
 TEENSY3_COPY_PATH := $(BUILD_PATH)/teensy3
-$(info TEENSY3_COPY_PATH: ${TEENSY3_COPY_PATH})
 PWD := $(realpath $(shell pwd))
 
 TOOLSPATH := $(realpath $(PROJECT_PATH)/teensy/tools)
