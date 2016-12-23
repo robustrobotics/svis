@@ -23,7 +23,6 @@ M_OPT_N_WARN          := -Wall -Os
 BIN_PATH          := bin
 SRC_PATH          := src
 BUILD_PATH        := build
-TEENSY3_PATH      := teensy3
 TEENSY3_COPY_PATH := teensy3.copy
 
 PWD          := $(realpath $(shell pwd))
