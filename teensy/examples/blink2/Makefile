@@ -59,21 +59,9 @@ $(error "Missing $(ARDUINO_HOME)/hardware/tools/arm/bin")
 endif
 
 # Setting up linker definitions and other defines
-ifeq ($(M_TEENSY_VERSION),3.0)
-M_CPU       := __MK20DX128__
-M_LINK_DEFS := mk20dx128.ld
-M_BOARD     := TEENSY30
-else ifeq ($(M_TEENSY_VERSION),3.1)
 M_CPU       := __MK20DX256__
 M_LINK_DEFS := mk20dx256.ld
 M_BOARD     := TEENSY31
-else ifeq ($(M_TEENSY_VERSION),3.2)
-M_CPU       := __MK20DX256__
-M_LINK_DEFS := mk20dx256.ld
-M_BOARD     := TEENSY31
-else
-$(error "Unsupported Teensy version: $(M_TEENSY_VERSION)")
-endif
 
 UNIX_TIME = $(shell date '+%s')
 CPPFLAGS  = $(M_OPT_N_WARN) -mcpu=cortex-m4 -mthumb -nostdlib
