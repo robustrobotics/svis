@@ -34,6 +34,10 @@ TOOLSPATH    := $(realpath $(PROJECT_PATH)/teensy/tools)
 # LIBRARYPATH  := $(realpath $(PROJECT_PATH)/libraries)
 COMPILERPATH := /home/fla/gcc-arm-none-eabi-4_8-2014q3/bin
 
+#************************************************************************
+# Definitions
+#************************************************************************
+
 # Setting up linker definitions and other defines
 M_CPU       := __MK20DX256__
 M_CPU_LOWER := mk20dx256
@@ -61,6 +65,10 @@ CC                  := $(abspath $(COMPILERPATH))/arm-none-eabi-gcc
 CXX                 := $(abspath $(COMPILERPATH))/arm-none-eabi-g++
 OBJCOPY             := $(abspath $(COMPILERPATH))/arm-none-eabi-objcopy
 SIZE                := $(abspath $(COMPILERPATH))/arm-none-eabi-size
+
+#************************************************************************
+# Make targets
+#************************************************************************
 
 # (Public) target definitions ahead
 .PHONY: all clean coreclean depsclean distclean build upload hex eep core
@@ -185,7 +193,9 @@ $(OUT_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
 	@echo "Linking "$@" ..."
 	@$(CXX) $(LDFLAGS) -o $@ $(SOURCE_OBJECTS) $(LIBTEENSY3) $(LIBS)
 
+#************************************************************************
 # Dedicated rules
+#************************************************************************
 define CXX_RULE
 $(OUT_PATH)/%.cpp.o: $(1)/%.cpp Makefile
 	@echo "Compiling $$< ..."
