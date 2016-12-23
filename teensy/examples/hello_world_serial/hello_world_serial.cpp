@@ -13,11 +13,10 @@
    This example code is in the public domain.
 */
 
-#include "core_pins.h"
-#include "usb_serial.h"
+#include "WProgram.h"
 
 void setup() {                
-  Serial.begin(38400);
+  Serial.begin(9600);
 }
 
 void loop() {
