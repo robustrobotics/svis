@@ -11,16 +11,17 @@ M_OPT_N_WARN := -Wall -Os
 
 PROJECT_PATH = /home/fla/svis
 
-BIN_PATH := bin
 SRC_PATH := src
 BUILD_PATH := build
-TEENSY3_COPY_PATH := teensy3.copy
+BIN_PATH := $(BUILD_PATH)/bin
+$(info BIN_PATH: ${BIN_PATH})
+TEENSY3_COPY_PATH := $(BUILD_PATH)/teensy3
+$(info TEENSY3_COPY_PATH: ${TEENSY3_COPY_PATH})
+PWD := $(realpath $(shell pwd))
 
 TOOLSPATH := $(realpath $(PROJECT_PATH)/teensy/tools)
 # LIBRARYPATH  := $(realpath $(PROJECT_PATH)/libraries)
 COMPILERPATH := /home/fla/gcc-arm-none-eabi-4_8-2014q3/bin
-
-PWD := $(realpath $(shell pwd))
 
 #************************************************************************
 # Definitions
@@ -59,7 +60,7 @@ SIZE := $(abspath $(COMPILERPATH))/arm-none-eabi-size
 all: $(BIN_PATH)/$(M_PROJECT).hex
 
 clean:
-	@rm -rf $(BIN_PATH) $(BUILD_PATH) $(TEENSY3_COPY_PATH)
+	@rm -rf $(BUILD_PATH)
 
 upload: all
 	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=mk20dx256 -wv $(BIN_PATH)/$(M_PROJECT).hex
@@ -96,6 +97,8 @@ CORE_COPY_DEPENDENCIES =$(addprefix $(TEENSY3_CORE_PATH)/,$(TEENSY3_FILES))
 # This one builds TEENSY3_COPY and recursively builds LIBTEENSY3
 .ONESHELL:
 $(TEENSY3_COPY_PATH): $(CORE_COPY_DEPENDENCIES)
+	@mkdir -p $(BIN_PATH)
+	@mkdir -p $(TEENSY3_COPY_PATH)
 	@for f in $(TEENSY3_FILES);\
 		do \
 			if [ ! -e $(TEENSY3_COPY_PATH)/$$f ]; \
@@ -128,13 +131,10 @@ LDFLAGS += -T$(TEENSY3_COPY_PATH)/mk20dx256.ld
 CPPFLAGS    += $(addprefix -I,$(INCLUDE_PATHS))
 ALL_OBJECTS  = $(SOURCE_OBJECTS) $(CORE_LIB_OBJECTS)
 
-# Create BIN_PATH
-$(BIN_PATH):
-	@mkdir -p $(BIN_PATH)
-
-# Create BUILD_PATH
-$(BUILD_PATH):
-	@mkdir -p $(BUILD_PATH)
+# Links the .elf
+$(BUILD_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
+	@echo "Linking "$@" ..."
+	@$(CXX) $(LDFLAGS) -o $@ $(SOURCE_OBJECTS) $(LIBTEENSY3) $(LIBS)
 
 # Creates the .hex from the .elf
 $(BIN_PATH)/%.hex: $(BUILD_PATH)/%.elf
@@ -148,19 +148,6 @@ $(BIN_PATH)/%.eep: $(BUILD_PATH)/%.elf
 	@$(SIZE) $<
 	@$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load \
 		--no-change-warnings --change-section-lma .eeprom=0 $< $@
-
-# Make sure BIN and BUILD paths exists
-$(CORE_LIB_OBJECTS): | $(BUILD_PATH)
-$(CORE_LIB_OBJECTS): | $(BIN_PATH)
-
-# Make sure BIN_PATH exists
-$(SOURCE_OBJECTS): | $(BUILD_PATH)
-$(SOURCE_OBJECTS): | $(BIN_PATH)
-
-# Links the .elf
-$(BUILD_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
-	@echo "Linking "$@" ..."
-	@$(CXX) $(LDFLAGS) -o $@ $(SOURCE_OBJECTS) $(LIBTEENSY3) $(LIBS)
 
 #************************************************************************
 # Dedicated rules
