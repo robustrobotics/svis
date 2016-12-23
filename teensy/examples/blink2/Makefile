@@ -58,6 +58,7 @@ endif
 
 # Setting up linker definitions and other defines
 M_CPU       := __MK20DX256__
+M_CPU_LOWER := mk20dx256
 M_LINK_DEFS := mk20dx256.ld
 M_BOARD     := TEENSY31
 
@@ -121,10 +122,7 @@ distclean:
 
 # Builds and uploads to Teensy3
 upload: hex
-	@$(TEENSY_POST_COMPILE) -file=$(OUT_PATH)/$(M_PROJECT) -path=$(shell pwd) \
-		-tools=$(abspath $(TOOLSPATH)) -board=$(M_BOARD)
-	@echo "Rebooting Teensy ..."
-	@-$(TEENSY_REBOOT)
+	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(M_CPU_LOWER) -wv $(OUT_PATH)/$(M_PROJECT).hex
 
 # Some functions
 relpath2        = $(subst $(1)/,,$(2))
