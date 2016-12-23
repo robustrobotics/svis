@@ -26,35 +26,13 @@ TEENSY3_PATH      := teensy3
 # Teensy3 copy folder
 TEENSY3_COPY_PATH := teensy3.copy
 
-################################################################################
-#
-# Arduino: https://www.arduino.cc/en/Main/Software
-# Teensyduino: https://www.pjrc.com/teensy/teensyduino.html
-# Source to this Makefile: https://github.com/rjeschke/teensy3-blink
-# Reference Makefile: $ARDUINO_HOME/hardware/teensy/avr/cores/teensy3/Makefile
-#
-################################################################################
-
-ARDUINO_HOME = /home/fla/arduino-1.6.13
-
-# Check if $ARDUINO_HOME is set
-ifeq ($(ARDUINO_HOME),)
-$(error '$$ARDUINO_HOME is not set')
-endif
+PROJECT_PATH = /home/fla/svis
 
 # Setting up some paths
 PWD          := $(realpath $(shell pwd))
-TOOLSPATH    := $(realpath $(ARDUINO_HOME)/hardware/tools)
-LIBRARYPATH  := $(realpath $(ARDUINO_HOME)/libraries)
-COMPILERPATH := $(realpath $(ARDUINO_HOME)/hardware/tools/arm/bin)
-
-# Check if tools and compilers exist
-ifeq ($(TOOLSPATH),)
-$(error "Missing: $(ARDUINO_HOME)/hardware/tools")
-endif
-ifeq ($(COMPILERPATH),)
-$(error "Missing $(ARDUINO_HOME)/hardware/tools/arm/bin")
-endif
+TOOLSPATH    := $(realpath $(PROJECT_PATH)/teensy/tools)
+# LIBRARYPATH  := $(realpath $(PROJECT_PATH)/libraries)
+COMPILERPATH := /home/fla/gcc-arm-none-eabi-4_8-2014q3/bin
 
 # Setting up linker definitions and other defines
 M_CPU       := __MK20DX256__
