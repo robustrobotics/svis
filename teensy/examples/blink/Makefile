@@ -1,13 +1,17 @@
-# The name of your project (used to name the compiled .hex file)
-TARGET = main
+# project name (used to name the compiled .hex file)
+TARGET = blink
 
-# Path to your arduino installation
-PROJECTPATH = /home/fla/svis
-# $(info PROJECTPATH: ${PROJECTPATH})
+# source files
+C_FILES := $(wildcard *.c)
+CPP_FILES := $(wildcard *.cpp)
 
-# Path location for the arm-none-eabi compiler
-COMPILERPATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
-# $(info COMPILERPATH: ${COMPILERPATH})
+# path to your arduino installation
+PROJECT_PATH = /home/fla/svis
+# $(info PROJECT_PATH: ${PROJECT_PATH})
+
+# path location for the arm-none-eabi compiler
+COMPILER_PATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
+# $(info COMPILER_PATH: ${COMPILER_PATH})
 
 #************************************************************************
 # Define processor
@@ -24,13 +28,28 @@ MCU_LD = $(LOWER_MCU).ld
 # Location of utilities within project
 #************************************************************************
 
-# Path for Teensy Loader, teensy_post_compile and teensy_reboot (on Linux)
-TOOLSPATH = $(abspath $(PROJECTPATH)/teensy/tools)
-# $(info TOOLSPATH: ${TOOLSPATH})
+# path for Teensy Loader, teensy_post_compile and teensy_reboot (on Linux)
+TOOLS_PATH = $(abspath $(PROJECT_PATH)/teensy/tools)
+# $(info TOOLS_PATH: ${TOOLS_PATH})
 
-# Path for the MCU library
-MCUPATH = $(abspath $(PROJECTPATH)/teensy/tools/$(MCU_LD))
-# $(info MCUPATH: ${MCUPATH})
+# path for the MCU library
+MCU_PATH = $(abspath $(PROJECT_PATH)/teensy/tools/$(MCU_LD))
+# $(info MCU_PATH: ${MCU_PATH})
+
+# path for arduino source and includes
+ARDUINO_PATH = $(abspath $(PROJECT_PATH)/teensy/src/teensy3)
+# $(info ARDUINO_PATH: ${ARDUINO_PATH})
+
+# arduino source files
+ARDUINO_C_FILES := $(wildcard $(ARDUINO_PATH)/*.c)
+# $(info ARDUINO_C_FILES: ${ARDUINO_C_FILES})
+C_FILES += $(ARDUINO_C_FILES)
+# $(info C_FILES: ${C_FILES})
+
+ARDUINO_CPP_FILES := $(wildcard $(ARDUINO_PATH)/*.cpp)
+# $(info ARDUINO_CPP_FILES: ${ARDUINO_CPP_FILES})
+CPP_FILES += $(ARDUINO_CPP_FILES)
+# $(info CPP_FILES: ${CPP_FILES})
 
 #************************************************************************
 # Settings below this point usually do not need to be edited
@@ -43,7 +62,7 @@ OPTIONS = -DF_CPU=48000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
 OPTIONS += -D__$(MCU)__ -DARDUINO=10613 -DTEENSYDUINO=132
 
 # CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -MMD $(OPTIONS) -I.
+CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -MMD $(OPTIONS) -I$(ARDUINO_PATH)
 
 # compiler options for C++ only
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
@@ -52,39 +71,40 @@ CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 CFLAGS =
 
 # linker options
-LDFLAGS = -Os -Wl,--gc-sections,--defsym=__rtc_localtime=0 --specs=nano.specs -mcpu=cortex-m4 -mthumb -T$(MCUPATH)
+LDFLAGS = -Os -Wl,--gc-sections,--defsym=__rtc_localtime=0 --specs=nano.specs -mcpu=cortex-m4 -mthumb -T$(MCU_PATH)
 
 # additional libraries to link
 LIBS = -lm
 
 # names for the compiler programs
-CC = $(COMPILERPATH)/arm-none-eabi-gcc
-CXX = $(COMPILERPATH)/arm-none-eabi-g++
-OBJCOPY = $(COMPILERPATH)/arm-none-eabi-objcopy
-SIZE = $(COMPILERPATH)/arm-none-eabi-size
+CC = $(COMPILER_PATH)/arm-none-eabi-gcc
+CXX = $(COMPILER_PATH)/arm-none-eabi-g++
+OBJCOPY = $(COMPILER_PATH)/arm-none-eabi-objcopy
+SIZE = $(COMPILER_PATH)/arm-none-eabi-size
 
-# automatically create lists of the sources and objects
-# TODO: this does not handle Arduino libraries yet...
-C_FILES := $(wildcard *.c)
-CPP_FILES := $(wildcard *.cpp)
+#************************************************************************
+# Objects definition
+#************************************************************************
+# define objects for compilation
 OBJS := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o)
 
-# the actual makefile rules (all .o files built by GNU make's default implicit rules)
-
+#************************************************************************
+# Make targets
+#************************************************************************
 all: $(TARGET).hex
 
-$(TARGET).elf: $(OBJS) $(MCUPATH)
+$(TARGET).elf: $(OBJS) $(MCU_PATH)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 %.hex: %.elf
 	$(SIZE) $<
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
 
-upload:
-	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(LOWER_MCU) -wv $(TARGET).hex
-
 # compiler generated dependency info
 -include $(OBJS:.o=.d)
+
+upload:
+	$(TOOLS_PATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(LOWER_MCU) -wv $(TARGET).hex
 
 clean:
 	rm -f *.o *.d $(TARGET).elf $(TARGET).hex
