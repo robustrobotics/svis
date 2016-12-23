@@ -4,6 +4,8 @@
    This example code is in the public domain.
 */
 
+#include "core_pins.h"
+
 // Teensy 2.0 has the LED on pin 11
 // Teensy++ 2.0 has the LED on pin 6
 // Teensy 3.x / Teensy LC have the LED on pin 13
