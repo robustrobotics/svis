@@ -14,8 +14,6 @@ M_TEENSYDUINO_VERSION := 132
 M_TEENSY_VERSION      := 3.2
 # Compilation optimization, warning, debug flags
 M_OPT_N_WARN          := -Wall -Os
-# Comment out the next line to disable auto dependencies generation
-M_AUTO_DEPENDENCIES := 1
 
 # Output path for binaries
 OUT_PATH          := bin
@@ -42,9 +40,7 @@ M_BOARD     := TEENSY31
 
 UNIX_TIME = $(shell date '+%s')
 CPPFLAGS  = $(M_OPT_N_WARN) -mcpu=cortex-m4 -mthumb -nostdlib
-ifneq ($(M_AUTO_DEPENDENCIES),)
 CPPFLAGS += -MMD
-endif
 CPPFLAGS += -DF_CPU=$(M_CPU_CLOCK) -D$(M_CPU) -D$(M_USB_TYPE) -DLAYOUT_$(M_LAYOUT)
 CPPFLAGS += -DARDUINO=$(M_ARDUINO_VERSION) -DTEENSYDUINO=$(M_TEENSYDUINO_VERSION)
 CPPFLAGS += -DTEENSY_VERSION=$(M_TEENSY_VERSION) -DTEENSY_BOARD=$(M_BOARD)
@@ -221,6 +217,4 @@ $(foreach tmp,$(INCLUDE_PATHS), \
 	$(eval $(call ASM_RULE,$(tmp))))
 
 # Include auto generated dependencies, don't fail on error
-ifneq ($(M_AUTO_DEPENDENCIES),)
 -include $(ALL_OBJECTS:.o=.d)
-endif
