@@ -1,6 +1,7 @@
 #************************************************************************
 # Setup build
 #************************************************************************
+PROJECT_PATH = /home/fla/svis
 
 # Name of the project, also used for naming the .hex file
 M_PROJECT             := teensy3-blinky
@@ -28,9 +29,6 @@ TEENSY3_PATH      := teensy3
 # Teensy3 copy folder
 TEENSY3_COPY_PATH := teensy3.copy
 
-PROJECT_PATH = /home/fla/svis
-
-# Setting up some paths
 PWD          := $(realpath $(shell pwd))
 TOOLSPATH    := $(realpath $(PROJECT_PATH)/teensy/tools)
 # LIBRARYPATH  := $(realpath $(PROJECT_PATH)/libraries)
