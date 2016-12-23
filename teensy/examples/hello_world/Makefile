@@ -1,5 +1,5 @@
 # project name (used to name the compiled .hex file)
-TARGET = hello_world_serial
+TARGET = hello_world
 
 # source files
 C_FILES := $(wildcard *.c)
