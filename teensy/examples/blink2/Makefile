@@ -117,25 +117,14 @@ TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/src/teensy3)
 
 TEENSY3_EXCLUDES = Makefile main.cpp
 
-ifeq ($(wildcard $(TEENSY3_PATH)),)
-TEENSY3_OVERRIDE_FILES =
-else
-TEENSY3_OVERRIDE_FILES = $(call relpath2,$(realpath $(TEENSY3_PATH)),$(call \
-	list_files,$(TEENSY3_PATH)))
-INCLUDE_PATHS += $(TEENSY3_PATH)
-TEENSY3_EXCLUDES += $(TEENSY3_OVERRIDE_FILES)
-endif
-
 TEENSY3_FILES = $(filter-out $(TEENSY3_EXCLUDES),$(call \
 	relpath2,$(TEENSY3_CORE_PATH),$(call list_files,$(TEENSY3_CORE_PATH))))
 
 INCLUDE_PATHS += $(TEENSY3_COPY_PATH)
 
-CORE_LIB_OBJECTS = $(call prepare_objects,$(TEENSY3_FILES) \
-	$(TEENSY3_OVERRIDE_FILES))
+CORE_LIB_OBJECTS = $(call prepare_objects,$(TEENSY3_FILES))
 
-CORE_COPY_DEPENDENCIES = $(addprefix $(TEENSY3_PATH)/,$(TEENSY3_OVERRIDE_FILES)) \
-	$(addprefix $(TEENSY3_CORE_PATH)/,$(TEENSY3_FILES))
+CORE_COPY_DEPENDENCIES =$(addprefix $(TEENSY3_CORE_PATH)/,$(TEENSY3_FILES))
 
 # (Internal) target definitions ahead
 # This one builds TEENSY3_COPY and recursively builds LIBTEENSY3
