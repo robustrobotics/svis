@@ -8,6 +8,7 @@ teensy/tools/teensy_loader_cli/teensy_loader_cli
 *.ko
 *.obj
 *.elf
+*.d
 
 # Precompiled Headers
 *.gch
