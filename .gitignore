@@ -1,4 +1,5 @@
 teensy/tools/teensy_loader_cli/teensy_loader_cli
+*build/
 
 # Emacs files
 *.*~
