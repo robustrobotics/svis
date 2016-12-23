@@ -1,3 +1,7 @@
+#************************************************************************
+# Setup build
+#************************************************************************
+
 # Name of the project, also used for naming the .hex file
 M_PROJECT             := teensy3-blinky
 # Used CPU clock
@@ -14,6 +18,10 @@ M_TEENSYDUINO_VERSION := 132
 M_TEENSY_VERSION      := 3.2
 # Compilation optimization, warning, debug flags
 M_OPT_N_WARN          := -Wall -Os
+
+#************************************************************************
+# Setup paths
+#************************************************************************
 
 # Output path for binaries
 OUT_PATH          := bin
