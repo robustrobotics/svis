@@ -8,8 +8,6 @@ M_PROJECT             := teensy3-blinky
 M_CPU_CLOCK           := 72000000
 # USB type
 M_USB_TYPE            := USB_SERIAL
-# Keyboard layout (what was that for?)
-M_LAYOUT              := US_ENGLISH
 # Arduino version
 M_ARDUINO_VERSION     := 10613
 # Teensyduino version
@@ -49,7 +47,7 @@ M_BOARD     := TEENSY31
 UNIX_TIME = $(shell date '+%s')
 CPPFLAGS  = $(M_OPT_N_WARN) -mcpu=cortex-m4 -mthumb -nostdlib
 CPPFLAGS += -MMD
-CPPFLAGS += -DF_CPU=$(M_CPU_CLOCK) -D$(M_CPU) -D$(M_USB_TYPE) -DLAYOUT_$(M_LAYOUT)
+CPPFLAGS += -DF_CPU=$(M_CPU_CLOCK) -D$(M_CPU) -D$(M_USB_TYPE) -DLAYOUT_US_ENGLISH
 CPPFLAGS += -DARDUINO=$(M_ARDUINO_VERSION) -DTEENSYDUINO=$(M_TEENSYDUINO_VERSION)
 CPPFLAGS += -DTEENSY_VERSION=$(M_TEENSY_VERSION) -DTEENSY_BOARD=$(M_BOARD)
 CXXFLAGS  = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
