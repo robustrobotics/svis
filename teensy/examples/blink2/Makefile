@@ -14,8 +14,6 @@ M_TEENSYDUINO_VERSION := 132
 M_TEENSY_VERSION      := 3.2
 # Compilation optimization, warning, debug flags
 M_OPT_N_WARN          := -Wall -Os
-# Uncomment the next line if $(TEENSY3_PATH) contains a full Teensy3 core
-# M_REPLACE_CORE := 1
 # Comment out the next line to disable auto dependencies generation
 M_AUTO_DEPENDENCIES := 1
 
@@ -139,13 +137,7 @@ prepare_objects = $(addprefix $(OUT_PATH)/,$(notdir $(addsuffix .o,$(call \
 INCLUDE_PATHS  := $(call relpath,$(SRC_PATH))
 SOURCE_OBJECTS := $(call prepare_objects,$(call list_files,$(SRC_PATH)))
 
-ifeq ($(M_REPLACE_CORE),)
-####
-# We're using the vanilla core with optional additions
-TEENSY3_CORE_PATH := $(realpath $(ARDUINO_HOME)/hardware/teensy/avr/cores/teensy3)
-ifeq ($(TEENSY3_CORE_PATH),)
-$(error "Missing: $(ARDUINO_HOME)/hardware/teensy/avr/cores/teensy3")
-endif
+TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/src/teensy3)
 
 TEENSY3_EXCLUDES = Makefile main.cpp
 
@@ -205,25 +197,6 @@ LDFLAGS += -T$(TEENSY3_COPY_PATH)/$(M_LINK_DEFS)
 else
 LDFLAGS += -T$(TEENSY3_PATH)/$(M_LINK_DEFS)
 endif
-
-####
-else  # ifeq ($(M_REPLACE_CORE),)
-####
-# We're replacing the whole core
-
-ifeq ($(wildcard $(TEENSY3_PATH)),)
-$(error "Missing: $(TEENSY3_PATH)")
-endif
-
-CORE_LIB_OBJECTS = $(call prepare_objects,$(call list_files,$(TEENSY3_PATH)))
-INCLUDE_PATHS   += $(TEENSY3_PATH)
-LDFLAGS         += -T$(TEENSY3_PATH)/$(M_LINK_DEFS)
-
-$(LIBTEENSY3): $(CORE_LIB_OBJECTS)
-	@$(AR) rcs $@ $(CORE_LIB_OBJECTS)
-
-####
-endif # ifeq ($(M_REPLACE_CORE),)
 
 # Add include folders and set source and object lists
 CPPFLAGS    += $(addprefix -I,$(INCLUDE_PATHS))
