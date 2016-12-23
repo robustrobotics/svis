@@ -12,8 +12,6 @@ M_USB_TYPE            := USB_SERIAL
 M_ARDUINO_VERSION     := 10613
 # Teensyduino version
 M_TEENSYDUINO_VERSION := 132
-# Teensy version (3.0, 3.1 or 3.2)
-M_TEENSY_VERSION      := 3.2
 # Compilation optimization, warning, debug flags
 M_OPT_N_WARN          := -Wall -Os
 
@@ -42,14 +40,13 @@ COMPILERPATH := /home/fla/gcc-arm-none-eabi-4_8-2014q3/bin
 M_CPU       := __MK20DX256__
 M_CPU_LOWER := mk20dx256
 M_LINK_DEFS := mk20dx256.ld
-M_BOARD     := TEENSY31
 
 UNIX_TIME = $(shell date '+%s')
 CPPFLAGS  = $(M_OPT_N_WARN) -mcpu=cortex-m4 -mthumb -nostdlib
 CPPFLAGS += -MMD
 CPPFLAGS += -DF_CPU=$(M_CPU_CLOCK) -D$(M_CPU) -D$(M_USB_TYPE) -DLAYOUT_US_ENGLISH
 CPPFLAGS += -DARDUINO=$(M_ARDUINO_VERSION) -DTEENSYDUINO=$(M_TEENSYDUINO_VERSION)
-CPPFLAGS += -DTEENSY_VERSION=$(M_TEENSY_VERSION) -DTEENSY_BOARD=$(M_BOARD)
+CPPFLAGS += -DTEENSY_VERSION=3.2 -DTEENSY_BOARD=TEENSY31
 CXXFLAGS  = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 ASMFLAGS  = -x assembler-with-cpp
 CFLAGS    =
