@@ -91,7 +91,7 @@ TEENSY_POST_COMPILE := $(abspath $(TOOLSPATH))/teensy_post_compile
 TEENSY_REBOOT       := $(abspath $(TOOLSPATH))/teensy_reboot
 
 # (Public) target definitions ahead
-.PHONY: all clean coreclean depsclean distclean build upload symbols hex eep core
+.PHONY: all clean coreclean depsclean distclean build upload hex eep core
 
 # Same as build
 all: build
@@ -127,9 +127,6 @@ upload: hex
 		-tools=$(abspath $(TOOLSPATH)) -board=$(M_BOARD)
 	@echo "Rebooting Teensy ..."
 	@-$(TEENSY_REBOOT)
-
-# Creates Eclipse CDT symbols
-symbols: $(OUT_PATH) $(OUT_PATH)/eclipse_cdt_symbols.xml
 
 # Some functions
 relpath2        = $(subst $(1)/,,$(2))
@@ -289,30 +286,3 @@ $(foreach tmp,$(INCLUDE_PATHS), \
 ifneq ($(M_AUTO_DEPENDENCIES),)
 -include $(ALL_OBJECTS:.o=.d)
 endif
-
-# Eclipse CDT symbol creation
-write_symbols = @echo "<macro><name>F_CPU</name><value>$(M_CPU_CLOCK)</value></macro>" \
-	"<macro><name>$(M_USB_TYPE)</name><value/></macro>" \
-	"<macro><name>$(M_CPU)</name><value/></macro>" \
-	"<macro><name>LAYOUT_$(M_LAYOUT)</name><value/></macro>" \
-	"<macro><name>ARDUINO</name><value>$(M_ARDUINO_VERSION)</value></macro>" \
-	"<macro><name>TEENSYDUINO</name><value>$(M_TEENSYDUINO_VERSION)</value></macro>" \
-	"<macro><name>TEENSY_VERSION</name><value>$(M_TEENSY_VERSION)</value></macro>" \
-	"<macro><name>TEENSY_BOARD</name><value>$(M_BOARD)</value></macro>" \
-	"<macro><name>NULL</name><value>0</value></macro>" \
-	>> $(1)
-
-.ONESHELL:
-$(OUT_PATH)/eclipse_cdt_symbols.xml: Makefile $(OUT_PATH)
-	@echo '<?xml version="1.0" encoding="UTF-8"?>' > $@
-	@echo '<cdtprojectproperties>' >> $@
-	@echo '<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.Macros">' >> $@
-	@echo '<language name="C++ Source File">' >> $@
-	$(call write_symbols,$@)
-	@echo '</language>' >> $@
-	@echo '<language name="C Source File">' >> $@
-	$(call write_symbols,$@)
-	@echo '</language>' >> $@
-	@echo '</section>' >> $@
-	@echo '</cdtprojectproperties>' >> $@
-
