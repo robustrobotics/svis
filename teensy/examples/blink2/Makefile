@@ -71,35 +71,13 @@ SIZE                := $(abspath $(COMPILERPATH))/arm-none-eabi-size
 #************************************************************************
 
 # (Public) target definitions ahead
-.PHONY: all clean coreclean depsclean distclean build upload hex eep core
+.PHONY: all clean upload
 
 # Same as build
 all: build
 
-# Compile and link .hex
-build: hex
-
-hex: $(OUT_PATH)/$(M_PROJECT).hex
-
-eep: $(OUT_PATH)/$(M_PROJECT).eep
-
-core: $(LIBTEENSY3)
-
-# Clean SOURCE_OBJECTS
 clean:
 	@rm -rf $(SOURCE_OBJECTS)
-
-# Clean LIBTEENSY3 and CORE_LIB_OBJECTS
-coreclean:
-	@rm -rf $(CORE_LIB_OBJECTS) $(TEENSY3LIB)
-
-# Cleans auto dependencies
-depsclean:
-	@rm -rf $(OUT_PATH)/*.d
-
-# Clean OUT_PATH and TEENSY3_COPY_PATH
-distclean:
-	@rm -rf $(OUT_PATH) $(TEENSY3_COPY_PATH)
 
 # Builds and uploads to Teensy3
 upload: hex
