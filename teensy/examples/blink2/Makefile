@@ -66,8 +66,6 @@ CC                  := $(abspath $(COMPILERPATH))/arm-none-eabi-gcc
 CXX                 := $(abspath $(COMPILERPATH))/arm-none-eabi-g++
 OBJCOPY             := $(abspath $(COMPILERPATH))/arm-none-eabi-objcopy
 SIZE                := $(abspath $(COMPILERPATH))/arm-none-eabi-size
-TEENSY_POST_COMPILE := $(abspath $(TOOLSPATH))/teensy_post_compile
-TEENSY_REBOOT       := $(abspath $(TOOLSPATH))/teensy_reboot
 
 # (Public) target definitions ahead
 .PHONY: all clean coreclean depsclean distclean build upload hex eep core
