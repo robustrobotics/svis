@@ -156,12 +156,7 @@ $(LIBTEENSY3): $(TEENSY3_COPY_PATH) $(CORE_LIB_OBJECTS)
 	@$(AR) rcs $@ $(CORE_LIB_OBJECTS)
 endif
 
-# Check if user uses linker definitions override
-ifeq ($(wildcard $(TEENSY3_PATH)/$(M_LINK_DEFS)),)
 LDFLAGS += -T$(TEENSY3_COPY_PATH)/$(M_LINK_DEFS)
-else
-LDFLAGS += -T$(TEENSY3_PATH)/$(M_LINK_DEFS)
-endif
 
 # Add include folders and set source and object lists
 CPPFLAGS    += $(addprefix -I,$(INCLUDE_PATHS))
