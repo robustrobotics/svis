@@ -4,6 +4,10 @@
 
 static const int ledPin = 13;
 
+#define SKETCH_ALIKE
+
+#ifdef SKETCH_ALIKE
+
 // the setup() method runs once, when the sketch starts
 void setup()
 {
@@ -16,9 +20,9 @@ void setup()
 void loop()
 {
     digitalWrite(ledPin, HIGH); // set the LED on
-    delay(200);                 // wait for half a second
+    delay(500);                 // wait for half a second
     digitalWrite(ledPin, LOW);  // set the LED off
-    delay(2000);                 // wait for half a second
+    delay(500);                 // wait for half a second
 }
 
 // This is needed as the starting point, as the standard main.cpp gets
@@ -32,3 +36,22 @@ extern "C" int main()
         yield();
     }
 }
+
+#else
+
+extern "C" int main()
+{
+    // setup()
+    pinMode(ledPin, OUTPUT);
+    for (;;)
+    {
+        // loop()
+        digitalWrite(ledPin, HIGH); // set the LED on
+        delay(500);                 // wait for half a second
+        digitalWrite(ledPin, LOW);  // set the LED off
+        delay(500);                 // wait for half a second
+
+        yield();                    // yield() is mandatory!
+    }
+}
+#endif
