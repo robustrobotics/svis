@@ -20,13 +20,10 @@ M_OPT_N_WARN          := -Wall -Os
 # Setup paths
 #************************************************************************
 
-# Output path for binaries
-OUT_PATH          := bin
-# Path for sources
+BIN_PATH          := bin
 SRC_PATH          := src
-# Teensy3 override folder
+BUILD_PATH        := build
 TEENSY3_PATH      := teensy3
-# Teensy3 copy folder
 TEENSY3_COPY_PATH := teensy3.copy
 
 PWD          := $(realpath $(shell pwd))
@@ -57,7 +54,7 @@ LDFLAGS  += -mcpu=cortex-m4 -mthumb --specs=nano.specs
 LIBS      = -larm_cortexM4l_math -lm
 
 # Intermediate library for Teensy3 core
-LIBTEENSY3          := $(OUT_PATH)/libteensy3.a
+LIBTEENSY3          := $(BIN_PATH)/libteensy3.a
 
 # Tools needed
 AR                  := $(abspath $(COMPILERPATH))/arm-none-eabi-ar
@@ -74,21 +71,20 @@ SIZE                := $(abspath $(COMPILERPATH))/arm-none-eabi-size
 .PHONY: all clean upload
 
 # Same as build
-all: build
+all: $(BIN_PATH)/$(M_PROJECT).hex
 
 clean:
-	@rm -rf $(SOURCE_OBJECTS)
+	@rm -rf $(BIN_PATH) $(BUILD_PATH) $(TEENSY3_COPY_PATH)
 
-# Builds and uploads to Teensy3
-upload: hex
-	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(M_CPU_LOWER) -wv $(OUT_PATH)/$(M_PROJECT).hex
+upload: all
+	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(M_CPU_LOWER) -wv $(BIN_PATH)/$(M_PROJECT).hex
 
 # Some functions
 relpath2        = $(subst $(1)/,,$(2))
 relpath         = $(subst $(PWD)/,,$(1))
 list_files      = $(realpath $(shell find $(1) -type f))
 filter_sources  = $(filter %.c %.cpp %.S,$(1))
-prepare_objects = $(addprefix $(OUT_PATH)/,$(notdir $(addsuffix .o,$(call \
+prepare_objects = $(addprefix $(BIN_PATH)/,$(notdir $(addsuffix .o,$(call \
 	filter_sources,$(call relpath,$(1))))))
 
 INCLUDE_PATHS  := $(call relpath,$(SRC_PATH))
@@ -143,31 +139,31 @@ LDFLAGS += -T$(TEENSY3_COPY_PATH)/$(M_LINK_DEFS)
 CPPFLAGS    += $(addprefix -I,$(INCLUDE_PATHS))
 ALL_OBJECTS  = $(SOURCE_OBJECTS) $(CORE_LIB_OBJECTS)
 
-# Create OUT_PATH
-$(OUT_PATH):
-	@mkdir -p $(OUT_PATH)
+# Create BIN_PATH
+$(BIN_PATH):
+	@mkdir -p $(BIN_PATH)
 
 # Creates the .hex from the .elf
-$(OUT_PATH)/%.hex: $(OUT_PATH)/%.elf
+$(BIN_PATH)/%.hex: $(BIN_PATH)/%.elf
 	@echo "Preparing $@ ..."
 	@$(SIZE) $<
 	@$(OBJCOPY) -O ihex -R .eeprom $< $@
 
 # Creates the .eep from the .elf
-$(OUT_PATH)/%.eep: $(OUT_PATH)/%.elf
+$(BIN_PATH)/%.eep: $(BIN_PATH)/%.elf
 	@echo "Preparing $@ ..."
 	@$(SIZE) $<
 	@$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load \
 		--no-change-warnings --change-section-lma .eeprom=0 $< $@
 
-# Make sure OUT_PATH exists
-$(CORE_LIB_OBJECTS): | $(OUT_PATH)
+# Make sure BIN_PATH exists
+$(CORE_LIB_OBJECTS): | $(BIN_PATH)
 
-# Make sure OUT_PATH exists
-$(SOURCE_OBJECTS): | $(OUT_PATH)
+# Make sure BIN_PATH exists
+$(SOURCE_OBJECTS): | $(BIN_PATH)
 
 # Links the .elf
-$(OUT_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
+$(BIN_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
 	@echo "Linking "$@" ..."
 	@$(CXX) $(LDFLAGS) -o $@ $(SOURCE_OBJECTS) $(LIBTEENSY3) $(LIBS)
 
@@ -175,19 +171,19 @@ $(OUT_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
 # Dedicated rules
 #************************************************************************
 define CXX_RULE
-$(OUT_PATH)/%.cpp.o: $(1)/%.cpp Makefile
+$(BIN_PATH)/%.cpp.o: $(1)/%.cpp Makefile
 	@echo "Compiling $$< ..."
 	@$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) -o $$@ $$<
 endef
 
 define CC_RULE
-$(OUT_PATH)/%.c.o: $(1)/%.c Makefile
+$(BIN_PATH)/%.c.o: $(1)/%.c Makefile
 	@echo "Compiling $$< ..."
 	@$(CC) -c $(CPPFLAGS) $(CFLAGS) -o $$@ $$<
 endef
 
 define ASM_RULE
-$(OUT_PATH)/%.S.o: $(1)/%.S Makefile
+$(BIN_PATH)/%.S.o: $(1)/%.S Makefile
 	@echo "Compiling $$< ..."
 	@$(CC) -c $(CPPFLAGS) $(ASM_FLAGS) $(CFLAGS) -o $$@ $$<
 endef
