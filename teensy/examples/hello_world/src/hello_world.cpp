@@ -15,11 +15,14 @@
 
 #include "WProgram.h"
 
-void setup() {                
+extern "C" int main()
+{
   Serial.begin(9600);
-}
+  
+  while(true) {
+    Serial.println("Hello World");
+    delay(1000);
 
-void loop() {
-  Serial.println("Hello World");
-  delay(1000);
+    yield();                    // yield() is mandatory!
+  }
 }

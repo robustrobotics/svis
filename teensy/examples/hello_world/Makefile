@@ -1,110 +1,178 @@
-# project name (used to name the compiled .hex file)
-TARGET = hello_world
+#************************************************************************
+# Configuration
+#************************************************************************
+M_PROJECT := hello_world
 
-# source files
-C_FILES := $(wildcard *.c)
-CPP_FILES := $(wildcard *.cpp)
+M_CPU_CLOCK := 72000000
+M_USB_TYPE := USB_SERIAL
+M_ARDUINO_VERSION := 10613
+M_TEENSYDUINO_VERSION := 132
+M_OPT_N_WARN := -Wall -Os
 
-# path to your arduino installation
 PROJECT_PATH = /home/fla/svis
-# $(info PROJECT_PATH: ${PROJECT_PATH})
 
-# path location for the arm-none-eabi compiler
-COMPILER_PATH = /home/fla/gcc-arm-none-eabi-4_9-2014q4/bin
-# $(info COMPILER_PATH: ${COMPILER_PATH})
+SRC_PATH := src
+BUILD_PATH := build
+BIN_PATH := $(BUILD_PATH)/bin
+TEENSY3_COPY_PATH := $(BUILD_PATH)/teensy3
+PWD := $(realpath $(shell pwd))
 
-#************************************************************************
-# Define processor
-#************************************************************************
-
-# set your MCU type here, or make command line `make MCU=MK20DX256`
-MCU=MK20DX256
-
-# make it lower case
-LOWER_MCU := $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$(MCU)))))))))))))))))))))))))))
-MCU_LD = $(LOWER_MCU).ld
+TOOLSPATH := $(realpath $(PROJECT_PATH)/teensy/tools)
+# LIBRARYPATH  := $(realpath $(PROJECT_PATH)/libraries)
+COMPILERPATH := /home/fla/gcc-arm-none-eabi-4_8-2014q3/bin
 
 #************************************************************************
-# Location of utilities within project
+# Definitions
 #************************************************************************
 
-# path for Teensy Loader, teensy_post_compile and teensy_reboot (on Linux)
-TOOLS_PATH = $(abspath $(PROJECT_PATH)/teensy/tools)
-# $(info TOOLS_PATH: ${TOOLS_PATH})
-
-# path for the MCU library
-MCU_PATH = $(abspath $(PROJECT_PATH)/teensy/tools/$(MCU_LD))
-# $(info MCU_PATH: ${MCU_PATH})
-
-# path for arduino source and includes
-ARDUINO_PATH = $(abspath $(PROJECT_PATH)/teensy/src/teensy3)
-# $(info ARDUINO_PATH: ${ARDUINO_PATH})
-
-# arduino source files
-ARDUINO_C_FILES := $(wildcard $(ARDUINO_PATH)/*.c)
-# $(info ARDUINO_C_FILES: ${ARDUINO_C_FILES})
-C_FILES += $(ARDUINO_C_FILES)
-# $(info C_FILES: ${C_FILES})
-
-ARDUINO_CPP_FILES := $(wildcard $(ARDUINO_PATH)/*.cpp)
-# $(info ARDUINO_CPP_FILES: ${ARDUINO_CPP_FILES})
-CPP_FILES += $(ARDUINO_CPP_FILES)
-# $(info CPP_FILES: ${CPP_FILES})
-
-#************************************************************************
-# Settings below this point usually do not need to be edited
-#************************************************************************
-
-# configurable options
-OPTIONS = -DF_CPU=48000000 -DUSB_SERIAL -DLAYOUT_US_ENGLISH -DUSING_MAKEFILE
-
-# options needed by many Arduino libraries to configure for Teensy 3.0
-OPTIONS += -D__$(MCU)__ -DARDUINO=10613 -DTEENSYDUINO=132
-
-# CPPFLAGS = compiler options for C and C++
-CPPFLAGS = -Wall -g -Os -mcpu=cortex-m4 -mthumb -MMD $(OPTIONS) -I$(ARDUINO_PATH)
-
-# compiler options for C++ only
+# Setting up linker definitions and other defines
+CPPFLAGS = $(M_OPT_N_WARN) -mcpu=cortex-m4 -mthumb -nostdlib -MMD \
+	-DF_CPU=$(M_CPU_CLOCK) -D__MK20DX256__ -D$(M_USB_TYPE) -DLAYOUT_US_ENGLISH \
+	-DARDUINO=$(M_ARDUINO_VERSION) -DTEENSYDUINO=$(M_TEENSYDUINO_VERSION) \
+	-DTEENSY_VERSION=3.2 -DTEENSY_BOARD=TEENSY31
 CXXFLAGS = -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
-
-# compiler options for C only
+ASMFLAGS = -x assembler-with-cpp
 CFLAGS =
+LDFLAGS = -O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=$(shell date '+%s') \
+	-mcpu=cortex-m4 -mthumb --specs=nano.specs
+LIBS = -larm_cortexM4l_math -lm
 
-# linker options
-LDFLAGS = -Os -Wl,--gc-sections,--defsym=__rtc_localtime=0 --specs=nano.specs -mcpu=cortex-m4 -mthumb -T$(MCU_PATH)
+# Intermediate library for Teensy3 core
+LIBTEENSY3 := $(BUILD_PATH)/libteensy3.a
 
-# additional libraries to link
-LIBS = -lm
-
-# names for the compiler programs
-CC = $(COMPILER_PATH)/arm-none-eabi-gcc
-CXX = $(COMPILER_PATH)/arm-none-eabi-g++
-OBJCOPY = $(COMPILER_PATH)/arm-none-eabi-objcopy
-SIZE = $(COMPILER_PATH)/arm-none-eabi-size
-
-#************************************************************************
-# Objects definition
-#************************************************************************
-# define objects for compilation
-OBJS := $(C_FILES:.c=.o) $(CPP_FILES:.cpp=.o)
+# Tools needed
+AR := $(abspath $(COMPILERPATH))/arm-none-eabi-ar
+CC := $(abspath $(COMPILERPATH))/arm-none-eabi-gcc
+CXX := $(abspath $(COMPILERPATH))/arm-none-eabi-g++
+OBJCOPY := $(abspath $(COMPILERPATH))/arm-none-eabi-objcopy
+SIZE := $(abspath $(COMPILERPATH))/arm-none-eabi-size
 
 #************************************************************************
 # Make targets
 #************************************************************************
-all: $(TARGET).hex
 
-$(TARGET).elf: $(OBJS) $(MCU_PATH)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+# (Public) target definitions ahead
+.PHONY: all clean upload
 
-%.hex: %.elf
-	$(SIZE) $<
-	$(OBJCOPY) -O ihex -R .eeprom $< $@
-
-# compiler generated dependency info
--include $(OBJS:.o=.d)
-
-upload:
-	$(TOOLS_PATH)/teensy_loader_cli/teensy_loader_cli -mmcu=$(LOWER_MCU) -wv $(TARGET).hex
+# Same as build
+all: $(BIN_PATH)/$(M_PROJECT).hex
 
 clean:
-	rm -f *.o *.d $(TARGET).elf $(TARGET).hex
+	@rm -rf $(BUILD_PATH)
+
+upload: all
+	$(TOOLSPATH)/teensy_loader_cli/teensy_loader_cli -mmcu=mk20dx256 -wv $(BIN_PATH)/$(M_PROJECT).hex
+
+# Some functions
+relpath2        = $(subst $(1)/,,$(2))
+relpath         = $(subst $(PWD)/,,$(1))
+list_files      = $(realpath $(shell find $(1) -type f))
+filter_sources  = $(filter %.c %.cpp %.S,$(1))
+prepare_objects = $(addprefix $(BUILD_PATH)/,$(notdir $(addsuffix .o,$(call \
+	filter_sources,$(call relpath,$(1))))))
+
+INCLUDE_PATHS  := $(call relpath,$(SRC_PATH))
+SOURCE_OBJECTS := $(call prepare_objects,$(call list_files,$(SRC_PATH)))
+
+TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/src/teensy3)
+
+# copy all of these files to the local TEENSY3_COPY_PATH folder
+TEENSY3_FILES = $(filter-out $(TEENSY3_EXCLUDES),$(call \
+	relpath2,$(TEENSY3_CORE_PATH),$(call list_files,$(TEENSY3_CORE_PATH))))
+
+# delete these files from the local TEENSY3_COPY_PATH folder
+TEENSY3_EXCLUDES = Makefile main.cpp
+
+# add file in TEENSY3_COPY_PATH to compile list
+INCLUDE_PATHS += $(TEENSY3_COPY_PATH)
+
+CORE_LIB_OBJECTS = $(call prepare_objects,$(TEENSY3_FILES))
+
+# all files in TEENSY3_CORE_PATH with global path
+CORE_COPY_DEPENDENCIES =$(addprefix $(TEENSY3_CORE_PATH)/,$(TEENSY3_FILES))
+
+# (Internal) target definitions ahead
+# This one builds TEENSY3_COPY and recursively builds LIBTEENSY3
+.ONESHELL:
+$(TEENSY3_COPY_PATH): $(CORE_COPY_DEPENDENCIES)
+	@mkdir -p $(BIN_PATH)
+	@mkdir -p $(TEENSY3_COPY_PATH)
+	@for f in $(TEENSY3_FILES);\
+		do \
+			if [ ! -e $(TEENSY3_COPY_PATH)/$$f ]; \
+			then \
+				mkdir -p `dirname $(TEENSY3_COPY_PATH)/$$f`; \
+				cp -fp $(TEENSY3_CORE_PATH)/$$f $(TEENSY3_COPY_PATH)/$$f; \
+			fi \
+		done
+	@for f in $(TEENSY3_EXCLUDES); \
+		do \
+			if [ -e $(TEENSY3_COPY_PATH)/$$f ]; then \
+				rm $(TEENSY3_COPY_PATH)/$$f; \
+			fi \
+		done
+	@touch $(TEENSY3_COPY_PATH)
+	@BUILD_TEENSY3_LIB=1 $(MAKE) $(LIBTEENSY3)
+
+# Only build LIBTEENSY3 if called recursively
+ifeq ($(BUILD_TEENSY3_LIB),1)
+$(LIBTEENSY3):  $(CORE_LIB_OBJECTS)
+else
+$(LIBTEENSY3): $(TEENSY3_COPY_PATH) $(CORE_LIB_OBJECTS)
+	@echo "Linking $@ ..."
+	@$(AR) rcs $@ $(CORE_LIB_OBJECTS)
+endif
+
+LDFLAGS += -T$(TEENSY3_COPY_PATH)/mk20dx256.ld
+
+# Add include folders and set source and object lists
+CPPFLAGS    += $(addprefix -I,$(INCLUDE_PATHS))
+ALL_OBJECTS  = $(SOURCE_OBJECTS) $(CORE_LIB_OBJECTS)
+
+# Links the .elf
+$(BUILD_PATH)/$(M_PROJECT).elf: $(LIBTEENSY3) $(SOURCE_OBJECTS) Makefile
+	@echo "Linking "$@" ..."
+	@$(CXX) $(LDFLAGS) -o $@ $(SOURCE_OBJECTS) $(LIBTEENSY3) $(LIBS)
+
+# Creates the .hex from the .elf
+$(BIN_PATH)/%.hex: $(BUILD_PATH)/%.elf
+	@echo "Preparing $@ ..."
+	@$(SIZE) $<
+	@$(OBJCOPY) -O ihex -R .eeprom $< $@
+
+# Creates the .eep from the .elf
+$(BIN_PATH)/%.eep: $(BUILD_PATH)/%.elf
+	@echo "Preparing $@ ..."
+	@$(SIZE) $<
+	@$(OBJCOPY) -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load \
+		--no-change-warnings --change-section-lma .eeprom=0 $< $@
+
+#************************************************************************
+# Dedicated rules
+#************************************************************************
+define CXX_RULE
+$(BUILD_PATH)/%.cpp.o: $(1)/%.cpp Makefile
+	@echo "Compiling $$< ..."
+	@$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) -o $$@ $$<
+endef
+
+define CC_RULE
+$(BUILD_PATH)/%.c.o: $(1)/%.c Makefile
+	@echo "Compiling $$< ..."
+	@$(CC) -c $(CPPFLAGS) $(CFLAGS) -o $$@ $$<
+endef
+
+define ASM_RULE
+$(BUILD_PATH)/%.S.o: $(1)/%.S Makefile
+	@echo "Compiling $$< ..."
+	@$(CC) -c $(CPPFLAGS) $(ASM_FLAGS) $(CFLAGS) -o $$@ $$<
+endef
+
+# All compile rules
+$(foreach tmp,$(INCLUDE_PATHS), \
+	$(eval $(call CC_RULE,$(tmp))) \
+	$(eval $(call CXX_RULE,$(tmp))) \
+	$(eval $(call ASM_RULE,$(tmp))))
+
+# Include auto generated dependencies, don't fail on error
+-include $(ALL_OBJECTS:.o=.d)
