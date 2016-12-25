@@ -17,8 +17,8 @@ BIN_PATH := $(BUILD_PATH)/bin
 TEENSY3_COPY_PATH := $(BUILD_PATH)/teensy3
 PWD := $(realpath $(shell pwd))
 
-TOOLSPATH := $(realpath $(PROJECT_PATH)/teensy/tools)
-# LIBRARYPATH  := $(realpath $(PROJECT_PATH)/libraries)
+TOOLSPATH := $(realpath $(PROJECT_PATH)/teensy/utilities)
+# LIBRARYPATH  := $(realpath $(PROJECT_PATH)/teensy/src/cores)
 COMPILERPATH := /home/fla/gcc-arm-none-eabi-4_8-2014q3/bin
 
 #************************************************************************
@@ -74,7 +74,7 @@ prepare_objects = $(addprefix $(BUILD_PATH)/,$(notdir $(addsuffix .o,$(call \
 INCLUDE_PATHS  := $(call relpath,$(SRC_PATH))
 SOURCE_OBJECTS := $(call prepare_objects,$(call list_files,$(SRC_PATH)))
 
-TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/src/teensy3)
+TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/src/cores/teensy3)
 
 # copy all of these files to the local TEENSY3_COPY_PATH folder
 TEENSY3_FILES = $(filter-out $(TEENSY3_EXCLUDES),$(call \
@@ -95,22 +95,26 @@ CORE_COPY_DEPENDENCIES =$(addprefix $(TEENSY3_CORE_PATH)/,$(TEENSY3_FILES))
 # This one builds TEENSY3_COPY and recursively builds LIBTEENSY3
 .ONESHELL:
 $(TEENSY3_COPY_PATH): $(CORE_COPY_DEPENDENCIES)
+  #	create directories
 	@mkdir -p $(BIN_PATH)
 	@mkdir -p $(TEENSY3_COPY_PATH)
-	@for f in $(TEENSY3_FILES);\
-		do \
+
+  # loop over files and copy them
+	@for f in $(TEENSY3_FILES); do \
 			if [ ! -e $(TEENSY3_COPY_PATH)/$$f ]; \
 			then \
 				mkdir -p `dirname $(TEENSY3_COPY_PATH)/$$f`; \
 				cp -fp $(TEENSY3_CORE_PATH)/$$f $(TEENSY3_COPY_PATH)/$$f; \
 			fi \
 		done
-	@for f in $(TEENSY3_EXCLUDES); \
-		do \
+
+  # loop over excludes and remove them
+	@for f in $(TEENSY3_EXCLUDES); do \
 			if [ -e $(TEENSY3_COPY_PATH)/$$f ]; then \
 				rm $(TEENSY3_COPY_PATH)/$$f; \
 			fi \
 		done
+
 	@touch $(TEENSY3_COPY_PATH)
 	@BUILD_TEENSY3_LIB=1 $(MAKE) $(LIBTEENSY3)
 
