@@ -94,10 +94,10 @@ add_definitions(-MMD)
 set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
 set(LINKER_LIBS "-larm_cortexM4l_math -lm" )
 
-set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
-set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
+set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}")
+set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}")
 
 # Do not pass flags like '-ffunction-sections -fdata-sections' to the linker.
 # This causes undefined symbol errors when linking.
-set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LINKER_LIBS}" CACHE STRING "Linker command line" FORCE)
+set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LINKER_LIBS}")
