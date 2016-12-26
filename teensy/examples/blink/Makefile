@@ -74,7 +74,7 @@ prepare_objects = $(addprefix $(BUILD_PATH)/,$(notdir $(addsuffix .o,$(call \
 INCLUDE_PATHS  := $(call relpath,$(SRC_PATH))
 SOURCE_OBJECTS := $(call prepare_objects,$(call list_files,$(SRC_PATH)))
 
-TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/src/cores/teensy3)
+TEENSY3_CORE_PATH := $(realpath $(PROJECT_PATH)/teensy/dependencies/cores/teensy3)
 
 # copy all of these files to the local TEENSY3_COPY_PATH folder
 TEENSY3_FILES = $(filter-out $(TEENSY3_EXCLUDES),$(call \
