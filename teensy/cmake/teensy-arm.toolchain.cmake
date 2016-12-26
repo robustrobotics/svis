@@ -60,26 +60,44 @@ set(CMAKE_RANLIB "${TOOLCHAIN_PREFIX}ranlib" CACHE PATH "ranlib" FORCE)
 
 include_directories("${TEENSY_ROOT}")
 
-set(TARGET_FLAGS "-mcpu=cortex-m4 -mthumb")
-set(BASE_FLAGS "-Os -Wall -nostdlib -ffunction-sections -fdata-sections ${TARGET_FLAGS}")
+# compile options
+set(TARGET_FLAGS "-mcpu=cortex-m4 -mthumb" CACHE STRING "arm specific flags")
+set(OPTIMIZE_FALGS "-0")
+set(BASE_FLAGS "${TARGET_FLAGS} ${OPTIMIZE_FLAGS} -Wall -ffunction-sections -fdata-sections -nostdlib -fsingle-precision-constant")
+set(CMAKE_C_FLAGS_RELEASE "${BASE_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${BASE_FLAGS} -fno-exceptions -felide-constructors -std=gnu++0x -fno-rtti")
 
-set(CMAKE_C_FLAGS "${BASE_FLAGS} -DTIME_T=1421620748" CACHE STRING "c flags") # XXX Generate TIME_T dynamically.
-set(CMAKE_CXX_FLAGS "${BASE_FLAGS} -fno-exceptions -fno-rtti -felide-constructors -std=gnu++0x" CACHE STRING "c++ flags")
+# set(CMAKE_CPP_FLAGS "--print-multi-lib -march=armv7-m -Os -Wall -nostdlib -ffunction-sections -fdata-sections -mcpu=cortex-m4 -mthumb -mfp16-format=ieee -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd" CACHE STRING "cpp flags")
+# set(CMAKE_CXX_FLAGS "--print-multi-lib -march=armv7-m -fno-exceptions -fno-rtti -felide-constructors -std=gnu++0x -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd" CACHE STRING "cxx flags")
+# set(CMAKE_ASM_FLAGS "--print-multi-lib -march=armv7-m -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd -mcpu=cortex-m4 -mthumb -x assembler-with-cpp" CACHE STRING "asm flags")
+# set(CMAKE_C_FLAGS "--print-multi-lib -march=armv7-m -Os -Wall -nostdlib -ffunction-sections -fdata-sections -mcpu=cortex-m4 -mthumb -mfp16-format=ieee -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd -DTIME_T=1421620748" CACHE STRING "c flags")
 
-set(LINKER_FLAGS "-Os -Wl,--gc-sections ${TARGET_FLAGS} -T${TEENSY_ROOT}/mk20dx256.ld" )
+# message(STATUS "TARGET_FLAGS: ${TARGET_FLAGS}")
+# message(STATUS "BASE_FLAGS: ${BASE_FLAGS}")
+# message(STATUS "CMAKE_C_FLAGS_RELEASE: ${CMAKE_C_FLAGS_RELEASE}")
+# message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
+
+# definitions
+add_definitions("-DARDUINO=${ARDUINO_VERSION}")
+add_definitions("-DTEENSYDUINO=${TEENSYDUINO_VERSION}")
+add_definitions("-D__${TEENSY_MODEL}__")
+add_definitions("-DUSB_${TEENSY_USB_MODE}")
+add_definitions("-DF_CPU=${TEENSY_FREQUENCY}000000")
+add_definitions("-DTEENSY_VERSION=3.2")
+add_definitions("-DTEENSY_BOARD=TEENSY31")
+add_definitions(-DLAYOUT_US_ENGLISH)
+add_definitions(-DUSB_VID=null)
+add_definitions(-DUSB_PID=null)
+add_definitions(-MMD)
+
+# link options
+set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
 set(LINKER_LIBS "-larm_cortexM4l_math -lm" )
+
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
 set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
 set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
 
 # Do not pass flags like '-ffunction-sections -fdata-sections' to the linker.
 # This causes undefined symbol errors when linking.
-set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_C_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> -o <TARGET>  <OBJECTS> <LINK_LIBRARIES> ${LINKER_LIBS}" CACHE STRING "Linker command line" FORCE)
-
-add_definitions("-DARDUINO=${ARDUINO_VERSION}")
-add_definitions("-DTEENSYDUINO=${TEENSYDUINO_VERSION}")
-add_definitions("-D__${TEENSY_MODEL}__")
-add_definitions(-DLAYOUT_US_ENGLISH)
-add_definitions(-DUSB_VID=null)
-add_definitions(-DUSB_PID=null)
-add_definitions(-MMD)
+set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LINKER_LIBS}" CACHE STRING "Linker command line" FORCE)
