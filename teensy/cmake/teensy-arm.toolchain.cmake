@@ -25,14 +25,19 @@ set(TOOLCHAIN_PREFIX "$ENV{HOME}/gcc-arm-none-eabi-4_8-2014q3/bin/arm-none-eabi-
 # message(WARNING "TOOLCHAIN_PREFIX: ${TOOLCHAIN_PREFIX}")
 
 set(TEENSY_CORES_ROOT "${CMAKE_SOURCE_DIR}/dependencies/cores" CACHE PATH "Path to the Teensy 'cores' repository")
-set(TEENSY_ROOT "${TEENSY_CORES_ROOT}/teensy3")
-set(ARDUINO_LIB_ROOT "${CMAKE_SOURCE_DIR}/dependencies/libraries" CACHE PATH "Path to the Arduino library directory")
+# message(WARNING "TEENSY_CORES_ROOT: ${TEENSY_CORES_ROOT}")
 
-set(ARDUINO_VERSION "106" CACHE STRING "Version of the Arduino SDK")
-set(TEENSYDUINO_VERSION "132" CACHE STRING "Version of the Teensyduino SDK")
+set(TEENSY_ROOT "${TEENSY_CORES_ROOT}/teensy3" CACHE PATH "Path to 'teensy3' directory in 'cores'")
+# message(WARNING "TEENSY_ROOT: ${TEENSY_ROOT}")
+
+set(ARDUINO_LIB_ROOT "${CMAKE_SOURCE_DIR}/dependencies/libraries" CACHE PATH "Path to the Arduino library directory")
+# message(WARNING "ARDUINO_LIB_ROOT: ${ARDUINO_LIB_ROOT}")
+
+set(ARDUINO_VERSION "10613" CACHE STRING "Version of the Arduino SDK")
+set(TEENSYDUINO_VERSION "133" CACHE STRING "Version of the Teensyduino SDK")
 set(TEENSY_MODEL "MK20DX256" CACHE STRING "Model of the Teensy MCU")
 
-set(TEENSY_FREQUENCY "96" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
+set(TEENSY_FREQUENCY "48" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
 set_property(CACHE TEENSY_FREQUENCY PROPERTY STRINGS 96 72 48 24 16 8 4 2)
 
 set(TEENSY_USB_MODE "SERIAL" CACHE STRING "What kind of USB device the Teensy should emulate")
