@@ -98,6 +98,11 @@ set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}")
 
+# avoid known bug in linux
+# error: "arm-none-eabi-gcc: error: unrecognized command line option '-rdynamic'"
+unset(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)
+unset(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+
 # Do not pass flags like '-ffunction-sections -fdata-sections' to the linker.
 # This causes undefined symbol errors when linking.
 set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LINKER_LIBS}")
