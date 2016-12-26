@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(svis_teensy)
 
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
+set(CMAKE_VERBOSE_MAKEFILE FALSE)
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 
 # only valid with cmake versions >= V3.0

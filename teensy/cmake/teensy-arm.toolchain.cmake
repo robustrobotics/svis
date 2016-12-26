@@ -21,32 +21,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# setup paths
 set(TOOLCHAIN_PREFIX "$ENV{HOME}/gcc-arm-none-eabi-4_8-2014q3/bin/arm-none-eabi-" CACHE PATH "Path to ARM toolchain")
-# message(WARNING "TOOLCHAIN_PREFIX: ${TOOLCHAIN_PREFIX}")
-
 set(TEENSY_CORES_ROOT "${CMAKE_SOURCE_DIR}/dependencies/cores" CACHE PATH "Path to the Teensy 'cores' repository")
-# message(WARNING "TEENSY_CORES_ROOT: ${TEENSY_CORES_ROOT}")
-
 set(TEENSY_ROOT "${TEENSY_CORES_ROOT}/teensy3" CACHE PATH "Path to 'teensy3' directory in 'cores'")
-# message(WARNING "TEENSY_ROOT: ${TEENSY_ROOT}")
-
 set(ARDUINO_LIB_ROOT "${CMAKE_SOURCE_DIR}/dependencies/libraries" CACHE PATH "Path to the Arduino library directory")
-# message(WARNING "ARDUINO_LIB_ROOT: ${ARDUINO_LIB_ROOT}")
 
+# configure options
 set(ARDUINO_VERSION "10613" CACHE STRING "Version of the Arduino SDK")
 set(TEENSYDUINO_VERSION "133" CACHE STRING "Version of the Teensyduino SDK")
 set(TEENSY_MODEL "MK20DX256" CACHE STRING "Model of the Teensy MCU")
-
-set(TEENSY_FREQUENCY "48" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
+set(TEENSY_FREQUENCY "96" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
 set_property(CACHE TEENSY_FREQUENCY PROPERTY STRINGS 96 72 48 24 16 8 4 2)
-
 set(TEENSY_USB_MODE "SERIAL" CACHE STRING "What kind of USB device the Teensy should emulate")
 set_property(CACHE TEENSY_USB_MODE PROPERTY STRINGS SERIAL HID SERIAL_HID MIDI RAWHID FLIGHTSIM)
 
+# setup system and cross-compiling
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_CROSSCOMPILING 1)
 
+# arm compiler binaries
 set(CMAKE_C_COMPILER "${TOOLCHAIN_PREFIX}gcc" CACHE PATH "gcc" FORCE)
 set(CMAKE_CXX_COMPILER "${TOOLCHAIN_PREFIX}g++" CACHE PATH "g++" FORCE)
 set(CMAKE_AR "${TOOLCHAIN_PREFIX}ar" CACHE PATH "archive" FORCE)
@@ -58,6 +53,7 @@ set(CMAKE_STRIP "${TOOLCHAIN_PREFIX}strip" CACHE PATH "strip" FORCE)
 set(CMAKE_PRINT_SIZE "${TOOLCHAIN_PREFIX}size" CACHE PATH "size" FORCE)
 set(CMAKE_RANLIB "${TOOLCHAIN_PREFIX}ranlib" CACHE PATH "ranlib" FORCE)
 
+# include teensy core files
 include_directories("${TEENSY_ROOT}")
 
 # compile options
@@ -82,8 +78,7 @@ add_definitions(-MMD)
 
 # link options
 set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=0 ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
-set(LINKER_LIBS "-larm_cortexM4l_math -lm" )
-
+set(LINKER_LIBS "-larm_cortexM4l_math -lm" )  # TODO(jakeware): use link_libraries to include these
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}")
