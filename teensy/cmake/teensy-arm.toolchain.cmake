@@ -91,7 +91,7 @@ add_definitions(-DUSB_PID=null)
 add_definitions(-MMD)
 
 # link options
-set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
+set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=0 ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
 set(LINKER_LIBS "-larm_cortexM4l_math -lm" )
 
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}")
