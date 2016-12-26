@@ -78,7 +78,8 @@ add_definitions(-MMD)
 
 # link options
 set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=0 ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
-set(LINKER_LIBS "-larm_cortexM4l_math -lm" )  # TODO(jakeware): use link_libraries to include these
+link_libraries(m)
+set(LINKER_LIBS "-larm_cortexM4l_math" )  # TODO(jakeware): use link_libraries to include these
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}")
