@@ -67,16 +67,6 @@ set(BASE_FLAGS "${TARGET_FLAGS} ${OPTIMIZE_FLAGS} -Wall -ffunction-sections -fda
 set(CMAKE_C_FLAGS_RELEASE "${BASE_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${BASE_FLAGS} -fno-exceptions -felide-constructors -std=gnu++0x -fno-rtti")
 
-# set(CMAKE_CPP_FLAGS "--print-multi-lib -march=armv7-m -Os -Wall -nostdlib -ffunction-sections -fdata-sections -mcpu=cortex-m4 -mthumb -mfp16-format=ieee -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd" CACHE STRING "cpp flags")
-# set(CMAKE_CXX_FLAGS "--print-multi-lib -march=armv7-m -fno-exceptions -fno-rtti -felide-constructors -std=gnu++0x -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd" CACHE STRING "cxx flags")
-# set(CMAKE_ASM_FLAGS "--print-multi-lib -march=armv7-m -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd -mcpu=cortex-m4 -mthumb -x assembler-with-cpp" CACHE STRING "asm flags")
-# set(CMAKE_C_FLAGS "--print-multi-lib -march=armv7-m -Os -Wall -nostdlib -ffunction-sections -fdata-sections -mcpu=cortex-m4 -mthumb -mfp16-format=ieee -mno-thumb-interwork -mfpu=vfp -msoft-float -mfix-cortex-m4-ldrd -DTIME_T=1421620748" CACHE STRING "c flags")
-
-# message(STATUS "TARGET_FLAGS: ${TARGET_FLAGS}")
-# message(STATUS "BASE_FLAGS: ${BASE_FLAGS}")
-# message(STATUS "CMAKE_C_FLAGS_RELEASE: ${CMAKE_C_FLAGS_RELEASE}")
-# message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
-
 # definitions
 add_definitions("-DARDUINO=${ARDUINO_VERSION}")
 add_definitions("-DTEENSYDUINO=${TEENSYDUINO_VERSION}")
