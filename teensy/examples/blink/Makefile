@@ -156,19 +156,22 @@ $(BIN_PATH)/%.eep: $(BUILD_PATH)/%.elf
 #************************************************************************
 define CXX_RULE
 $(BUILD_PATH)/%.cpp.o: $(1)/%.cpp Makefile
-	@echo "Compiling $$< ..."
+	@echo "Compiling $$< with CXX..."
+	@echo "$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) -o $$@ $$<"
 	@$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) -o $$@ $$<
 endef
 
 define CC_RULE
 $(BUILD_PATH)/%.c.o: $(1)/%.c Makefile
-	@echo "Compiling $$< ..."
+	@echo "Compiling $$< with CC..."
+	@echo "@$(CC) -c $(CPPFLAGS) $(CFLAGS) -o $$@ $$<"
 	@$(CC) -c $(CPPFLAGS) $(CFLAGS) -o $$@ $$<
 endef
 
 define ASM_RULE
 $(BUILD_PATH)/%.S.o: $(1)/%.S Makefile
-	@echo "Compiling $$< ..."
+	@echo "Compiling $$< with ASM..."
+	@echo "@$(CC) -c $(CPPFLAGS) $(ASM_FLAGS) $(CFLAGS) -o $$@ $$<"
 	@$(CC) -c $(CPPFLAGS) $(ASM_FLAGS) $(CFLAGS) -o $$@ $$<
 endef
 
