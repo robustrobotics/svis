@@ -48,4 +48,4 @@ add_teensy_executable(blink examples/blink/src/blink.cpp)
 add_teensy_executable(hello_world examples/hello_world/src/hello_world.cpp)
 
 # usb_raw_hid example
-add_teensy_executable(hello_world examples/usb_raw_hid/src/usb_raw_hid.cpp)
+add_teensy_executable(usb_hid_raw examples/usb_raw_hid/src/usb_raw_hid.cpp)
