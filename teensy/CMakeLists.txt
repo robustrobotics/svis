@@ -41,4 +41,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(teensy-arm.toolchain)
 include(Teensy)
 
-subdirs(examples)
+# blink example
+add_teensy_executable(blink examples/blink/src/blink.cpp)
+
+# hello_world example
+add_teensy_executable(hello_world examples/hello_world/src/hello_world.cpp)
+
+# usb_raw_hid example
+add_teensy_executable(hello_world examples/usb_raw_hid/src/usb_raw_hid.cpp)
