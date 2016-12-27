@@ -58,8 +58,8 @@ include_directories("${TEENSY_ROOT}")
 
 # compile options
 set(TARGET_FLAGS "-mcpu=cortex-m4 -mthumb" CACHE STRING "arm specific flags")
-set(OPTIMIZE_FALGS "-0")
-set(BASE_FLAGS "${TARGET_FLAGS} ${OPTIMIZE_FLAGS} -Wall -ffunction-sections -fdata-sections -nostdlib -fsingle-precision-constant")
+set(OPTIMIZE_FALGS "-0s")
+set(BASE_FLAGS "${TARGET_FLAGS} ${OPTIMIZE_FLAGS} -c -Wall -ffunction-sections -fdata-sections -nostdlib -fsingle-precision-constant")
 set(CMAKE_C_FLAGS_RELEASE "${BASE_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${BASE_FLAGS} -fno-exceptions -felide-constructors -std=gnu++0x -fno-rtti")
 
@@ -77,7 +77,7 @@ add_definitions(-DUSB_PID=null)
 add_definitions(-MMD)
 
 # link options
-set(LINKER_FLAGS "-O -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=0 ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
+set(LINKER_FLAGS "-Os -Wl,--gc-sections,--relax,--defsym=__rtc_localtime=0 ${TARGET_FLAGS} -fsingle-precision-constant -T${TEENSY_ROOT}/mk20dx256.ld")
 link_libraries(m)
 set(LINKER_LIBS "-larm_cortexM4l_math" )  # TODO(jakeware): use link_libraries to include these
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}")
