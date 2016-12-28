@@ -23,7 +23,7 @@
 
 file(GLOB TEENSY_C_CORE_FILES
   "${TEENSY_ROOT}/*.c"
-  "*${TEENSY_ROOT}/.S"
+  "${TEENSY_ROOT}/*.S"
   )
 
 file(GLOB TEENSY_CXX_CORE_FILES
@@ -48,6 +48,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
     else()
         message(FATAL_ERROR "Invalid USB mode: ${TEENSY_USB_MODE}")
     endif()
+
     set(TARGET_FLAGS "-D${USB_MODE_DEF} -DF_CPU=${TEENSY_FREQUENCY}000000 ${TEENSY_FLAGS}")
     set(TARGET_C_FLAGS "${TARGET_FLAGS} ${TEENSY_C_FLAGS}")
     set(TARGET_CXX_FLAGS "${TARGET_FLAGS} ${TEENSY_CXX_FLAGS}")
