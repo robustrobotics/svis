@@ -11,7 +11,6 @@
 */
 
 #include <WProgram.h>
-#include <usb_api.h>
 
 // RawHID packets are always 64 bytes
 byte buffer[64];
