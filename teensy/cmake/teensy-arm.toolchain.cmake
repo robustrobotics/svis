@@ -67,8 +67,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${BASE_FLAGS} -fno-exceptions -felide-constructors 
 add_definitions("-DARDUINO=${ARDUINO_VERSION}")
 add_definitions("-DTEENSYDUINO=${TEENSYDUINO_VERSION}")
 add_definitions("-D__${TEENSY_MODEL}__")
-add_definitions("-DUSB_${TEENSY_USB_MODE}")
-add_definitions("-DF_CPU=${TEENSY_FREQUENCY}000000")
 add_definitions(-DTEENSY_VERSION=3.2)
 add_definitions(-DTEENSY_BOARD=TEENSY31)
 add_definitions(-DLAYOUT_US_ENGLISH)
