@@ -1,0 +1,21 @@
+{
+"name": "ArtNet",
+"frameworks": "Arduino",
+"keywords": "ArtNet, LED, LEDs, DMX, E1.31", 
+"description": "Control LEDs over Ethernet using the Artnet Protocol",
+"url": "http://forum.pjrc.com/threads/24688-Artnet-to-OctoWS2811/page10",
+"authors":
+[
+{
+        "name": "Nathanaël Lécaudé",
+},
+{
+        "name": "mortonkopf",
+}
+]
+"repository":
+{
+    "name": "git",
+    "url": "https://github.com/natcl/Artnet"
+}
+}
