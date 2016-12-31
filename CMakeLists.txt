@@ -48,3 +48,7 @@ add_subdirectory(examples/hello_world)
 
 # usb_raw_hid example
 add_subdirectory(examples/usb_raw_hid)
+
+# interval_timer example
+add_subdirectory(examples/interval_timer)
+
