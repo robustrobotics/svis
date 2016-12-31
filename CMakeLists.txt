@@ -52,3 +52,5 @@ add_subdirectory(examples/usb_raw_hid)
 # interval_timer example
 add_subdirectory(examples/interval_timer)
 
+# attach_interrupt example
+add_subdirectory(examples/attach_interrupt)
