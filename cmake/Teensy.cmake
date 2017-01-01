@@ -64,24 +64,7 @@ macro(add_teensy_executable TARGET_NAME SOURCES)
     set_source_files_properties(${TEENSY_CXX_CORE_FILES}
         PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
 
-    set(FINAL_SOURCES ${TEENSY_LIB_SOURCES})
-    foreach(SOURCE ${SOURCES})
-        get_filename_component(SOURCE_EXT ${SOURCE} EXT)
-        get_filename_component(SOURCE_NAME ${SOURCE} NAME_WE)
-        get_filename_component(SOURCE_PATH ${SOURCE} REALPATH)
-        if((${SOURCE_EXT} STREQUAL .ino) OR (${SOURCE_EXT} STREQUAL .pde))
-            # Generate a stub C++ file from the Arduino sketch file.
-            set(GEN_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/${SOURCE_NAME}.cpp")
-            set(TEMPLATE_FILE "${SOURCE}.in")
-            if(NOT EXISTS "${TEMPLATE_FILE}")
-                set(TEMPLATE_FILE "${CMAKE_SOURCE_DIR}/cmake/Arduino.inc.in")
-            endif()
-            configure_file("${TEMPLATE_FILE}" "${GEN_SOURCE}")
-            set(FINAL_SOURCES ${FINAL_SOURCES} ${GEN_SOURCE})
-        else()
-            set(FINAL_SOURCES ${FINAL_SOURCES} ${SOURCE})
-        endif()
-    endforeach(SOURCE ${SOURCES})
+    set(FINAL_SOURCES ${TEENSY_LIB_SOURCES} ${SOURCES})
     
     # Add the Arduino library directory to the include path if found.
     if(EXISTS ${ARDUINO_LIB_ROOT})
