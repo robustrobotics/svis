@@ -6,6 +6,7 @@
 // timer object 
 IntervalTimer gyro_timer;
 IntervalTimer accel_timer;
+IntervalTimer imu_timer;
 
 // accel and gyro variables
 MPU6050 accelgyro;
@@ -30,16 +31,18 @@ unsigned long accel_count_last = 0;
 unsigned long accel_count_diff = 0;
 volatile unsigned long accel_count = 0;
 
-
-void ReadGyro(void) {
-  // accelgyro.getRotation(&gx, &gy, &gz);
-  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+void ReadGyro() {
+  accelgyro.getRotation(&gx, &gy, &gz);
   gyro_count++;
 }
 
-void ReadAccel(void) {
-  // accelgyro.getAcceleration(&ax, &ay, &az);
+void ReadAccel() {
+  accelgyro.getAcceleration(&ax, &ay, &az);
   accel_count++;
+}
+
+void ReadIMU() {
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 }
 
 void WriteASCII() {
@@ -63,7 +66,7 @@ void WriteBinary() {
 
 void setup() {
   Wire.begin();
-  Wire.setClock(400000);
+  Wire.setClock(1000000);
 
   // initialize serial communication
   Serial.begin(115200);
@@ -92,12 +95,20 @@ void setup() {
   
   Serial.print("Accel Range: ");
   Serial.println(accelgyro.getFullScaleAccelRange());
-  
+
+  Serial.print("I2C Clock Speed: ");
+  accelgyro.setMasterClockSpeed(13);
+  Serial.println(accelgyro.getMasterClockSpeed());
+
   // start interrupt timers
-  gyro_timer.begin(ReadGyro, 1000);  // microseconds
+  gyro_timer.begin(ReadGyro, 200);  // microseconds
   gyro_timer.priority(0);  // [0,255] with 0 as highest
+  
   accel_timer.begin(ReadAccel, 1000);  // microseconds
   accel_timer.priority(1);  // [0,255] with 0 as highest
+
+  // imu_timer.begin(ReadIMU, 1000);  // microseconds
+  // imu_timer.priority(1);  // [0,255] with 0 as highest
 }
 
 extern "C" int main()
