@@ -3,52 +3,25 @@
 #include "MPU6050.h"
 #include "Wire.h"
 
-// timer object 
+#define LED_PIN 13
+
+// timer objects
 IntervalTimer imu_timer;
 
 // accel and gyro variables
-MPU6050 accelgyro;
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
+MPU6050 mpu6050;
+int16_t imu_data[6];  // [ax, ay, ax, gx, gy, gz]
 
-// output mode
-//#define OUTPUT_READABLE_ACCELGYRO
-//#define OUTPUT_BINARY_ACCELGYRO
-
-// led variables
-#define LED_PIN 13
-bool blinkState = false;
-
-// timing
-long tic = 0;
-long toc = 0;
-
-unsigned long imu_count_last = 0;
-unsigned long imu_count_diff = 0;
-volatile unsigned long imu_count = 0;
+volatile bool imu_flag = false;
+volatile bool strobe_flag = false;
 
 void ReadIMU() {
-  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  imu_count++;
+  mpu6050.getMotion6(&imu_data[0], &imu_data[1], &imu_data[2], &imu_data[3], &imu_data[4], &imu_data[5]);
+  imu_flag = true;
 }
 
-void WriteASCII() {
-  Serial.print("a/g:\t");
-  Serial.print(ax); Serial.print("\t");
-  Serial.print(ay); Serial.print("\t");
-  Serial.print(az); Serial.print("\t");
-  Serial.print(gx); Serial.print("\t");
-  Serial.print(gy); Serial.print("\t");
-  Serial.println(gz);
-}
-
-void WriteBinary() {
-  Serial.write((uint8_t)(ax >> 8)); Serial.write((uint8_t)(ax & 0xFF));
-  Serial.write((uint8_t)(ay >> 8)); Serial.write((uint8_t)(ay & 0xFF));
-  Serial.write((uint8_t)(az >> 8)); Serial.write((uint8_t)(az & 0xFF));
-  Serial.write((uint8_t)(gx >> 8)); Serial.write((uint8_t)(gx & 0xFF));
-  Serial.write((uint8_t)(gy >> 8)); Serial.write((uint8_t)(gy & 0xFF));
-  Serial.write((uint8_t)(gz >> 8)); Serial.write((uint8_t)(gz & 0xFF));
+void OnStrobe() {
+  strobe_flag = true;
 }
 
 void setup() {
@@ -62,33 +35,57 @@ void setup() {
 
   // initialize device
   Serial.println("Initializing I2C devices...");
-  accelgyro.initialize();
+  mpu6050.initialize();
 
   // verify connection
   Serial.println("Testing device connections...");
-  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.println(mpu6050.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
   // configure Arduino LED for
   pinMode(LED_PIN, OUTPUT);
 
   Serial.print("Sample Rate Divisor: ");
-  Serial.println(accelgyro.getRate());
+  Serial.println(mpu6050.getRate());
 
   Serial.print("DLPF Mode: ");
-  Serial.println(accelgyro.getDLPFMode());
+  Serial.println(mpu6050.getDLPFMode());
 
   Serial.print("DHPF Mode: ");
-  Serial.println(accelgyro.getDHPFMode());
+  Serial.println(mpu6050.getDHPFMode());
 
   Serial.print("Gyro Range: ");
-  Serial.println(accelgyro.getFullScaleGyroRange());
+  Serial.println(mpu6050.getFullScaleGyroRange());
   
   Serial.print("Accel Range: ");
-  Serial.println(accelgyro.getFullScaleAccelRange());
+  Serial.println(mpu6050.getFullScaleAccelRange());
 
-  // start interrupt timers
+  // setup interrupt timers
   imu_timer.begin(ReadIMU, 1000);  // microseconds
-  imu_timer.priority(1);  // [0,255] with 0 as highest
+  imu_timer.priority(0);  // [0,255] with 0 as highest
+
+  // setup pin interrupt
+  // TODO(jakeware): What is the priority of this?
+  attachInterrupt(7, OnStrobe, RISING);  // attach pin 7 to interrupt
+}
+
+void SendIMU() {
+  // make threadsafe copy
+  int16_t imu_data_temp[6];
+  noInterrupts();
+  for(int i = 0; i < 6; i++) {
+    imu_data_temp[i] = imu_data[i];
+  }
+  interrupts();
+
+  // send data
+
+  imu_flag = false;
+}
+
+void SendStrobe() {
+  // send data
+  
+  strobe_flag = false;
 }
 
 extern "C" int main()
@@ -96,18 +93,12 @@ extern "C" int main()
   setup();
   
   while(true) {
-    if ((millis() - tic) >= 100) {
-      // reset timer
-      tic = millis();
+    if (imu_flag) {
+      SendIMU();
+    }
 
-      // get count
-      noInterrupts();
-      imu_count_diff = imu_count - imu_count_last;
-      imu_count_last = imu_count;
-      interrupts();
-
-      // output count
-      Serial.println(imu_count_diff);
+    if (strobe_flag) {
+      SendStrobe();
     }
 
     yield();  // yield() is mandatory!
