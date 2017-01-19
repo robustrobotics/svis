@@ -24,12 +24,18 @@ bool blinkState = false;
 // timing
 long tic = 0;
 long toc = 0;
+
 unsigned long gyro_count_last = 0;
 unsigned long gyro_count_diff = 0;
 volatile unsigned long gyro_count = 0;
+
 unsigned long accel_count_last = 0;
 unsigned long accel_count_diff = 0;
 volatile unsigned long accel_count = 0;
+
+unsigned long imu_count_last = 0;
+unsigned long imu_count_diff = 0;
+volatile unsigned long imu_count = 0;
 
 void ReadGyro() {
   accelgyro.getRotation(&gx, &gy, &gz);
@@ -43,6 +49,7 @@ void ReadAccel() {
 
 void ReadIMU() {
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  imu_count++;
 }
 
 void WriteASCII() {
@@ -90,25 +97,24 @@ void setup() {
   Serial.print("DLPF Mode: ");
   Serial.println(accelgyro.getDLPFMode());
 
+  Serial.print("DHPF Mode: ");
+  Serial.println(accelgyro.getDHPFMode());
+
   Serial.print("Gyro Range: ");
   Serial.println(accelgyro.getFullScaleGyroRange());
   
   Serial.print("Accel Range: ");
   Serial.println(accelgyro.getFullScaleAccelRange());
 
-  Serial.print("I2C Clock Speed: ");
-  accelgyro.setMasterClockSpeed(13);
-  Serial.println(accelgyro.getMasterClockSpeed());
-
   // start interrupt timers
-  gyro_timer.begin(ReadGyro, 200);  // microseconds
-  gyro_timer.priority(0);  // [0,255] with 0 as highest
+  // gyro_timer.begin(ReadGyro, 200);  // microseconds
+  // gyro_timer.priority(0);  // [0,255] with 0 as highest
   
-  accel_timer.begin(ReadAccel, 1000);  // microseconds
-  accel_timer.priority(1);  // [0,255] with 0 as highest
+  // accel_timer.begin(ReadAccel, 1000);  // microseconds
+  // accel_timer.priority(1);  // [0,255] with 0 as highest
 
-  // imu_timer.begin(ReadIMU, 1000);  // microseconds
-  // imu_timer.priority(1);  // [0,255] with 0 as highest
+  imu_timer.begin(ReadIMU, 1000);  // microseconds
+  imu_timer.priority(1);  // [0,255] with 0 as highest
 }
 
 extern "C" int main()
@@ -122,18 +128,24 @@ extern "C" int main()
 
       // get count
       noInterrupts();
-      gyro_count_diff = gyro_count - gyro_count_last;
-      gyro_count_last = gyro_count;
+      // gyro_count_diff = gyro_count - gyro_count_last;
+      // gyro_count_last = gyro_count;
 
-      accel_count_diff = accel_count - accel_count_last;
-      accel_count_last = accel_count;
+      // accel_count_diff = accel_count - accel_count_last;
+      // accel_count_last = accel_count;
+
+      imu_count_diff = imu_count - imu_count_last;
+      imu_count_last = imu_count;
 
       interrupts();
 
       // output count
-      Serial.print(accel_count_diff);
-      Serial.print("\t");
-      Serial.println(gyro_count_diff);
+      // Serial.print(accel_count_diff);
+      // Serial.print("\t");
+      // Serial.println(gyro_count_diff);
+      // Serial.print("\t");
+      Serial.println(imu_count_diff);
+
     }
 
     yield();  // yield() is mandatory!
