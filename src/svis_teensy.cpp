@@ -4,8 +4,6 @@
 #include "Wire.h"
 
 // timer object 
-IntervalTimer gyro_timer;
-IntervalTimer accel_timer;
 IntervalTimer imu_timer;
 
 // accel and gyro variables
@@ -25,27 +23,9 @@ bool blinkState = false;
 long tic = 0;
 long toc = 0;
 
-unsigned long gyro_count_last = 0;
-unsigned long gyro_count_diff = 0;
-volatile unsigned long gyro_count = 0;
-
-unsigned long accel_count_last = 0;
-unsigned long accel_count_diff = 0;
-volatile unsigned long accel_count = 0;
-
 unsigned long imu_count_last = 0;
 unsigned long imu_count_diff = 0;
 volatile unsigned long imu_count = 0;
-
-void ReadGyro() {
-  accelgyro.getRotation(&gx, &gy, &gz);
-  gyro_count++;
-}
-
-void ReadAccel() {
-  accelgyro.getAcceleration(&ax, &ay, &az);
-  accel_count++;
-}
 
 void ReadIMU() {
   accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
@@ -73,7 +53,7 @@ void WriteBinary() {
 
 void setup() {
   Wire.begin();
-  Wire.setClock(1000000);
+  Wire.setClock(400000);
 
   // initialize serial communication
   Serial.begin(115200);
@@ -107,12 +87,6 @@ void setup() {
   Serial.println(accelgyro.getFullScaleAccelRange());
 
   // start interrupt timers
-  // gyro_timer.begin(ReadGyro, 200);  // microseconds
-  // gyro_timer.priority(0);  // [0,255] with 0 as highest
-  
-  // accel_timer.begin(ReadAccel, 1000);  // microseconds
-  // accel_timer.priority(1);  // [0,255] with 0 as highest
-
   imu_timer.begin(ReadIMU, 1000);  // microseconds
   imu_timer.priority(1);  // [0,255] with 0 as highest
 }
@@ -128,24 +102,12 @@ extern "C" int main()
 
       // get count
       noInterrupts();
-      // gyro_count_diff = gyro_count - gyro_count_last;
-      // gyro_count_last = gyro_count;
-
-      // accel_count_diff = accel_count - accel_count_last;
-      // accel_count_last = accel_count;
-
       imu_count_diff = imu_count - imu_count_last;
       imu_count_last = imu_count;
-
       interrupts();
 
       // output count
-      // Serial.print(accel_count_diff);
-      // Serial.print("\t");
-      // Serial.println(gyro_count_diff);
-      // Serial.print("\t");
       Serial.println(imu_count_diff);
-
     }
 
     yield();  // yield() is mandatory!
