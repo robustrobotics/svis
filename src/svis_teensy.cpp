@@ -323,11 +323,11 @@ void Send() {
   memcpy(&send_buffer[2], &send_count, sizeof(send_count));
 
   // actually send the packet
-  if (RawHID.send(send_buffer, 100)) {
-    Serial.println(send_count);
-  } else {
-    Serial.println("E0");
-  }
+  // if (RawHID.send(send_buffer, 100)) {
+  //   Serial.println(send_count);
+  // } else {
+  //   Serial.println("E0");
+  // }
 
   // reset
   send_count++;
