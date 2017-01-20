@@ -113,7 +113,8 @@ void setup() {
   Serial.println(mpu6050.getFullScaleAccelRange());
 
   // setup interrupt timers
-  imu_timer.begin(ReadIMU, 1000);  // microseconds
+  // imu_timer.begin(ReadIMU, 1000);  // microseconds
+  imu_timer.begin(ReadIMU, 1000000);  // microseconds
   imu_timer.priority(0);  // [0,255] with 0 as highest
 
   // setup pin interrupt
