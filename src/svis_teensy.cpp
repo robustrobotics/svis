@@ -241,7 +241,7 @@ void Blink() {
 void setup() {
   InitComms();
   InitGPIO();
-  // Blink();
+  Blink();
   InitMPU6050();
   InitInterrupts();
 }
@@ -378,7 +378,7 @@ void Send() {
   }
 
   // blink led
-  if (!send_count%1000) {
+  if (send_count%10 == 0) {
     led_state = !led_state;
     digitalWrite(LED_PIN, led_state);
   }
