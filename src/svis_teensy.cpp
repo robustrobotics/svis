@@ -36,6 +36,7 @@ uint8_t send_buffer_ind = SEND_HEADER_SIZE;
 uint8_t send_count = 0;
 
 // debug
+elapsedMillis since_print;
 bool imu_debug_flag = false;
 bool strobe_debug_flag = false;
 
@@ -381,7 +382,6 @@ void Send() {
 
 extern "C" int main() {
   setup();
-  elapsedMillis since_print;
 
   while (true) {
     if (strobe_buffer_count > 0) {
