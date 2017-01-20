@@ -35,6 +35,67 @@ uint8_t send_buffer[SEND_BUFFER_SIZE];
 uint8_t send_buffer_ind = SEND_HEADER_SIZE;
 uint8_t send_count = 0;
 
+// debug
+bool imu_debug_flag = false;
+bool strobe_debug_flag = false;
+
+void PrintIMUDataBuffer() {
+  Serial.println("imu_data_buffer:");
+  Serial.println("Sample:\tAx:\tAy:\tAz:\tGx:\tGy:\tGz:");
+  for (int i = 0; i < IMU_BUFFER_SIZE; i++) {
+    Serial.print(i);
+    Serial.print(":\t");
+    for (int j = 0; j < IMU_DATA_SIZE; j++) {
+      Serial.print(imu_data_buffer[i*IMU_DATA_SIZE + j]);
+      Serial.print("\t");
+    }
+
+    // mark head location
+    if (i == imu_buffer_head) {
+      Serial.print("\tH");
+    }
+
+    // mark tail location
+    if (i == imu_buffer_tail) {
+      Serial.print("\tT");
+    }
+
+    Serial.println();
+  }
+}
+
+void PrintIMUStampBuffer() {
+  Serial.println("imu_stamp_buffer:");
+  for (int i = 0; i < IMU_BUFFER_SIZE; i++) {
+    Serial.print(i);
+    Serial.print(":\t");
+    Serial.print(imu_stamp_buffer[i]);
+
+    // mark head location
+    if (i == imu_buffer_head) {
+      Serial.print("\tH");
+    }
+
+    // mark tail location
+    if (i == imu_buffer_tail) {
+      Serial.print("\tT");
+    }
+
+    Serial.println();
+  }
+}
+
+void PrintIMUDebug() {
+  PrintIMUStampBuffer();
+  PrintIMUDataBuffer();
+  Serial.print("imu_buffer_head: ");
+  Serial.println(imu_buffer_head);
+  Serial.print("imu_buffer_tail: ");
+  Serial.println(imu_buffer_tail);
+  Serial.print("imu_buffer_count: ");
+  Serial.println(imu_buffer_count);
+}
+
 void ReadIMU() {
   imu_stamp_buffer[imu_buffer_head] = micros();
   mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*IMU_DATA_SIZE],
@@ -57,6 +118,41 @@ void ReadIMU() {
   if (imu_buffer_count > IMU_BUFFER_SIZE) {
     imu_buffer_count = IMU_BUFFER_SIZE;
   }
+
+  if (imu_debug_flag) {
+    PrintIMUDebug();
+  }
+}
+
+void PrintStrobeStampBuffer() {
+  Serial.println("strobe_stamp_buffer:");
+  for (int i = 0; i < STROBE_BUFFER_SIZE; i++) {
+    Serial.print(i);
+    Serial.print(":\t");
+    Serial.print(strobe_stamp_buffer[i]);
+
+    // mark head location
+    if (i == strobe_buffer_head) {
+      Serial.print("\tH");
+    }
+
+    // mark tail location
+    if (i == strobe_buffer_tail) {
+      Serial.print("\tT");
+    }
+    
+    Serial.println();
+  }
+}
+
+void PrintStrobeDebug() {
+  PrintStrobeStampBuffer();
+  Serial.print("strobe_buffer_head: ");
+  Serial.println(strobe_buffer_head);
+  Serial.print("strobe_buffer_tail: ");
+  Serial.println(strobe_buffer_tail);
+  Serial.print("strobe_buffer_count: ");
+  Serial.println(strobe_buffer_count);
 }
 
 void ReadStrobe() {
@@ -245,6 +341,7 @@ void Send() {
 
 extern "C" int main() {
   setup();
+  elapsedMillis since_print;
 
   while (true) {
     if (strobe_buffer_count > 0) {
@@ -257,6 +354,11 @@ extern "C" int main() {
 
     if (send_flag) {
       Send();
+    }
+
+    if (since_print > 1000) {
+      since_print = 0;
+      Serial.println("check");
     }
 
     yield();  // yield() is mandatory!
