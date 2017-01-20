@@ -37,6 +37,7 @@ uint8_t send_count = 0;
 
 // debug
 elapsedMillis since_print;
+bool led_state = false;
 bool imu_debug_flag = false;
 bool strobe_debug_flag = false;
 
@@ -230,9 +231,17 @@ void InitInterrupts() {
   attachInterrupt(7, ReadStrobe, RISING);  // attach pin 7 to interrupt
 }
 
+void Blink() {
+  digitalWrite(LED_PIN, HIGH);
+  delay(500);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(500);
+}
+
 void setup() {
   InitComms();
   InitGPIO();
+  // Blink();
   InitMPU6050();
   InitInterrupts();
 }
@@ -283,14 +292,12 @@ void PushIMU() {
                 sizeof(imu_stamp_buffer[imu_buffer_tail]));
 
     imu_buffer_count--;
-
     // check count
     if (imu_buffer_count < 0) {
       imu_buffer_count = 0;
     }
 
     imu_buffer_tail++;
-
     // check tail
     if (imu_buffer_tail >= IMU_BUFFER_SIZE) {
       imu_buffer_tail = imu_buffer_tail%IMU_BUFFER_SIZE;
@@ -318,7 +325,7 @@ void PushStrobe() {
   // calculate number of packets
   if (strobe_data_bytes > send_space) {
     num_packets = static_cast<int>(static_cast<float>(send_space)
-                                       / static_cast<float>(STROBE_PACKET_SIZE));
+                                   / static_cast<float>(STROBE_PACKET_SIZE));
     send_flag = true;
   } else {
     num_packets = strobe_buffer_count;
@@ -332,20 +339,13 @@ void PushStrobe() {
                 sizeof(strobe_stamp_buffer[strobe_buffer_tail]));
     send_buffer_ind += sizeof(strobe_stamp_buffer[strobe_buffer_tail]);
 
-    // copy data
-    memcpy(&send_buffer[send_buffer_ind],
-                &strobe_stamp_buffer[strobe_buffer_tail],
-                sizeof(strobe_stamp_buffer[strobe_buffer_tail]));
-
     strobe_buffer_count--;
-
     // check count
     if (strobe_buffer_count < 0) {
       strobe_buffer_count = 0;
     }
 
     strobe_buffer_tail++;
-
     // check tail
     if (strobe_buffer_tail >= STROBE_BUFFER_SIZE) {
       strobe_buffer_tail = strobe_buffer_tail%STROBE_BUFFER_SIZE;
@@ -375,6 +375,12 @@ void Send() {
   send_buffer_ind = SEND_HEADER_SIZE;
   for (int i = 0; i < SEND_BUFFER_SIZE; i++) {
     send_buffer[i] = 0;
+  }
+
+  // blink led
+  if (!send_count%1000) {
+    led_state = !led_state;
+    digitalWrite(LED_PIN, led_state);
   }
 
   send_flag = false;
