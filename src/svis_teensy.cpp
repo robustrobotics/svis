@@ -4,13 +4,13 @@
 #include "Wire.h"
 
 #define LED_PIN 13
-#define IMU_DATA_SIZE 6
-#define IMU_BUFFER_SIZE 10
-#define IMU_PACKET_SIZE 17
-#define STROBE_BUFFER_SIZE 10
-#define STROBE_PACKET_SIZE 5
-#define SEND_BUFFER_SIZE 64
-#define SEND_HEADER_SIZE 6
+#define IMU_DATA_SIZE 6  // (int16_t) [ax, ay, az, gx, gy, gz]
+#define IMU_BUFFER_SIZE 10  // store 10 samples (imu_stamp, imu_data) in circular buffers
+#define IMU_PACKET_SIZE 17  // (int8_t) [2, imu_stamp[0], ... , imu_stamp[3], imu_data[0], ... , imu_data[11]]
+#define STROBE_BUFFER_SIZE 10  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
+#define STROBE_PACKET_SIZE 6  // (int8_t) [1, strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
+#define SEND_BUFFER_SIZE 64  // (int8_t) size of HID USB packets
+#define SEND_HEADER_SIZE 6  // (int8_t) [header1, header2, packet_count[0]], ... , packet_count[3]
 
 // timer objects
 IntervalTimer imu_timer;
@@ -25,6 +25,8 @@ uint8_t imu_buffer_count = 0;
 
 // strobe variables
 int32_t strobe_stamp_buffer[STROBE_BUFFER_SIZE];
+uint8_t strobe_count = 0;
+uint8_t strobe_count_buffer[STROBE_BUFFER_SIZE];
 uint8_t strobe_buffer_head = 0;
 uint8_t strobe_buffer_tail = 0;
 uint8_t strobe_buffer_count = 0;
@@ -40,6 +42,7 @@ elapsedMillis since_print;
 bool led_state = false;
 bool imu_debug_flag = false;
 bool strobe_debug_flag = false;
+bool send_debug_flag = false;
 
 void PrintIMUDataBuffer() {
   Serial.println("imu_data_buffer:");
@@ -99,7 +102,10 @@ void PrintIMUDebug() {
 }
 
 void ReadIMU() {
+  // imu timestamp
   imu_stamp_buffer[imu_buffer_head] = micros();
+
+  // imu data
   mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*IMU_DATA_SIZE],
                      &imu_data_buffer[imu_buffer_head*IMU_DATA_SIZE + 1],
                      &imu_data_buffer[imu_buffer_head*IMU_DATA_SIZE + 2],
@@ -158,7 +164,12 @@ void PrintStrobeDebug() {
 }
 
 void ReadStrobe() {
+  // strobe timestamp
   strobe_stamp_buffer[strobe_buffer_head] = micros();
+
+  // strobe count
+  strobe_count_buffer[strobe_buffer_head] = strobe_count;
+  strobe_count = (strobe_count + 1)%128;  // roll over at 128 like flea3
 
   // set counts and flags
   strobe_buffer_head = (strobe_buffer_head + 1)%STROBE_BUFFER_SIZE;
@@ -390,6 +401,10 @@ void PushStrobe() {
                 sizeof(strobe_stamp_buffer[strobe_buffer_tail]));
     send_buffer_ind += sizeof(strobe_stamp_buffer[strobe_buffer_tail]);
 
+    // copy count
+    send_buffer[send_buffer_ind] = strobe_count_buffer[strobe_buffer_tail];
+    send_buffer_ind++;
+
     strobe_buffer_count--;
     // check count
     if (strobe_buffer_count < 0) {
@@ -414,7 +429,9 @@ void Send() {
   // count
   memcpy(&send_buffer[2], &send_count, sizeof(send_count));
 
-  PrintSendBuffer();
+  if (send_debug_flag) {
+    PrintSendBuffer();
+  }
 
   // actually send the packet
   // if (RawHID.send(send_buffer, SEND_BUFFER_SIZE)) {
