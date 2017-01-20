@@ -1,8 +1,8 @@
 {
-  "name": "I2Cdevlib-MPU6050",
+  "name": "I2Cdevlib-ICM20689",
   "keywords": "gyroscope, accelerometer, sensor, i2cdevlib, i2c",
-  "description": "The MPU6050 combines a 3-axis gyroscope and a 3-axis accelerometer on the same silicon die together with an onboard Digital Motion Processor(DMP) which processes complex 6-axis MotionFusion algorithms",
-  "include": "Arduino/MPU6050",
+  "description": "The ICM20689 combines a 3-axis gyroscope and a 3-axis accelerometer on the same silicon die together with an onboard Digital Motion Processor(DMP) which processes complex 6-axis MotionFusion algorithms",
+  "include": "Arduino/ICM20689",
   "repository":
   {
     "type": "git",
