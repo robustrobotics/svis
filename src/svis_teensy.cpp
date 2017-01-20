@@ -171,17 +171,13 @@ void ReadStrobe() {
   if (strobe_buffer_count > STROBE_BUFFER_SIZE) {
     strobe_buffer_count = STROBE_BUFFER_SIZE;
   }
+
+  if (strobe_debug_flag) {
+    PrintStrobeDebug();
+  }
 }
 
-void setup() {
-  Wire.begin();
-  Wire.setClock(400000);
-
-  // initialize serial communication
-  Serial.begin(115200);
-
-  delay(500);
-
+void InitMPU6050() {
   // initialize device
   Serial.println("Initializing I2C devices...");
   mpu6050.initialize();
@@ -190,9 +186,7 @@ void setup() {
   Serial.println("Testing device connections...");
   Serial.println(mpu6050.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-  // configure Arduino LED for
-  pinMode(LED_PIN, OUTPUT);
-
+  // print registers
   Serial.print("Sample Rate Divisor: ");
   Serial.println(mpu6050.getRate());
 
@@ -207,15 +201,39 @@ void setup() {
 
   Serial.print("Accel Range: ");
   Serial.println(mpu6050.getFullScaleAccelRange());
+}
 
+void InitComms() {
+  // initialize serial communication
+  Serial.begin(115200);
+
+  // initialize i2c communication
+  Wire.begin();
+  Wire.setClock(400000);
+
+  delay(500);
+}
+
+void InitGPIO() {
+  // configure onboard LED
+  pinMode(LED_PIN, OUTPUT);
+}
+
+void InitInterrupts() {
   // setup interrupt timers
-  // imu_timer.begin(ReadIMU, 1000);  // microseconds
-  imu_timer.begin(ReadIMU, 1000000);  // microseconds
+  imu_timer.begin(ReadIMU, 1000);  // microseconds
   imu_timer.priority(0);  // [0,255] with 0 as highest
 
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
   attachInterrupt(7, ReadStrobe, RISING);  // attach pin 7 to interrupt
+}
+
+void setup() {
+  InitComms();
+  InitGPIO();
+  InitMPU6050();
+  InitInterrupts();
 }
 
 int GetIMUDataBytes(uint8_t count) {
