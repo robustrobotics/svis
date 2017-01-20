@@ -254,6 +254,14 @@ int GetStrobeDataBytes(uint8_t count) {
   return STROBE_PACKET_SIZE*count;
 }
 
+void PrintSendBuffer() {
+  Serial.println("send_buffer: ");
+  for (int i = 0; i < SEND_BUFFER_SIZE; i++) {
+    Serial.print(i);
+    Serial.print("\t");
+    Serial.print(send_buffer[i]);
+    Serial.println();
+  }
 }
 
 void PushIMU() {
@@ -280,22 +288,46 @@ void PushIMU() {
     num_packets = imu_buffer_count;
   }
 
+  // Serial.print("num_packets: ");
+  // Serial.println(num_packets);
+  // Serial.print("**********START: ");
+  // PrintSendBuffer();
+
   // copy data
   for (int i = 0; i < num_packets; i++) {
+    // data id
+    // Serial.print("send_buffer_ind (id): ");
+    // Serial.println(send_buffer_ind);
+
     send_buffer[send_buffer_ind] = 2;
     send_buffer_ind++;
+    // Serial.print("*********POST ID: ");
+    // PrintSendBuffer();
+
+    // Serial.print("send_buffer_ind (stamp): ");
+    // Serial.println(send_buffer_ind);
 
     // copy stamp
     memcpy(&send_buffer[send_buffer_ind],
                 &imu_stamp_buffer[imu_buffer_tail],
                 sizeof(imu_stamp_buffer[imu_buffer_tail]));
     send_buffer_ind += sizeof(imu_stamp_buffer[imu_buffer_tail]);
+    // Serial.print("*********POST STAMP: ");
+    // PrintSendBuffer();
+
+    // Serial.print("send_buffer_ind (data): ");
+    // Serial.println(send_buffer_ind);
 
     // copy data
     memcpy(&send_buffer[send_buffer_ind],
                 &imu_data_buffer[imu_buffer_tail],
                 IMU_DATA_SIZE*sizeof(imu_data_buffer[imu_buffer_tail]));
     send_buffer_ind += IMU_DATA_SIZE*sizeof(imu_data_buffer[imu_buffer_tail]);
+    // Serial.print("*********POST DATA: ");
+    // PrintSendBuffer();
+
+    // Serial.print("send_buffer_ind (end): ");
+    // Serial.println(send_buffer_ind);
 
     imu_buffer_count--;
     // check count
@@ -329,6 +361,10 @@ void PushStrobe() {
   int strobe_data_bytes = GetStrobeDataBytes(strobe_buffer_count);
 
   // calculate number of packets
+  // Serial.print("strobe_data_bytes:");
+  // Serial.println(strobe_data_bytes);
+  // Serial.print("send_space:");
+  // Serial.println(send_space);
   if (strobe_data_bytes > send_space) {
     num_packets = static_cast<int>(static_cast<float>(send_space)
                                    / static_cast<float>(STROBE_PACKET_SIZE));
@@ -336,6 +372,11 @@ void PushStrobe() {
   } else {
     num_packets = strobe_buffer_count;
   }
+
+  // Serial.print("num_packets: ");
+  // Serial.println(num_packets);
+  // Serial.print("**********START: ");
+  // PrintSendBuffer();
 
   // copy data
   for (int i = 0; i < num_packets; i++) {
@@ -372,6 +413,8 @@ void Send() {
 
   // count
   memcpy(&send_buffer[2], &send_count, sizeof(send_count));
+
+  PrintSendBuffer();
 
   // actually send the packet
   // if (RawHID.send(send_buffer, SEND_BUFFER_SIZE)) {
@@ -414,7 +457,7 @@ extern "C" int main() {
 
     if (since_print > 1000) {
       since_print = 0;
-      Serial.println("check");
+      // Serial.println("check");
     }
 
     yield();  // yield() is mandatory!
