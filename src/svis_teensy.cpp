@@ -264,7 +264,18 @@ void PushIMU() {
                 sizeof(imu_stamp_buffer[imu_buffer_tail]));
 
     imu_buffer_count--;
+
+    // check count
+    if (imu_buffer_count < 0) {
+      imu_buffer_count = 0;
+    }
+
     imu_buffer_tail++;
+
+    // check tail
+    if (imu_buffer_tail >= IMU_BUFFER_SIZE) {
+      imu_buffer_tail = imu_buffer_tail%IMU_BUFFER_SIZE;
+    }
   }
 
   interrupts();
@@ -308,7 +319,18 @@ void PushStrobe() {
                 sizeof(strobe_stamp_buffer[strobe_buffer_tail]));
 
     strobe_buffer_count--;
+
+    // check count
+    if (strobe_buffer_count < 0) {
+      strobe_buffer_count = 0;
+    }
+
     strobe_buffer_tail++;
+
+    // check tail
+    if (strobe_buffer_tail >= STROBE_BUFFER_SIZE) {
+      strobe_buffer_tail = strobe_buffer_tail%STROBE_BUFFER_SIZE;
+    }
   }
 
   interrupts();
