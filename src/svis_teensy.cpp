@@ -251,7 +251,9 @@ int GetIMUDataBytes(uint8_t count) {
 }
 
 int GetStrobeDataBytes(uint8_t count) {
-  return IMU_PACKET_SIZE*count;
+  return STROBE_PACKET_SIZE*count;
+}
+
 }
 
 void PushIMU() {
@@ -280,6 +282,9 @@ void PushIMU() {
 
   // copy data
   for (int i = 0; i < num_packets; i++) {
+    send_buffer[send_buffer_ind] = 2;
+    send_buffer_ind++;
+
     // copy stamp
     memcpy(&send_buffer[send_buffer_ind],
                 &imu_stamp_buffer[imu_buffer_tail],
@@ -289,7 +294,8 @@ void PushIMU() {
     // copy data
     memcpy(&send_buffer[send_buffer_ind],
                 &imu_data_buffer[imu_buffer_tail],
-                sizeof(imu_stamp_buffer[imu_buffer_tail]));
+                IMU_DATA_SIZE*sizeof(imu_data_buffer[imu_buffer_tail]));
+    send_buffer_ind += IMU_DATA_SIZE*sizeof(imu_data_buffer[imu_buffer_tail]);
 
     imu_buffer_count--;
     // check count
@@ -320,7 +326,7 @@ void PushStrobe() {
   noInterrupts();
 
   // get number of bytes to copy
-  int strobe_data_bytes = GetStrobeDataBytes(imu_buffer_count);
+  int strobe_data_bytes = GetStrobeDataBytes(strobe_buffer_count);
 
   // calculate number of packets
   if (strobe_data_bytes > send_space) {
@@ -333,6 +339,10 @@ void PushStrobe() {
 
   // copy data
   for (int i = 0; i < num_packets; i++) {
+    // data id
+    send_buffer[send_buffer_ind] = 1;
+    send_buffer_ind++;
+
     // copy stamp
     memcpy(&send_buffer[send_buffer_ind],
                 &strobe_stamp_buffer[strobe_buffer_tail],
@@ -364,7 +374,7 @@ void Send() {
   memcpy(&send_buffer[2], &send_count, sizeof(send_count));
 
   // actually send the packet
-  // if (RawHID.send(send_buffer, 100)) {
+  // if (RawHID.send(send_buffer, SEND_BUFFER_SIZE)) {
   //   Serial.println(send_count);
   // } else {
   //   Serial.println("E0");
