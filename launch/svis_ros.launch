@@ -1,0 +1,22 @@
+<!-- Launch file for running svis_ros. -->
+
+<launch>
+  <arg name="namespace" default="depthest_ros" />
+  <arg name="manager" default="manager" />
+  <arg name="standalone" default="true" />
+
+  <group ns="$(arg namespace)" >
+
+    <!-- Launch the nodelet manager. -->
+    <node if="$(arg standalone)"
+          pkg="nodelet" type="nodelet" name="$(arg manager)"
+          args="manager" output="screen" >
+    </node>
+
+    <!-- Launch the nodelet.. -->
+    <node pkg="nodelet" type="nodelet" name="svis_ros"
+          args="load svis_ros $(arg manager)" output="screen">
+    </node>
+
+  </group>
+</launch>
