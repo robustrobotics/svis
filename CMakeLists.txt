@@ -9,7 +9,7 @@ endif (CCACHE_FOUND)
 
 project(svis_ros)
 
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
+set(CMAKE_VERBOSE_MAKEFILE FALSE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 add_definitions("-std=c++11")
