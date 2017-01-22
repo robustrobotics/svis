@@ -10,7 +10,7 @@
 #define STROBE_BUFFER_SIZE 10  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
 #define STROBE_PACKET_SIZE 6  // (int8_t) [1, strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
 #define SEND_BUFFER_SIZE 64  // (int8_t) size of HID USB packets
-#define SEND_HEADER_SIZE 6  // (int8_t) [header1, header2, packet_count[0]], ... , packet_count[3]
+#define SEND_HEADER_SIZE 8  // (int8_t) [header1, header2, packet_count[0], ... , packet_count[3], imu_count, strobe_count];
 
 // timer objects
 IntervalTimer imu_timer;
@@ -36,6 +36,8 @@ bool send_flag = false;
 uint8_t send_buffer[SEND_BUFFER_SIZE];
 uint8_t send_buffer_ind = SEND_HEADER_SIZE;
 uint8_t send_count = 0;
+uint8_t strobe_packet_count = 0;
+uint8_t imu_packet_count = 0;
 
 // debug
 elapsedMillis since_print;
@@ -299,6 +301,8 @@ void PushIMU() {
     num_packets = imu_buffer_count;
   }
 
+  imu_packet_count += num_packets;
+
   // copy data
   for (int i = 0; i < num_packets; i++) {
     // data id
@@ -357,6 +361,8 @@ void PushStrobe() {
     num_packets = strobe_buffer_count;
   }
 
+  strobe_packet_count += num_packets;
+
   // copy data
   for (int i = 0; i < num_packets; i++) {
     // data id
@@ -394,12 +400,12 @@ void Send() {
   send_buffer[0] = 0xAB;
   send_buffer[1] = 0xCD;
 
-  // count
+  // send_count
   memcpy(&send_buffer[2], &send_count, sizeof(send_count));
 
-  if (send_debug_flag) {
-    PrintSendBuffer();
-  }
+  // packet_counts
+  send_buffer[6] = imu_packet_count;
+  send_buffer[7] = strobe_packet_count;
 
   // actually send the packet
   RawHID.send(send_buffer, SEND_BUFFER_SIZE);
@@ -411,6 +417,11 @@ void Send() {
     send_buffer[i] = 0;
   }
 
+  // debug print
+  if (send_debug_flag) {
+    PrintSendBuffer();
+  }
+  
   // blink led
   if (send_count%10 == 0) {
     led_state = !led_state;
