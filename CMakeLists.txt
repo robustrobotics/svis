@@ -24,7 +24,7 @@ set(REQ_CATKIN_PKGS
 )
 find_package(catkin REQUIRED COMPONENTS ${REQ_CATKIN_PKGS})
 
-find_package(libusb-1.0 REQUIRED)
+# find_package(libusb-1.0 REQUIRED)
 find_package(libusb REQUIRED)
 
 catkin_package(
@@ -39,11 +39,9 @@ include_directories(
   src/hid
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_BINARY_DIR}/include
-  ${LIBUSB_1_INCLUDE_DIRS}
+  # ${LIBUSB_1_INCLUDE_DIRS}
+  ${LibUSB_INCLUDE_DIRS}
 )
-
-# SET(CMAKE_CXX_FLAGS_RELEASE "-lusb")
-# SET(CMAKE_C_FLAGS_RELEASE "-lusb")
 
 add_library(${PROJECT_NAME}
   src/svis_ros_nodelet.cc
@@ -57,7 +55,7 @@ add_dependencies(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}  
   ${catkin_LIBRARIES}
-  ${LIBUSB_1_LIBRARIES}
+  # ${LIBUSB_1_LIBRARIES}
   ${LibUSB_LIBRARIES}
   svis_hid
 )
@@ -72,7 +70,7 @@ add_library(svis_hid
   )
 
 target_link_libraries(svis_hid
-  ${LIBUSB_1_LIBRARIES}
+  # ${LIBUSB_1_LIBRARIES}
   ${LibUSB_LIBRARIES}
 )
 
