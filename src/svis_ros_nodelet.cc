@@ -14,6 +14,14 @@ extern "C" {
 #include "hid.h"
 }
 
+#define IMU_DATA_SIZE 6  // (int16_t) [ax, ay, az, gx, gy, gz]
+#define IMU_BUFFER_SIZE 10  // store 10 samples (imu_stamp, imu_data) in circular buffers
+#define IMU_PACKET_SIZE 17  // (int8_t) [2, imu_stamp[0], ... , imu_stamp[3], imu_data[0], ... , imu_data[11]]
+#define STROBE_BUFFER_SIZE 10  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
+#define STROBE_PACKET_SIZE 6  // (int8_t) [1, strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
+#define SEND_BUFFER_SIZE 64  // (int8_t) size of HID USB packets
+#define SEND_HEADER_SIZE 8  // (int8_t) [header1, header2, packet_count[0], ... , packet_count[3], imu_count, strobe_count];
+
 namespace svis_ros {
 
 /**
