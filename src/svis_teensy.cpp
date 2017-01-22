@@ -10,7 +10,7 @@
 #define STROBE_BUFFER_SIZE 10  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
 #define STROBE_PACKET_SIZE 6  // (int8_t) [1, strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
 #define SEND_BUFFER_SIZE 64  // (int8_t) size of HID USB packets
-#define SEND_HEADER_SIZE 8  // (int8_t) [header1, header2, packet_count[0], ... , packet_count[3], imu_count, strobe_count];
+#define SEND_HEADER_SIZE 8  // (int8_t) [header1, header2, send_count[0], ... , send_count[3], imu_count, strobe_count];
 
 // timer objects
 IntervalTimer imu_timer;
@@ -413,6 +413,8 @@ void Send() {
   // reset
   send_count++;
   send_buffer_ind = SEND_HEADER_SIZE;
+  imu_packet_count = 0;
+  strobe_packet_count = 0;
   for (int i = 0; i < SEND_BUFFER_SIZE; i++) {
     send_buffer[i] = 0;
   }
