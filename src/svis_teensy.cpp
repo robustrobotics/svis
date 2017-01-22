@@ -402,11 +402,7 @@ void Send() {
   }
 
   // actually send the packet
-  // if (RawHID.send(send_buffer, SEND_BUFFER_SIZE)) {
-  //   Serial.println(send_count);
-  // } else {
-  //   Serial.println("E0");
-  // }
+  RawHID.send(send_buffer, SEND_BUFFER_SIZE);
 
   // reset
   send_count++;
