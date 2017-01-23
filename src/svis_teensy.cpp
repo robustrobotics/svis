@@ -38,6 +38,7 @@ const int checksum_index = 62;
 // hid usb
 uint8_t send_buffer[send_buffer_size];
 uint16_t send_count = 0;
+uint8_t send_errors = 0;
 uint8_t strobe_packet_count = 0;
 uint8_t imu_packet_count = 0;
 
@@ -169,7 +170,7 @@ void PrintStrobeStampBuffer() {
     if (i == strobe_buffer_tail) {
       Serial.print("\tT");
     }
-    
+
     Serial.println();
   }
 }
@@ -218,7 +219,8 @@ void InitMPU6050() {
 
   // verify connection
   Serial.println("Testing device connections...");
-  Serial.println(mpu6050.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.println(mpu6050.testConnection() ?
+                 "MPU6050 connection successful" : "MPU6050 connection failed");
 
   // print registers
   Serial.print("Sample Rate Divisor: ");
@@ -393,26 +395,28 @@ void Send() {
   }
   memcpy(&send_buffer[checksum_index], &checksum, sizeof(checksum));
 
-  // actually send the packet
-  RawHID.send(send_buffer, send_buffer_size);
+  // send packet
+  if (RawHID.send(send_buffer, send_buffer_size)) {
+    // blink led
+    if (send_count%10 == 0) {
+      led_state = !led_state;
+      digitalWrite(LED_PIN, led_state);
+    }
+  } else {
+    send_errors++;
+  }
 
   // debug print
   if (send_debug_flag) {
     PrintSendBuffer();
   }
-  
+
   // reset
   send_count++;
   imu_packet_count = 0;
   strobe_packet_count = 0;
   for (int i = 0; i < send_buffer_size; i++) {
     send_buffer[i] = 0;
-  }
-
-  // blink led
-  if (send_count%10 == 0) {
-    led_state = !led_state;
-    digitalWrite(LED_PIN, led_state);
   }
 }
 
