@@ -14,14 +14,6 @@ extern "C" {
 #include "hid.h"
 }
 
-#define IMU_DATA_SIZE 6  // (int16_t) [ax, ay, az, gx, gy, gz]
-#define IMU_BUFFER_SIZE 10  // store 10 samples (imu_stamp, imu_data) in circular buffers
-#define IMU_PACKET_SIZE 17  // (int8_t) [2, imu_stamp[0], ... , imu_stamp[3], imu_data[0], ... , imu_data[11]]
-#define STROBE_BUFFER_SIZE 10  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
-#define STROBE_PACKET_SIZE 6  // (int8_t) [1, strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
-#define SEND_BUFFER_SIZE 64  // (int8_t) size of HID USB packets
-#define SEND_HEADER_SIZE 8  // (int8_t) [header1, header2, packet_count[0], ... , packet_count[3], imu_count, strobe_count];
-
 namespace svis_ros {
 
 /**
@@ -94,14 +86,29 @@ class SVISNodelet : public nodelet::Nodelet {
         NODELET_INFO("(svis_ros) 0");
       } else if (num > 0) {
         // NODELET_INFO("(svis_ros) buffer: ");
-        for (i = 0; i < num; i++) {
-          // printf("%02X ", buf[i] & 255);
-        }
+        // for (i = 0; i < num; i++) {
+        //   printf("%02X ", buf[i] & 255);
+        // }
+        // printf("\n");
 
         int ind = 0;
         int mask8  = 0x00000000000000FF;
         int mask16 = 0x000000000000FFFF;
         int mask32 = 0x00000000FFFFFFFF;
+
+        // checksum
+        uint16_t checksum_calc = 0;
+        for (int i = 0; i < send_buffer_size - 2; i++) {
+          checksum_calc += buf[i] & 0xFF;
+        }
+        uint16_t checksum_orig = 0;
+        memcpy(&checksum_orig, &buf[checksum_index], sizeof(checksum_orig));
+
+        if (checksum_calc != checksum_orig) {
+          NODELET_INFO("(svis_ros) checksum error [%02X, %02X] [%02X, %02X]",
+                       buf[checksum_index] & 0xFF, buf[checksum_index + 1] & 0xFF, checksum_calc, checksum_orig);
+          continue;
+        }
 
         // header
         header_packet header;
@@ -178,6 +185,23 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
  private:
+  // hid usb packet sizes
+  const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
+  const int imu_buffer_size = 10;  // store 10 samples (imu_stamp, imu_data) in circular buffers
+  const int imu_packet_size = 16;  // (int8_t) [imu_stamp[0], ... , imu_stamp[3], imu_data[0], ... , imu_data[11]]
+  const int strobe_buffer_size = 10;  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
+  const int strobe_packet_size = 5;  // (int8_t) [strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
+  const int send_buffer_size = 64;  // (int8_t) size of HID USB packets
+  const int send_header_size = 4;  // (int8_t) [send_count[0], send_count[1], imu_count, strobe_count];
+
+  // hid usb packet indices
+  const int send_count_index = 0;
+  const int imu_count_index = 2;
+  const int strobe_count_index = 3;
+  const int imu_index[3] = {4, 20, 36};
+  const int strobe_index[2] = {52, 57};
+  const int checksum_index = 62;
+  
   struct header_packet {
     int send_count;
     int imu_count;
