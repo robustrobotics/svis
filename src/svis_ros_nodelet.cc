@@ -98,7 +98,6 @@ class SVISNodelet : public nodelet::Nodelet {
           // printf("%02X ", buf[i] & 255);
         }
 
-
         int ind = 0;
         int mask8  = 0x00000000000000FF;
         int mask16 = 0x000000000000FFFF;
@@ -106,20 +105,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
         // header
         header_packet header;
-        header.id1 = mask8 & buf[ind++];
-        header.id2 = mask8 & buf[ind++];
-        NODELET_INFO("(svis_ros) [%X, %X]", header.id1, header.id2);
-
-        // header check
-        if (header.id1 != 0xAB && header.id2 != 0xBC) {
-          NODELET_WARN("(svis_ros) Bad header");
-          continue;
-        }
 
         // send_count
-        memcpy(&header.send_count, &buf[ind], 4);
+        header.send_count = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
         NODELET_INFO("(svis_ros) send_count: [%i, %i]", ind, header.send_count);
-        ind += 4;
+        ind += 2;
 
         // imu_packet_count
         header.imu_count = mask8 & buf[ind];
@@ -131,43 +121,51 @@ class SVISNodelet : public nodelet::Nodelet {
         NODELET_INFO("(svis_ros) strobe_packet_count: [%i, %i]", ind, header.strobe_count);
         ind++;
 
-        // get packets
+        // imu
         std::vector<imu_packet> imu_packets(header.imu_count);
+        for (int i = 0; i < header.imu_count; i++) {
+          imu_packet imu;
+
+          // timestamp
+          memcpy(&imu.timestamp, &buf[ind], 4);
+          NODELET_INFO("(svis_ros) imu.timestamp: [%i, %i]", ind, imu.timestamp);
+          ind += 4;
+
+          // accel
+          imu.acc[0] = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
+          ind += 2;
+          imu.acc[1] = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
+          ind += 2;
+          imu.acc[2] = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
+          ind += 2;
+
+          NODELET_INFO("(svis_ros) imu.acc: [%i, %i, %i]", imu.acc[0], imu.acc[1], imu.acc[2]);
+
+          // gyro
+          imu.gyro[0] = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
+          ind += 2;
+          imu.gyro[1] = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
+          ind += 2;
+          imu.gyro[2] = mask16 & (mask8 & buf[ind] | ((mask8 & buf[ind + 1]) << 8));
+          ind += 2;
+
+          NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
+        }
+
+        // strobe
         std::vector<strobe_packet> strobe_packets(header.strobe_count);
-        while (ind < SEND_BUFFER_SIZE) {
-          if (buf[ind] == 1) {
-            // strobe packet
-            strobe_packet strobe;
-            strobe.id = buf[ind];
-            NODELET_INFO("(svis_ros) strobe.id: [%i, %i]", ind, strobe.id);            
-            ind++;
-            
-            memcpy(&strobe.timestamp, &buf[ind], 4);
-            NODELET_INFO("(svis_ros) strobe.timestamp: [%i, %i]", ind, strobe.timestamp);
-            ind += 4;
+        for (int i = 0; i < header.strobe_count; i++) {
+          strobe_packet strobe;
 
-            strobe.count = mask8 & buf[ind];
-            NODELET_INFO("(svis_ros) strobe.count: [%i, %i]", ind, strobe.count);            
-            ind++;
-          } else if (buf[ind] == 2) {
-            // imu packet
-            imu_packet imu;
-            imu.id = buf[ind];
-            NODELET_INFO("(svis_ros) imu.id: [%i, %i]", ind, imu.id);            
-            ind++;
-            
-            memcpy(&imu.timestamp, &buf[ind], 4);
-            NODELET_INFO("(svis_ros) imu.timestamp: [%i, %i]", ind, imu.timestamp);
-            ind += 4;
-          } else {
-            // increment to next spot
-            ind++;
-          }
+          // timestamp
+          memcpy(&strobe.timestamp, &buf[ind], 4);
+          NODELET_INFO("(svis_ros) strobe.timestamp: [%i, %i]", ind, strobe.timestamp);
+          ind += 4;
 
-          // check for early termination
-          if (ind > (SEND_BUFFER_SIZE - IMU_PACKET_SIZE) || ind > (SEND_BUFFER_SIZE - STROBE_PACKET_SIZE)) {
-            break;
-          }
+          // count
+          strobe.count = mask8 & buf[ind];
+          NODELET_INFO("(svis_ros) strobe.count: [%i, %i]", ind, strobe.count);
+          ind++;
         }
 
         // new line
@@ -181,21 +179,17 @@ class SVISNodelet : public nodelet::Nodelet {
 
  private:
   struct header_packet {
-    int id1;
-    int id2;
     int send_count;
     int imu_count;
     int strobe_count;
   };
 
   struct strobe_packet {
-    int id;  // 1
     int timestamp;  // microseconds since teensy bootup
     int count;  // number of camera images
   };
 
   struct imu_packet {
-    int id;  // 2
     int timestamp;  // microseconds since teensy bootup
     int acc[3];  // units?
     int gyro[3];  // units?
