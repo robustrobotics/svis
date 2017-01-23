@@ -157,6 +157,9 @@ class SVISNodelet : public nodelet::Nodelet {
           ind += 2;
 
           NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
+
+          // save packet
+          imu_packets[i] = imu;
         }
 
         // strobe
@@ -173,6 +176,9 @@ class SVISNodelet : public nodelet::Nodelet {
           strobe.count = mask8 & buf[ind];
           NODELET_INFO("(svis_ros) strobe.count: [%i, %i]", ind, strobe.count);
           ind++;
+
+          // save packet
+          strobe_packets[i] = strobe;
         }
 
         // new line
