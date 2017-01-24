@@ -61,5 +61,8 @@ add_subdirectory(examples/adafruit_9dof)
 # mpu6050_raw example
 add_subdirectory(examples/mpu6050_raw)
 
+# icm20689_raw example
+add_subdirectory(examples/icm20689_raw)
+
 # svis_teensy
 add_subdirectory(src)
