@@ -72,12 +72,12 @@ class SVISNodelet : public nodelet::Nodelet {
     }
 
     // loop
-    char buf[64];
+    std::vector<char> buf(64);
     ros::Time t_now;
     ros::Time t_last;
     while (ros::ok()) {
       // check if any Raw HID packet has arrived
-      int num = rawhid_recv(0, buf, 64, 220);
+      int num = rawhid_recv(0, buf.data(), buf.size(), 220);
 
       // timing
       t_now = ros::Time::now();
@@ -92,13 +92,16 @@ class SVISNodelet : public nodelet::Nodelet {
       } else if (num == 0) {
         NODELET_INFO("(svis_ros) 0");
       } else if (num > 0) {
+        // resize vector
+        buf.resize(num);
+
         // debug print
         if (print_buffer_) {
-          PrintBuffer(num, buf);
+          PrintBuffer(buf);
         }
 
         // checksum
-        if(GetChecksum(ind, buf)) {
+        if(GetChecksum(buf)) {
           return;
         }
         
@@ -124,7 +127,6 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
  private:
-  int GetChecksum(std::unique_ptr<char> buf) {
   struct header_packet {
     int send_count;
     int imu_count;
@@ -142,6 +144,7 @@ class SVISNodelet : public nodelet::Nodelet {
     int gyro[3];  // units?
   };
 
+  int GetChecksum(std::vector<char> &buf) {
     // calculate checksum
     uint16_t checksum_calc = 0;
     for (int i = 0; i < send_buffer_size - 2; i++) {
@@ -162,8 +165,8 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void GetHeader(std::unique_ptr<char> buf, header_packet &header) {
-    ind ind = 0;
+  void GetHeader(std::vector<char> &buf, header_packet &header) {
+    int ind = 0;
     
     // send_count
     header.send_count = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
@@ -181,7 +184,7 @@ class SVISNodelet : public nodelet::Nodelet {
     ind++;
   }
 
-  void GetIMU(std::unique_ptr<char> buf, header_packet &header, std::vector<imu_packet> &imu_packets) {
+  void GetIMU(std::vector<char> &buf, header_packet &header, std::vector<imu_packet> &imu_packets) {
     for (int i = 0; i < header.imu_count; i++) {
       imu_packet imu;
       int ind = imu_index[i];
@@ -216,7 +219,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void GetStrobe(std::unique_ptr<char> buf, header_packet &header, std::vector<strobe_packet> &strobe_packets) {
+  void GetStrobe(std::vector<char> &buf, header_packet &header, std::vector<strobe_packet> &strobe_packets) {
     for (int i = 0; i < header.strobe_count; i++) {
       strobe_packet strobe;
       int ind = strobe_index[i];
@@ -236,9 +239,9 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void PrintBuffer(int num, std::unique_ptr<char> buf) {
+  void PrintBuffer(std::vector<char> &buf) {
     NODELET_INFO("(svis_ros) buffer: ");
-    for (int i = 0; i < num; i++) {
+    for (int i = 0; i < buf.size(); i++) {
       printf("%02X ", buf[i] & 255);
     }
     printf("\n");
