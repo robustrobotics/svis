@@ -314,8 +314,8 @@ void PushIMU() {
 
     // copy data
     memcpy(&send_buffer[imu_index[i] + 4],
-                &imu_data_buffer[imu_buffer_tail],
-                imu_data_size*sizeof(imu_data_buffer[imu_buffer_tail]));
+                &imu_data_buffer[imu_buffer_tail*imu_data_size],
+                imu_data_size*sizeof(imu_data_buffer[imu_buffer_tail*imu_data_size]));
 
     imu_buffer_count--;
     // check count
@@ -441,8 +441,10 @@ void Send() {
 
   // data
   PushIMU();
+  // TestPushIMU();
   PushStrobe();
-  
+  // TestPushStrobe();
+
   // packet_counts
   send_buffer[imu_count_index] = imu_packet_count;
   send_buffer[strobe_count_index] = strobe_packet_count;
