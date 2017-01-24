@@ -128,20 +128,20 @@ class SVISNodelet : public nodelet::Nodelet {
 
  private:
   struct header_packet {
-    int send_count;
-    int imu_count;
-    int strobe_count;
+    uint16_t send_count;
+    uint8_t imu_count;
+    uint8_t strobe_count;
   };
 
   struct strobe_packet {
-    int timestamp;  // microseconds since teensy bootup
-    int count;  // number of camera images
+    uint32_t timestamp;  // microseconds since teensy bootup
+    uint8_t count;  // number of camera images
   };
 
   struct imu_packet {
-    int timestamp;  // microseconds since teensy bootup
-    int acc[3];  // units?
-    int gyro[3];  // units?
+    uint32_t timestamp;  // microseconds since teensy bootup
+    int16_t acc[3];  // units?
+    int16_t gyro[3];  // units?
   };
 
   int GetChecksum(std::vector<char> &buf) {
@@ -169,19 +169,19 @@ class SVISNodelet : public nodelet::Nodelet {
     int ind = 0;
     
     // send_count
-    header.send_count = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
+    memcpy(&header.send_count, &buf[ind], sizeof(header.send_count));
     NODELET_INFO("(svis_ros) send_count: [%i, %i]", ind, header.send_count);
-    ind += 2;
+    ind += sizeof(header.send_count);
 
     // imu_packet_count
-    header.imu_count = 0xFF & buf[ind];
+    memcpy(&header.imu_count, &buf[ind], sizeof(header.imu_count));
     NODELET_INFO("(svis_ros) imu_packet_count: [%i, %i]", ind, header.imu_count);
-    ind++;
+    ind += sizeof(header.imu_count);
 
     // strobe_packet_count
-    header.strobe_count = 0xFF & buf[ind];
+    memcpy(&header.strobe_count, &buf[ind], sizeof(header.strobe_count));
     NODELET_INFO("(svis_ros) strobe_packet_count: [%i, %i]", ind, header.strobe_count);
-    ind++;
+    ind += sizeof(header.strobe_count);
   }
 
   void GetIMU(std::vector<char> &buf, header_packet &header, std::vector<imu_packet> &imu_packets) {
@@ -190,27 +190,27 @@ class SVISNodelet : public nodelet::Nodelet {
       int ind = imu_index[i];
 
       // timestamp
-      memcpy(&imu.timestamp, &buf[ind], 4);
+      memcpy(&imu.timestamp, &buf[ind], sizeof(imu.timestamp));
       NODELET_INFO("(svis_ros) imu.timestamp: [%i, %i]", ind, imu.timestamp);
-      ind += 4;
+      ind += sizeof(imu.timestamp);
 
       // accel
-      imu.acc[0] = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
-      ind += 2;
-      imu.acc[1] = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
-      ind += 2;
-      imu.acc[2] = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
-      ind += 2;
+      memcpy(&imu.acc[0], &buf[ind], sizeof(imu.acc[0]));
+      ind += sizeof(imu.acc[0]);
+      memcpy(&imu.acc[1], &buf[ind], sizeof(imu.acc[1]));
+      ind += sizeof(imu.acc[1]);
+      memcpy(&imu.acc[2], &buf[ind], sizeof(imu.acc[2]));
+      ind += sizeof(imu.acc[2]);
 
       NODELET_INFO("(svis_ros) imu.acc: [%i, %i, %i]", imu.acc[0], imu.acc[1], imu.acc[2]);
 
       // gyro
-      imu.gyro[0] = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
-      ind += 2;
-      imu.gyro[1] = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
-      ind += 2;
-      imu.gyro[2] = 0xFFFF & (0xFF & buf[ind] | ((0xFF & buf[ind + 1]) << 8));
-      ind += 2;
+      memcpy(&imu.gyro[0], &buf[ind], sizeof(imu.gyro[0]));
+      ind += sizeof(imu.gyro[0]);
+      memcpy(&imu.gyro[1], &buf[ind], sizeof(imu.gyro[1]));
+      ind += sizeof(imu.gyro[1]);
+      memcpy(&imu.gyro[2], &buf[ind], sizeof(imu.gyro[2]));
+      ind += sizeof(imu.gyro[2]);
 
       NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
@@ -225,14 +225,14 @@ class SVISNodelet : public nodelet::Nodelet {
       int ind = strobe_index[i];
       
       // timestamp
-      memcpy(&strobe.timestamp, &buf[ind], 4);
+      memcpy(&strobe.timestamp, &buf[ind], sizeof(strobe.timestamp));
       NODELET_INFO("(svis_ros) strobe.timestamp: [%i, %i]", ind, strobe.timestamp);
-      ind += 4;
+      ind += sizeof(strobe.timestamp);
 
       // count
-      strobe.count = 0xFF & buf[ind];
+      memcpy(&strobe.count, &buf[ind], sizeof(strobe.count));
       NODELET_INFO("(svis_ros) strobe.count: [%i, %i]", ind, strobe.count);
-      ind++;
+      ind += strobe.count;
 
       // save packet
       strobe_packets[i] = strobe;
