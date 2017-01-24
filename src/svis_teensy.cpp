@@ -376,6 +376,65 @@ void PushStrobe() {
   interrupts();
 }
 
+void TestPushIMU() {
+  uint32_t imu_stamp0 = 1000;
+  memcpy(&send_buffer[imu_index[0]], &imu_stamp0, sizeof(imu_stamp0));
+  int16_t acc0 = 5;
+  memcpy(&send_buffer[imu_index[0] + 4], &acc0, sizeof(acc0));
+  int16_t acc1 = -5;
+  memcpy(&send_buffer[imu_index[0] + 6], &acc1, sizeof(acc1));
+  int16_t acc2 = 0;
+  memcpy(&send_buffer[imu_index[0] + 8], &acc2, sizeof(acc2));
+  int16_t gyro0 = 10;
+  memcpy(&send_buffer[imu_index[0] + 10], &gyro0, sizeof(gyro0));
+  int16_t gyro1 = -10;
+  memcpy(&send_buffer[imu_index[0] + 12], &gyro1, sizeof(gyro1));
+  int16_t gyro2 = 0;
+  memcpy(&send_buffer[imu_index[0] + 14], &gyro2, sizeof(gyro2));
+
+  imu_stamp0 = 2000;
+  memcpy(&send_buffer[imu_index[1]], &imu_stamp0, sizeof(imu_stamp0));
+  acc0 = 50;
+  memcpy(&send_buffer[imu_index[1] + 4], &acc0, sizeof(acc0));
+  acc1 = -50;
+  memcpy(&send_buffer[imu_index[1] + 6], &acc1, sizeof(acc1));
+  acc2 = 1;
+  memcpy(&send_buffer[imu_index[1] + 8], &acc2, sizeof(acc2));
+  gyro0 = 100;
+  memcpy(&send_buffer[imu_index[1] + 10], &gyro0, sizeof(gyro0));
+  gyro1 = -100;
+  memcpy(&send_buffer[imu_index[1] + 12], &gyro1, sizeof(gyro1));
+  gyro2 = 1;
+  memcpy(&send_buffer[imu_index[1] + 14], &gyro2, sizeof(gyro2));
+
+  imu_stamp0 = 3000;
+  memcpy(&send_buffer[imu_index[2]], &imu_stamp0, sizeof(imu_stamp0));
+  acc0 = 500;
+  memcpy(&send_buffer[imu_index[2] + 4], &acc0, sizeof(acc0));
+  acc1 = -500;
+  memcpy(&send_buffer[imu_index[2] + 6], &acc1, sizeof(acc1));
+  acc2 = 2;
+  memcpy(&send_buffer[imu_index[2] + 8], &acc2, sizeof(acc2));
+  gyro0 = 1000;
+  memcpy(&send_buffer[imu_index[2] + 10], &gyro0, sizeof(gyro0));
+  gyro1 = -1000;
+  memcpy(&send_buffer[imu_index[2] + 12], &gyro1, sizeof(gyro1));
+  gyro2 = 2;
+  memcpy(&send_buffer[imu_index[2] + 14], &gyro2, sizeof(gyro2));
+}
+
+void TestPushStrobe() {
+  uint32_t strobe_stamp0 = 4000;
+  memcpy(&send_buffer[strobe_index[0]], &strobe_stamp0, sizeof(strobe_stamp0));
+  uint8_t count = 5;
+  memcpy(&send_buffer[strobe_index[0] + 4], &count, sizeof(count));
+
+  strobe_stamp0 = 5000;
+  memcpy(&send_buffer[strobe_index[1]], &strobe_stamp0, sizeof(strobe_stamp0));
+  count = 10;
+  memcpy(&send_buffer[strobe_index[1] + 4], &count, sizeof(count));
+}
+
 void Send() {
   // send_count
   memcpy(&send_buffer[send_count_index], &send_count, sizeof(send_count));
