@@ -125,6 +125,23 @@ class SVISNodelet : public nodelet::Nodelet {
 
  private:
   int GetChecksum(std::unique_ptr<char> buf) {
+  struct header_packet {
+    int send_count;
+    int imu_count;
+    int strobe_count;
+  };
+
+  struct strobe_packet {
+    int timestamp;  // microseconds since teensy bootup
+    int count;  // number of camera images
+  };
+
+  struct imu_packet {
+    int timestamp;  // microseconds since teensy bootup
+    int acc[3];  // units?
+    int gyro[3];  // units?
+  };
+
     // calculate checksum
     uint16_t checksum_calc = 0;
     for (int i = 0; i < send_buffer_size - 2; i++) {
@@ -244,23 +261,6 @@ class SVISNodelet : public nodelet::Nodelet {
   const int strobe_index[2] = {52, 57};
   const int checksum_index = 62;
   
-  struct header_packet {
-    int send_count;
-    int imu_count;
-    int strobe_count;
-  };
-
-  struct strobe_packet {
-    int timestamp;  // microseconds since teensy bootup
-    int count;  // number of camera images
-  };
-
-  struct imu_packet {
-    int timestamp;  // microseconds since teensy bootup
-    int acc[3];  // units?
-    int gyro[3];  // units?
-  };
-
   bool print_buffer_ = false;
 };
 
