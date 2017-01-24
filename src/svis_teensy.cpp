@@ -45,14 +45,14 @@ uint8_t imu_packet_count = 0;
 // imu variables
 IntervalTimer imu_timer;
 MPU6050 mpu6050;
-int32_t imu_stamp_buffer[imu_buffer_size];
+uint32_t imu_stamp_buffer[imu_buffer_size];
 int16_t imu_data_buffer[imu_data_size*imu_buffer_size];
 uint8_t imu_buffer_head = 0;
 uint8_t imu_buffer_tail = 0;
 uint8_t imu_buffer_count = 0;
 
 // strobe variables
-int32_t strobe_stamp_buffer[strobe_buffer_size];
+uint32_t strobe_stamp_buffer[strobe_buffer_size];
 uint8_t strobe_count = 0;
 uint8_t strobe_count_buffer[strobe_buffer_size];
 uint8_t strobe_buffer_head = 0;
