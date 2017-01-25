@@ -9,6 +9,20 @@
 <grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
+<layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
+<layer number="3" name="Route3" color="4" fill="3" visible="no" active="no"/>
+<layer number="4" name="Route4" color="1" fill="4" visible="no" active="no"/>
+<layer number="5" name="Route5" color="4" fill="4" visible="no" active="no"/>
+<layer number="6" name="Route6" color="1" fill="8" visible="no" active="no"/>
+<layer number="7" name="Route7" color="4" fill="8" visible="no" active="no"/>
+<layer number="8" name="Route8" color="1" fill="2" visible="no" active="no"/>
+<layer number="9" name="Route9" color="4" fill="2" visible="no" active="no"/>
+<layer number="10" name="Route10" color="1" fill="7" visible="no" active="no"/>
+<layer number="11" name="Route11" color="4" fill="7" visible="no" active="no"/>
+<layer number="12" name="Route12" color="1" fill="5" visible="no" active="no"/>
+<layer number="13" name="Route13" color="4" fill="5" visible="no" active="no"/>
+<layer number="14" name="Route14" color="1" fill="6" visible="no" active="no"/>
+<layer number="15" name="Route15" color="4" fill="6" visible="no" active="no"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="no" active="no"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="no" active="no"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="no" active="no"/>
@@ -941,25 +955,25 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="19" y1="-7.95" x2="16.85" y2="-7.95" width="0" layer="20"/>
 <wire x1="19" y1="7.95" x2="16.85" y2="7.95" width="0" layer="20"/>
 <wire x1="16.85" y1="7.95" x2="14.7" y2="10.1" width="0" layer="20" curve="-90"/>
-<smd name="11" x="-17" y="4.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="12" x="-17" y="3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="13" x="-17" y="2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="14" x="-17" y="1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="15" x="-17" y="0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="16" x="-17" y="-0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="17" x="-17" y="-1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="18" x="-17" y="-2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="19" x="-17" y="-3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="2" x="-17" y="4.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="4" x="-17" y="3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="6" x="-17" y="2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="8" x="-17" y="1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="10" x="-17" y="0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="12" x="-17" y="-0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="14" x="-17" y="-1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="16" x="-17" y="-2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="18" x="-17" y="-3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
 <smd name="20" x="-17" y="-4.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="10" x="-13.8" y="-4.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="9" x="-13.8" y="-3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="8" x="-13.8" y="-2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="7" x="-13.8" y="-1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="6" x="-13.8" y="-0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="5" x="-13.8" y="0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="4" x="-13.8" y="1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="3" x="-13.8" y="2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
-<smd name="2" x="-13.8" y="3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="19" x="-13.8" y="-4.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="17" x="-13.8" y="-3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="15" x="-13.8" y="-2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="13" x="-13.8" y="-1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="11" x="-13.8" y="-0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="9" x="-13.8" y="0.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="7" x="-13.8" y="1.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="5" x="-13.8" y="2.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
+<smd name="3" x="-13.8" y="3.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
 <smd name="1" x="-13.8" y="4.5" dx="0.61" dy="1.37" layer="1" rot="R90"/>
 <wire x1="-11.5" y1="12" x2="-11.5" y2="-12" width="0.127" layer="22"/>
 <wire x1="-11.5" y1="-12" x2="14.5" y2="-12" width="0.127" layer="22"/>
@@ -3332,6 +3346,94 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 </deviceset>
 </devicesets>
 </library>
+<library name="SparkFun-Jumpers">
+<description>&lt;h3&gt;SparkFun Jumpers&lt;/h3&gt;
+In this library you'll find jumpers, or other semipermanent means of changing current paths. The least permanent form is the solder jumper. These can be changed by adding, removing, or moving solder. In cases that are less likely to be changed we have jumpers that are connected with traces. These can be cut with a razor, or reconnected with solder. Reference designator JP.
+&lt;br&gt;
+&lt;br&gt;
+We've spent an enormous amount of time creating and checking these footprints and parts, but it is &lt;b&gt; the end user's responsibility&lt;/b&gt; to ensure correctness and suitablity for a given componet or application. 
+&lt;br&gt;
+&lt;br&gt;If you enjoy using this library, please buy one of our products at &lt;a href=" www.sparkfun.com"&gt;SparkFun.com&lt;/a&gt;.
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;Licensing:&lt;/b&gt; Creative Commons ShareAlike 4.0 International - https://creativecommons.org/licenses/by-sa/4.0/ 
+&lt;br&gt;
+&lt;br&gt;
+You are welcome to use this library for commercial purposes. For attribution, we ask that when you begin to sell your device using our footprint, you email us with a link to the product being sold. We want bragging rights that we helped (in a very small part) to create your 8th world wonder. We would like the opportunity to feature your device on our homepage.</description>
+<packages>
+<package name="SMT-JUMPER_3_NO_NO-SILK">
+<text x="0" y="1.143" size="0.6096" layer="25" font="vector" ratio="20" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.143" size="0.6096" layer="27" font="vector" ratio="20" align="top-center">&gt;VALUE</text>
+<smd name="1" x="-0.8128" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="2" x="0" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="3" x="0.8128" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+</package>
+<package name="SMT-JUMPER_3_NO_SILK">
+<text x="0" y="1.143" size="0.6096" layer="25" font="vector" ratio="20" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.143" size="0.6096" layer="27" font="vector" ratio="20" align="top-center">&gt;VALUE</text>
+<wire x1="1.27" y1="-1.016" x2="-1.27" y2="-1.016" width="0.1524" layer="21"/>
+<wire x1="1.27" y1="1.016" x2="1.524" y2="0.762" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.524" y1="0.762" x2="-1.27" y2="1.016" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.524" y1="-0.762" x2="-1.27" y2="-1.016" width="0.1524" layer="21" curve="90"/>
+<wire x1="1.27" y1="-1.016" x2="1.524" y2="-0.762" width="0.1524" layer="21" curve="90"/>
+<wire x1="1.524" y1="-0.762" x2="1.524" y2="0.762" width="0.1524" layer="21"/>
+<wire x1="-1.524" y1="-0.762" x2="-1.524" y2="0.762" width="0.1524" layer="21"/>
+<wire x1="-1.27" y1="1.016" x2="1.27" y2="1.016" width="0.1524" layer="21"/>
+<smd name="1" x="-0.8128" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="2" x="0" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="3" x="0.8128" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+</package>
+</packages>
+<symbols>
+<symbol name="SMT-JUMPER_3_NO">
+<wire x1="-0.635" y1="-1.397" x2="0.635" y2="-1.397" width="1.27" layer="94" curve="180" cap="flat"/>
+<wire x1="-0.635" y1="1.397" x2="0.635" y2="1.397" width="1.27" layer="94" curve="-180" cap="flat"/>
+<wire x1="1.27" y1="-0.635" x2="-1.27" y2="-0.635" width="0.1524" layer="94"/>
+<wire x1="-1.27" y1="-0.635" x2="-1.27" y2="0" width="0.1524" layer="94"/>
+<wire x1="-1.27" y1="0" x2="-1.27" y2="0.635" width="0.1524" layer="94"/>
+<wire x1="-1.27" y1="0.635" x2="1.27" y2="0.635" width="0.1524" layer="94"/>
+<wire x1="1.27" y1="0.635" x2="1.27" y2="-0.635" width="0.1524" layer="94"/>
+<wire x1="-2.54" y1="0" x2="-1.27" y2="0" width="0.1524" layer="94"/>
+<text x="2.54" y="0.381" size="1.778" layer="95" font="vector">&gt;NAME</text>
+<text x="2.54" y="-0.381" size="1.778" layer="96" font="vector" align="top-left">&gt;VALUE</text>
+<rectangle x1="-1.27" y1="-0.635" x2="1.27" y2="0.635" layer="94"/>
+<pin name="3" x="0" y="-5.08" visible="off" length="short" direction="pas" rot="R90"/>
+<pin name="1" x="0" y="5.08" visible="off" length="short" direction="pas" rot="R270"/>
+<pin name="2" x="-5.08" y="0" visible="off" length="short" direction="pas"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="JUMPER-SMT_3_NO" prefix="JP">
+<description>&lt;h3&gt;Normally open jumper&lt;/h3&gt;
+&lt;p&gt;This jumper has three pads in close proximity to each other. Apply solder to close the connection(s).&lt;/p&gt;</description>
+<gates>
+<gate name="G$1" symbol="SMT-JUMPER_3_NO" x="0" y="0"/>
+</gates>
+<devices>
+<device name="_NO-SILK" package="SMT-JUMPER_3_NO_NO-SILK">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+<connect gate="G$1" pin="3" pad="3"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+<device name="_SILK" package="SMT-JUMPER_3_NO_SILK">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+<connect gate="G$1" pin="3" pad="3"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -3339,12 +3441,13 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 </variantdefs>
 <classes>
 <class number="0" name="default" width="0" drill="0">
+<clearance class="0" value="0.205"/>
 </class>
 </classes>
 <parts>
 <part name="U1" library="SparkFun-Sensors" deviceset="MPU-6000" device="QFN-24"/>
 <part name="U$1" library="custom" deviceset="ADIS16448" device=""/>
-<part name="U$2" library="Teensy_3_and_LC_Series_Boards_v1.1" deviceset="TEENSY_3.1_DIL" device=""/>
+<part name="U$2" library="Teensy_3_and_LC_Series_Boards_v1.1" deviceset="TEENSY_3.1_DIL" device="" value="TEENSY_3.2"/>
 <part name="GND1" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND2" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="GND3" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
@@ -3359,7 +3462,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="C3" library="SparkFun-Capacitors" deviceset="CAP" device="0402-CAP" value="0.1uF"/>
 <part name="C4" library="SparkFun-Capacitors" deviceset="CAP" device="0402-CAP" value="2.2uF"/>
 <part name="C5" library="SparkFun-Capacitors" deviceset="CAP" device="0402-CAP" value="0.1uF"/>
-<part name="C6" library="SparkFun-Capacitors" deviceset="CAP" device="0402-CAP"/>
+<part name="C6" library="SparkFun-Capacitors" deviceset="CAP" device="0402-CAP" value="0.1uF"/>
 <part name="GND5" library="SparkFun-Aesthetics" deviceset="GND" device=""/>
 <part name="SUPPLY6" library="SparkFun-Aesthetics" deviceset="3.3V" device=""/>
 <part name="J1" library="SparkFun-Connectors" deviceset="M08" device=""/>
@@ -3370,6 +3473,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="R2" library="SparkFun-Resistors" deviceset="RESISTOR" device="0603" value="4.7k"/>
 <part name="SUPPLY4" library="SparkFun-Aesthetics" deviceset="3.3V" device=""/>
 <part name="SUPPLY7" library="SparkFun-Aesthetics" deviceset="3.3V" device=""/>
+<part name="JP2" library="SparkFun-Jumpers" deviceset="JUMPER-SMT_3_NO" device="_SILK"/>
 </parts>
 <sheets>
 <sheet>
@@ -3379,7 +3483,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <instance part="U1" gate="G$1" x="63.5" y="50.8"/>
 <instance part="U$1" gate="G$1" x="60.96" y="83.82"/>
 <instance part="U$2" gate="G$1" x="127" y="66.04"/>
-<instance part="GND1" gate="1" x="152.4" y="78.74"/>
+<instance part="GND1" gate="1" x="152.4" y="66.04"/>
 <instance part="GND2" gate="1" x="43.18" y="76.2"/>
 <instance part="GND3" gate="1" x="33.02" y="35.56"/>
 <instance part="SUPPLY1" gate="G$1" x="43.18" y="96.52"/>
@@ -3404,6 +3508,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <instance part="R2" gate="G$1" x="50.8" y="27.94" rot="R90"/>
 <instance part="SUPPLY4" gate="G$1" x="48.26" y="33.02"/>
 <instance part="SUPPLY7" gate="G$1" x="17.78" y="104.14"/>
+<instance part="JP2" gate="G$1" x="27.94" y="27.94" rot="R270"/>
 </instances>
 <busses>
 </busses>
@@ -3412,8 +3517,12 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <segment>
 <pinref part="U$2" gate="G$1" pin="GND"/>
 <wire x1="149.86" y1="83.82" x2="152.4" y2="83.82" width="0.1524" layer="91"/>
-<wire x1="152.4" y1="83.82" x2="152.4" y2="81.28" width="0.1524" layer="91"/>
+<wire x1="152.4" y1="83.82" x2="152.4" y2="71.12" width="0.1524" layer="91"/>
 <pinref part="GND1" gate="1" pin="GND"/>
+<pinref part="U$2" gate="G$1" pin="AGND"/>
+<wire x1="152.4" y1="71.12" x2="152.4" y2="68.58" width="0.1524" layer="91"/>
+<wire x1="149.86" y1="71.12" x2="152.4" y2="71.12" width="0.1524" layer="91"/>
+<junction x="152.4" y="71.12"/>
 </segment>
 <segment>
 <pinref part="U1" gate="G$1" pin="GND"/>
@@ -3679,6 +3788,11 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <wire x1="45.72" y1="86.36" x2="40.64" y2="86.36" width="0.1524" layer="91"/>
 <label x="40.64" y="86.36" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
+<segment>
+<pinref part="U$2" gate="G$1" pin="21/A7/PWM"/>
+<wire x1="104.14" y1="38.1" x2="101.6" y2="38.1" width="0.1524" layer="91"/>
+<label x="101.6" y="38.1" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
 </net>
 <net name="IMU1_DIO3" class="0">
 <segment>
@@ -3726,13 +3840,9 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <net name="C32_IO3" class="0">
 <segment>
 <pinref part="J3" gate="G$1" pin="4"/>
-<wire x1="15.24" y1="35.56" x2="20.32" y2="35.56" width="0.1524" layer="91"/>
-<label x="20.32" y="35.56" size="1.27" layer="95" xref="yes"/>
-</segment>
-<segment>
-<pinref part="U$2" gate="G$1" pin="7/RX3"/>
-<wire x1="104.14" y1="73.66" x2="101.6" y2="73.66" width="0.1524" layer="91"/>
-<label x="101.6" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="JP2" gate="G$1" pin="2"/>
+<wire x1="15.24" y1="35.56" x2="27.94" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="35.56" x2="27.94" y2="33.02" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="C32_IO2" class="0">
@@ -3817,6 +3927,25 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <pinref part="U$2" gate="G$1" pin="0/RX1/T"/>
 <wire x1="104.14" y1="91.44" x2="101.6" y2="91.44" width="0.1524" layer="91"/>
 <label x="101.6" y="91.44" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="JP2" gate="G$1" pin="1"/>
+<wire x1="33.02" y1="27.94" x2="35.56" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="35.56" y1="27.94" x2="35.56" y2="25.4" width="0.1524" layer="91"/>
+<label x="35.56" y="25.4" size="1.27" layer="95" rot="R270" xref="yes"/>
+</segment>
+</net>
+<net name="C32_IO3_T" class="0">
+<segment>
+<pinref part="JP2" gate="G$1" pin="3"/>
+<wire x1="22.86" y1="27.94" x2="20.32" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="20.32" y1="27.94" x2="20.32" y2="25.4" width="0.1524" layer="91"/>
+<label x="20.32" y="25.4" size="1.27" layer="95" rot="R270" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U$2" gate="G$1" pin="7/RX3"/>
+<wire x1="104.14" y1="73.66" x2="101.6" y2="73.66" width="0.1524" layer="91"/>
+<label x="101.6" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
