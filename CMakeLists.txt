@@ -21,6 +21,8 @@ endif (NOT CMAKE_BUILD_TYPE)
 set(REQ_CATKIN_PKGS   
   roscpp
   nodelet
+  sensor_msgs
+  image_transport
 )
 find_package(catkin REQUIRED COMPONENTS ${REQ_CATKIN_PKGS})
 

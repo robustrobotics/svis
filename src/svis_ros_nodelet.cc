@@ -1,3 +1,5 @@
+
+
 // Copyright 2016 Massachusetts Institute of Technology
 
 #include <stdio.h>
@@ -8,6 +10,10 @@
 
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <image_transport/image_transport.h>
+#include <image_transport/camera_subscriber.h>
 #include <pluginlib/class_list_macros.h>
 
 extern "C" {
@@ -48,6 +54,18 @@ class SVISNodelet : public nodelet::Nodelet {
     // Grab a handle to the parent node.
     ros::NodeHandle nh;
     ros::NodeHandle pnh("~");
+
+    // image transport
+    image_transport::ImageTransport it(nh);
+    
+    // subscribers
+    NODELET_INFO("check0");
+    image_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::ImageCallback, this);
+
+    // publishers
+    NODELET_INFO("check1");
+    // image_pub_ = it.advertiseCamera("~/debug_image", 1, false);
+    NODELET_INFO("check2");
 
     Run();
 
@@ -246,6 +264,41 @@ class SVISNodelet : public nodelet::Nodelet {
     }
     printf("\n");
   }
+
+  void PrintImageQuadlet(std::string name, const sensor_msgs::Image::ConstPtr& msg, int i) {
+    printf("%s: ", name.c_str());
+    printf("%02X ", msg->data[i]);
+    printf("%02X ", msg->data[i + 1]);
+    printf("%02X ", msg->data[i + 2]);
+    printf("%02X ", msg->data[i + 3]);
+    printf("\n");
+  }
+
+  void ImageCallback(const sensor_msgs::Image::ConstPtr& msg, const sensor_msgs::CameraInfo::ConstPtr& info) {
+    // NODELET_INFO("%s", msg->encoding.c_str());
+    // NODELET_INFO("%i", msg->step);
+    PrintImageQuadlet("timestamp", msg, 0);
+    PrintImageQuadlet("gain", msg, 4);
+    PrintImageQuadlet("shutter", msg, 8);
+    PrintImageQuadlet("brightness", msg, 12);
+    PrintImageQuadlet("exposure", msg, 16);
+    PrintImageQuadlet("white balance", msg, 20);
+    PrintImageQuadlet("frame counter", msg, 24);
+    PrintImageQuadlet("roi", msg, 28);
+    printf("\n\n");
+
+    // sensor_msgs::Image img = *msg;
+
+    // for (int i = 0; i < 40; i++) {
+    //   img.data[i] = 0;
+    // }
+
+    // image_pub_.publish(img);
+  }
+
+  // image transport
+  image_transport::CameraSubscriber image_sub_;  
+  image_transport::CameraPublisher image_pub_;
   
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
