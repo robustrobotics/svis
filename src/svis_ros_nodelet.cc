@@ -275,8 +275,11 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void ImageCallback(const sensor_msgs::Image::ConstPtr& msg, const sensor_msgs::CameraInfo::ConstPtr& info) {
-    // NODELET_INFO("%s", msg->encoding.c_str());
-    // NODELET_INFO("%i", msg->step);
+    NODELET_INFO("encoding: %s", msg->encoding.c_str());
+    NODELET_INFO("step: %i", msg->step);
+    NODELET_INFO("width: %i", msg->width);
+    NODELET_INFO("height: %i", msg->height);
+    NODELET_INFO("is_bigendian: %i", msg->is_bigendian);
     PrintImageQuadlet("timestamp", msg, 0);
     PrintImageQuadlet("gain", msg, 4);
     PrintImageQuadlet("shutter", msg, 8);
