@@ -71,6 +71,8 @@ class SVISNodelet : public nodelet::Nodelet {
     imu_filter_size_ = 5;
     strobe_buffer_.set_capacity(10);
     image_buffer_.set_capacity(10);
+    init_flag_ = true;
+    time_offset_ = 0;
 
     Run();
 
@@ -96,16 +98,14 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // loop
     std::vector<char> buf(64);
-    ros::Time t_now;
-    ros::Time t_last;
     while (ros::ok()) {
       // check if any Raw HID packet has arrived
       int num = rawhid_recv(0, buf.data(), buf.size(), 220);
 
       // timing
-      t_now = ros::Time::now();
+      t_now_ = ros::Time::now();
       // NODELET_INFO("(svis_ros) [n: %i, dt: %f]", num, (t_now - t_last).toSec());
-      t_last = t_now;
+      t_last_ = t_now_;
 
       // check byte count
       if (num < 0) {
@@ -152,18 +152,24 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
  private:
-  struct header_packet {
+  class HeaderPacket {
+   public:
+    ros::Time ros_timestamp;
     uint16_t send_count;
     uint8_t imu_count;
     uint8_t strobe_count;
   };
 
-  struct strobe_packet {
+  class StrobePacket {
+   public:
+    ros::Time ros_timestamp;
     uint32_t timestamp;  // microseconds since teensy bootup
     uint8_t count;  // number of camera images
   };
 
-  struct imu_packet {
+  class ImuPacket {
+   public:
+    ros::Time ros_timestamp;
     uint32_t timestamp;  // microseconds since teensy bootup
     int16_t acc[3];  // units?
     int16_t gyro[3];  // units?
@@ -439,6 +445,8 @@ class SVISNodelet : public nodelet::Nodelet {
   boost::circular_buffer<strobe_packet> strobe_buffer_;
   boost::circular_buffer<ImagePacket> image_buffer_;
   std::vector<CameraPacket> camera_packets_;
+  int time_offset_;
+  bool init_flag_;
 
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
@@ -459,8 +467,8 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // debug
   bool print_buffer_ = false;
-  ros::Time t_now;
-  ros::Time t_last;
+  ros::Time t_now_;
+  ros::Time t_last_;
 };
 
 }  // namespace svis_ros
