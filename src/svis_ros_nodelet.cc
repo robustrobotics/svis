@@ -20,7 +20,7 @@
 #include <pluginlib/class_list_macros.h>
 
 extern "C" {
-#include "hid.h"
+#include "hid/hid.h"
 }
 
 namespace svis_ros {
