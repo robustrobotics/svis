@@ -1,5 +1,3 @@
-
-
 // Copyright 2016 Massachusetts Institute of Technology
 
 #include <stdio.h>
@@ -69,8 +67,10 @@ class SVISNodelet : public nodelet::Nodelet {
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
 
     // initialize variables
-    imu_buffer_.set_capacity(imu_buffer_size);
+    imu_buffer_.set_capacity(10);
     imu_filter_size_ = 5;
+    strobe_buffer_.set_capacity(10);
+    image_buffer_.set_capacity(10);
 
     Run();
 
@@ -124,7 +124,7 @@ class SVISNodelet : public nodelet::Nodelet {
         }
 
         // checksum
-        if(GetChecksum(buf)) {
+        if (GetChecksum(buf)) {
           return;
         }
 
@@ -132,21 +132,19 @@ class SVISNodelet : public nodelet::Nodelet {
         header_packet header;
         GetHeader(buf, header);
 
-        // imu
-        std::vector<imu_packet> imu_packets(header.imu_count);
-        GetIMU(buf, header, imu_packets);
-        PushIMU(imu_packets);
+        // get data
+        GetIMU(buf, header);
+        GetStrobe(buf, header);
 
-        std::vector<imu_packet> imu_packets_filt;
-        FilterIMU(imu_packets_filt, imu_packets_filt);
-        PublishIMU(imu_packets_filt);
+        // filter imu
+        FilterIMU();
 
-        // strobe
-        std::vector<strobe_packet> strobe_packets(header.strobe_count);
-        GetStrobe(buf, header, strobe_packets);
+        // associate strobe and camera
+        AssociateStrobe();
 
-        // new line
-        // printf("\n");
+        // publish
+        PublishIMU();
+        PublishCamera();
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -169,6 +167,27 @@ class SVISNodelet : public nodelet::Nodelet {
     uint32_t timestamp;  // microseconds since teensy bootup
     int16_t acc[3];  // units?
     int16_t gyro[3];  // units?
+  };
+
+  class ImagePacket {
+   public:
+    double timestamp;
+    double gain;
+    double shutter;
+    double brightness;
+    double exposure;
+    double frame_counter;
+    double strobe_pattern;
+    double gpio_state;
+    double roi_position;
+    sensor_msgs::CameraInfo::ConstPtr info;
+    sensor_msgs::Image::ConstPtr image;
+  };
+
+  class CameraPacket {
+   public:
+    ImagePacket image;
+    strobe_packet strobe;
   };
 
   int GetChecksum(std::vector<char> &buf) {
@@ -194,7 +213,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void GetHeader(std::vector<char> &buf, header_packet &header) {
     int ind = 0;
-    
+
     // send_count
     memcpy(&header.send_count, &buf[ind], sizeof(header.send_count));
     // NODELET_INFO("(svis_ros) send_count: [%i, %i]", ind, header.send_count);
@@ -211,12 +230,7 @@ class SVISNodelet : public nodelet::Nodelet {
     ind += sizeof(header.strobe_count);
   }
 
-  void GetIMU(std::vector<char> &buf, header_packet &header, std::vector<imu_packet> &imu_packets) {
-    t_now = ros::Time::now();
-    double dt = (t_now - t_last).toSec();
-    t_last = t_now;
-    // ROS_INFO("dt: %0.6f", dt);
-
+  void GetIMU(std::vector<char> &buf, header_packet &header) {
     for (int i = 0; i < header.imu_count; i++) {
       imu_packet imu;
       int ind = imu_index[i];
@@ -247,15 +261,15 @@ class SVISNodelet : public nodelet::Nodelet {
       // NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
       // save packet
-      imu_packets[i] = imu;
+      imu_buffer_.push_back(imu);
     }
   }
 
-  void GetStrobe(std::vector<char> &buf, header_packet &header, std::vector<strobe_packet> &strobe_packets) {
+  void GetStrobe(std::vector<char> &buf, header_packet &header) {
     for (int i = 0; i < header.strobe_count; i++) {
       strobe_packet strobe;
       int ind = strobe_index[i];
-      
+
       // timestamp
       memcpy(&strobe.timestamp, &buf[ind], sizeof(strobe.timestamp));
       // NODELET_INFO("(svis_ros) strobe.timestamp: [%i, %i]", ind, strobe.timestamp);
@@ -267,21 +281,13 @@ class SVISNodelet : public nodelet::Nodelet {
       ind += strobe.count;
 
       // save packet
-      strobe_packets[i] = strobe;
+      strobe_buffer_.push_back(strobe);
     }
   }
 
-  void PushIMU(std::vector<imu_packet> &imu_packets) {
-    // insert imu packets into circular buffer
-    for (int i = 0; i < imu_packets.size(); i++) {
-      imu_buffer_.push_back(imu_packets[i]);
-    }
-  }
-
-  void FilterIMU(std::vector<imu_packet> &imu_packets, std::vector<imu_packet> &imu_packets_filt) {
+  void FilterIMU() {
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
-
       // sum
       double timestamp_total = 0.0;
       double acc_total[3] = {0.0};
@@ -304,16 +310,16 @@ class SVISNodelet : public nodelet::Nodelet {
         temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_filter_size_));
         temp_packet.gyro[j] = static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
       }
-      imu_packets_filt.push_back(temp_packet);
+      imu_packets_filt_.push_back(temp_packet);
     }
   }
 
-  void PublishIMU(std::vector<imu_packet> &imu_packets_filt) {
+  void PublishIMU() {
     imu_packet temp_packet;
     sensor_msgs::Imu imu;
 
-    for (int i = 0; i < imu_packets_filt.size(); i++) {
-      temp_packet = imu_packets_filt[i];
+    for (int i = 0; i < imu_packets_filt_.size(); i++) {
+      temp_packet = imu_packets_filt_[i];
 
       imu.header.stamp = ros::Time(temp_packet.timestamp);
       imu.header.frame_id = "body";
@@ -352,6 +358,9 @@ class SVISNodelet : public nodelet::Nodelet {
       // publish
       imu_pub_.publish(imu);
     }
+
+    // clear buffer
+    imu_packets_filt_.clear();
   }
 
   void PrintBuffer(std::vector<char> &buf) {
@@ -388,18 +397,30 @@ class SVISNodelet : public nodelet::Nodelet {
     printf("\n\n");
   }
 
-  void ImageCallback(const sensor_msgs::Image::ConstPtr& msg, const sensor_msgs::CameraInfo::ConstPtr& info) {
+  void ImageCallback(const sensor_msgs::Image::ConstPtr& image_msg, const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
     // PrintMetaDataRaw(msg);
 
-    uint32_t timestamp;
-    // memcpy(&checksum_orig, &buf[checksum_index], sizeof(checksum_orig));
-    // sensor_msgs::Image img = *msg;
+    // store image
+    ImagePacket image_packet;
+    image_packet.image = image_msg;
+    image_packet.info = info_msg;
+    image_buffer_.push_back(image_packet);
+  }
 
-    // for (int i = 0; i < 40; i++) {
-    //   img.data[i] = 0;
-    // }
+  void AssociateStrobe() {
 
-    // image_pub_.publish(img);
+  }
+
+  void PublishCamera() {
+    for (int i = 0; i < camera_packets_.size(); i++) {
+      // publish info message
+      sensor_msgs::CameraInfo info_msg;
+
+      // publish image message
+      sensor_msgs::Image image_msg;
+    }
+
+    camera_packets_.clear();
   }
 
   // publishers
@@ -409,10 +430,16 @@ class SVISNodelet : public nodelet::Nodelet {
   // subscribers
   image_transport::CameraSubscriber image_sub_;
 
-  // imu buffer
+  // imu
   boost::circular_buffer<imu_packet> imu_buffer_;
   int imu_filter_size_;
-  
+  std::vector<imu_packet> imu_packets_filt_;
+
+  // camera
+  boost::circular_buffer<strobe_packet> strobe_buffer_;
+  boost::circular_buffer<ImagePacket> image_buffer_;
+  std::vector<CameraPacket> camera_packets_;
+
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
   const int imu_buffer_size = 10;  // store 10 samples (imu_stamp, imu_data) in circular buffers
