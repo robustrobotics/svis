@@ -40,7 +40,7 @@ class SVISNodelet : public nodelet::Nodelet {
   SVISNodelet() = default;
 
   ~SVISNodelet() = default;
-  
+
   SVISNodelet(const SVISNodelet& rhs) = delete;
   SVISNodelet& operator=(const SVISNodelet& rhs) = delete;
 
@@ -60,7 +60,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // image transport
     image_transport::ImageTransport it(nh);
-    
+
     // subscribers
     image_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::ImageCallback, this);
 
@@ -127,7 +127,7 @@ class SVISNodelet : public nodelet::Nodelet {
         if(GetChecksum(buf)) {
           return;
         }
-        
+
         // header
         header_packet header;
         GetHeader(buf, header);
@@ -150,7 +150,6 @@ class SVISNodelet : public nodelet::Nodelet {
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
-      
     }
   }
 
@@ -282,7 +281,7 @@ class SVISNodelet : public nodelet::Nodelet {
   void FilterIMU(std::vector<imu_packet> &imu_packets, std::vector<imu_packet> &imu_packets_filt) {
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
-      
+
       // sum
       double timestamp_total = 0.0;
       double acc_total[3] = {0.0};
@@ -291,7 +290,7 @@ class SVISNodelet : public nodelet::Nodelet {
       for (int i = 0; i < imu_filter_size_; i++) {
         temp_packet = imu_buffer_[0];
         imu_buffer_.pop_front();
-        
+
         timestamp_total += static_cast<double>(temp_packet.timestamp);
         for (int j = 0; j < 3; j++) {
           acc_total[j] += static_cast<double>(temp_packet.acc[j]);
@@ -312,7 +311,7 @@ class SVISNodelet : public nodelet::Nodelet {
   void PublishIMU(std::vector<imu_packet> &imu_packets_filt) {
     imu_packet temp_packet;
     sensor_msgs::Imu imu;
-    
+
     for (int i = 0; i < imu_packets_filt.size(); i++) {
       temp_packet = imu_packets_filt[i];
 
