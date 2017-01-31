@@ -8,6 +8,8 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
+#include <boost/circular_buffer.hpp>
+
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <sensor_msgs/Image.h>
@@ -65,6 +67,10 @@ class SVISNodelet : public nodelet::Nodelet {
     // publishers
     image_pub_ = it.advertiseCamera("/flea3/image_raw_sync", 1);
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
+
+    // initialize variables
+    imu_buffer_.set_capacity(imu_buffer_size);
+    imu_filter_size_ = 5;
 
     Run();
 
@@ -129,10 +135,11 @@ class SVISNodelet : public nodelet::Nodelet {
         // imu
         std::vector<imu_packet> imu_packets(header.imu_count);
         GetIMU(buf, header, imu_packets);
-        imu_packet imu_packet_filt;
-        if (PushIMU(imu_packets, imu_packet_filt)) {
-          PublishIMU(imu_packet_filt);
-        }
+        PushIMU(imu_packets);
+
+        std::vector<imu_packet> imu_packets_filt;
+        FilterIMU(imu_packets_filt, imu_packets_filt);
+        PublishIMU(imu_packets_filt);
 
         // strobe
         std::vector<strobe_packet> strobe_packets(header.strobe_count);
@@ -265,83 +272,87 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  int PushIMU(std::vector<imu_packet> &imu_packets, imu_packet &imu_packet_filt) {
+  void PushIMU(std::vector<imu_packet> &imu_packets) {
     // insert imu packets into circular buffer
     for (int i = 0; i < imu_packets.size(); i++) {
-      imu_buffer.push_back(imu_packets[i]);
-
-      if (imu_buffer.size() >= 20) {
-        FilterIMU(imu_packet_filt);
-        return 1;
-      }
+      imu_buffer_.push_back(imu_packets[i]);
     }
-
-    return 0;
   }
 
-  void FilterIMU(imu_packet &imu_packet_filt) {
-    // sum
-    double timestamp_total = 0.0;
-    double acc_total[3] = {0.0};
-    double gyro_total[3] = {0.0};
-    for (int i = 0; i < imu_buffer.size(); i++) {
-      timestamp_total += static_cast<double>(imu_buffer[i].timestamp);
+  void FilterIMU(std::vector<imu_packet> &imu_packets, std::vector<imu_packet> &imu_packets_filt) {
+    // create filter packets
+    while (imu_buffer_.size() >= imu_filter_size_) {
+      
+      // sum
+      double timestamp_total = 0.0;
+      double acc_total[3] = {0.0};
+      double gyro_total[3] = {0.0};
+      imu_packet temp_packet;
+      for (int i = 0; i < imu_filter_size_; i++) {
+        temp_packet = imu_buffer_[0];
+        imu_buffer_.pop_front();
+        
+        timestamp_total += static_cast<double>(temp_packet.timestamp);
+        for (int j = 0; j < 3; j++) {
+          acc_total[j] += static_cast<double>(temp_packet.acc[j]);
+          gyro_total[j] += static_cast<double>(temp_packet.gyro[j]);
+        }
+      }
+
+      // calculate average
+      temp_packet.timestamp = static_cast<int>(timestamp_total / static_cast<double>(imu_filter_size_));
       for (int j = 0; j < 3; j++) {
-        acc_total[j] += static_cast<double>(imu_buffer[i].acc[j]);
-        gyro_total[j] += static_cast<double>(imu_buffer[i].gyro[j]);
+        temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_filter_size_));
+        temp_packet.gyro[j] = static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
       }
+      imu_packets_filt.push_back(temp_packet);
     }
-
-    // calculate average
-    imu_packet_filt.timestamp = static_cast<int>(timestamp_total / static_cast<double>(imu_buffer.size()));
-    for (int j = 0; j < 3; j++) {
-      imu_packet_filt.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_buffer.size()));
-      imu_packet_filt.gyro[j] = static_cast<int>(gyro_total[j] / static_cast<double>(imu_buffer.size()));
-    }
-
-    // clear imu buffer
-    imu_buffer.clear();
   }
 
-  void PublishIMU(imu_packet &imu_packet_filt) {
+  void PublishIMU(std::vector<imu_packet> &imu_packets_filt) {
+    imu_packet temp_packet;
     sensor_msgs::Imu imu;
+    
+    for (int i = 0; i < imu_packets_filt.size(); i++) {
+      temp_packet = imu_packets_filt[i];
 
-    imu.header.stamp = ros::Time(imu_packet_filt.timestamp);
-    imu.header.frame_id = "body";
+      imu.header.stamp = ros::Time(temp_packet.timestamp);
+      imu.header.frame_id = "body";
 
-    // orientation
-    imu.orientation.x = std::numeric_limits<double>::quiet_NaN();
-    imu.orientation.y = std::numeric_limits<double>::quiet_NaN();
-    imu.orientation.z = std::numeric_limits<double>::quiet_NaN();
-    imu.orientation.w = std::numeric_limits<double>::quiet_NaN();
+      // orientation
+      imu.orientation.x = std::numeric_limits<double>::quiet_NaN();
+      imu.orientation.y = std::numeric_limits<double>::quiet_NaN();
+      imu.orientation.z = std::numeric_limits<double>::quiet_NaN();
+      imu.orientation.w = std::numeric_limits<double>::quiet_NaN();
 
-    // orientation covariance
-    for (int i = 0; i < 9; i++) {
-      imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
+      // orientation covariance
+      for (int i = 0; i < 9; i++) {
+        imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
+      }
+
+      // angular velocity
+      imu.angular_velocity.x = temp_packet.gyro[0];
+      imu.angular_velocity.y = temp_packet.gyro[1];
+      imu.angular_velocity.z = temp_packet.gyro[2];
+
+      // angular velocity covariance
+      for (int i = 0; i < 9; i++) {
+        imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
+      }
+
+      // linear acceleration
+      imu.linear_acceleration.x = temp_packet.acc[0];
+      imu.linear_acceleration.y = temp_packet.acc[1];
+      imu.linear_acceleration.z = temp_packet.acc[2];
+
+      // acceleration covariance
+      for (int i = 0; i < 9; i++) {
+        imu.linear_acceleration_covariance[i] = std::numeric_limits<double>::quiet_NaN();
+      }
+
+      // publish
+      imu_pub_.publish(imu);
     }
-
-    // angular velocity
-    imu.angular_velocity.x = imu_packet_filt.gyro[0];
-    imu.angular_velocity.y = imu_packet_filt.gyro[1];
-    imu.angular_velocity.z = imu_packet_filt.gyro[2];
-
-    // angular velocity covariance
-    for (int i = 0; i < 9; i++) {
-      imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
-    }
-
-    // linear acceleration
-    imu.linear_acceleration.x = imu_packet_filt.acc[0];
-    imu.linear_acceleration.y = imu_packet_filt.acc[1];
-    imu.linear_acceleration.z = imu_packet_filt.acc[2];
-
-    // acceleration covariance
-    for (int i = 0; i < 9; i++) {
-      imu.linear_acceleration_covariance[i] = std::numeric_limits<double>::quiet_NaN();
-    }
-
-    // publish
-    imu_pub_.publish(imu);
   }
 
   void PrintBuffer(std::vector<char> &buf) {
@@ -400,9 +411,8 @@ class SVISNodelet : public nodelet::Nodelet {
   image_transport::CameraSubscriber image_sub_;
 
   // imu buffer
-  int imu_buffer_head = 0;
-  int imu_buffer_tail = 0;
-  std::vector<imu_packet> imu_buffer;
+  boost::circular_buffer<imu_packet> imu_buffer_;
+  int imu_filter_size_;
   
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
