@@ -215,7 +215,7 @@ class SVISNodelet : public nodelet::Nodelet {
     t_now = ros::Time::now();
     double dt = (t_now - t_last).toSec();
     t_last = t_now;
-    ROS_INFO("dt: %0.6f", dt);
+    // ROS_INFO("dt: %0.6f", dt);
 
     for (int i = 0; i < header.imu_count; i++) {
       imu_packet imu;
