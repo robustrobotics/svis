@@ -129,7 +129,7 @@ class SVISNodelet : public nodelet::Nodelet {
         }
 
         // header
-        header_packet header;
+        HeaderPacket header;
         GetHeader(buf, header);
 
         // get data
@@ -193,7 +193,7 @@ class SVISNodelet : public nodelet::Nodelet {
   class CameraPacket {
    public:
     ImagePacket image;
-    strobe_packet strobe;
+    StrobePacket strobe;
   };
 
   int GetChecksum(std::vector<char> &buf) {
@@ -217,7 +217,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void GetHeader(std::vector<char> &buf, header_packet &header) {
+  void GetHeader(std::vector<char> &buf, HeaderPacket &header) {
     int ind = 0;
 
     // send_count
@@ -236,9 +236,9 @@ class SVISNodelet : public nodelet::Nodelet {
     ind += sizeof(header.strobe_count);
   }
 
-  void GetIMU(std::vector<char> &buf, header_packet &header) {
+  void GetIMU(std::vector<char> &buf, HeaderPacket &header) {
     for (int i = 0; i < header.imu_count; i++) {
-      imu_packet imu;
+      ImuPacket imu;
       int ind = imu_index[i];
 
       // timestamp
@@ -271,9 +271,9 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void GetStrobe(std::vector<char> &buf, header_packet &header) {
+  void GetStrobe(std::vector<char> &buf, HeaderPacket &header) {
     for (int i = 0; i < header.strobe_count; i++) {
-      strobe_packet strobe;
+      StrobePacket strobe;
       int ind = strobe_index[i];
 
       // timestamp
@@ -298,7 +298,7 @@ class SVISNodelet : public nodelet::Nodelet {
       double timestamp_total = 0.0;
       double acc_total[3] = {0.0};
       double gyro_total[3] = {0.0};
-      imu_packet temp_packet;
+      ImuPacket temp_packet;
       for (int i = 0; i < imu_filter_size_; i++) {
         temp_packet = imu_buffer_[0];
         imu_buffer_.pop_front();
@@ -321,7 +321,7 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void PublishIMU() {
-    imu_packet temp_packet;
+    ImuPacket temp_packet;
     sensor_msgs::Imu imu;
 
     for (int i = 0; i < imu_packets_filt_.size(); i++) {
@@ -437,12 +437,12 @@ class SVISNodelet : public nodelet::Nodelet {
   image_transport::CameraSubscriber image_sub_;
 
   // imu
-  boost::circular_buffer<imu_packet> imu_buffer_;
+  boost::circular_buffer<ImuPacket> imu_buffer_;
   int imu_filter_size_;
-  std::vector<imu_packet> imu_packets_filt_;
+  std::vector<ImuPacket> imu_packets_filt_;
 
   // camera
-  boost::circular_buffer<strobe_packet> strobe_buffer_;
+  boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<ImagePacket> image_buffer_;
   std::vector<CameraPacket> camera_packets_;
   int time_offset_;
