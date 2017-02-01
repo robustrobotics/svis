@@ -136,6 +136,11 @@ class SVISNodelet : public nodelet::Nodelet {
         GetIMU(buf, header);
         GetStrobe(buf, header);
 
+        if (init_flag_) {
+          GetOffset();
+          continue;
+        }
+
         // filter imu
         FilterIMU();
 
@@ -217,8 +222,26 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
+  void GetOffset() {
+    if (init_flag_) {
+      if(init_count_++ >= 1000) {
+        time_offset_ = time_offset_ / init_count_;
+        init_flag_ = false;
+      } else {
+        while (strobe_buffer_.size() > 0) {
+          StrobePacket strobe = strobe_buffer_[0];
+          strobe_buffer_.pop_front();
+          time_offset_ += (strobe.ros_timestamp.toSec() - strobe.timestamp);
+        }
+      }      
+    }
+  }
+
   void GetHeader(std::vector<char> &buf, HeaderPacket &header) {
     int ind = 0;
+
+    // ros time
+    header.ros_timestamp = ros::Time::now();
 
     // send_count
     memcpy(&header.send_count, &buf[ind], sizeof(header.send_count));
@@ -241,6 +264,9 @@ class SVISNodelet : public nodelet::Nodelet {
       ImuPacket imu;
       int ind = imu_index[i];
 
+      // ros time
+      imu.ros_timestamp = header.ros_timestamp;
+      
       // timestamp
       memcpy(&imu.timestamp, &buf[ind], sizeof(imu.timestamp));
       // NODELET_INFO("(svis_ros) imu.timestamp: [%i, %i]", ind, imu.timestamp);
@@ -276,6 +302,9 @@ class SVISNodelet : public nodelet::Nodelet {
       StrobePacket strobe;
       int ind = strobe_index[i];
 
+      // ros time
+      strobe.ros_timestamp = header.ros_timestamp;
+      
       // timestamp
       memcpy(&strobe.timestamp, &buf[ind], sizeof(strobe.timestamp));
       // NODELET_INFO("(svis_ros) strobe.timestamp: [%i, %i]", ind, strobe.timestamp);
@@ -445,8 +474,11 @@ class SVISNodelet : public nodelet::Nodelet {
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<ImagePacket> image_buffer_;
   std::vector<CameraPacket> camera_packets_;
-  int time_offset_;
+  double time_offset_;
+  int init_count_;
   bool init_flag_;
+  ros::Time init_start_;
+  ros::Time init_stop_;
 
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
