@@ -117,7 +117,7 @@ class SVISNodelet : public nodelet::Nodelet {
         rawhid_close(0);
         return;
       } else if (num == 0) {
-        NODELET_INFO("(svis_ros) 0");
+        NODELET_INFO("(svis_ros) 0 bytes received");
       } else if (num > 0) {
         // resize vector
         buf.resize(num);
@@ -245,7 +245,7 @@ class SVISNodelet : public nodelet::Nodelet {
           time_offset_vec_.pop_front();
         }
         NODELET_INFO("filtered time_offset_vec.size(): %lu", time_offset_vec_.size());
-        
+
         // sum time offsets
         double sum = 0.0;
         for (int i = 0; i < time_offset_vec_.size(); i++) {
@@ -496,7 +496,7 @@ class SVISNodelet : public nodelet::Nodelet {
     frame_counter |= (0xFF & image_msg->data[25]) << 16;
     frame_counter |= (0xFF & image_msg->data[24]) << 24;
     NODELET_INFO("frame_counter: %u", frame_counter);
-    
+
     // store image
     CameraPacket camera_packet;
     camera_packet.image = image_msg;
