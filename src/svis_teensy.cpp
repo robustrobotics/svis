@@ -191,7 +191,7 @@ void ReadStrobe() {
 
   // strobe count
   strobe_count_buffer[strobe_buffer_head] = strobe_count;
-  strobe_count = (strobe_count + 1)%128;  // roll over at 128 like flea3
+  strobe_count = (strobe_count + 1);
 
   // set counts and flags
   strobe_buffer_head = (strobe_buffer_head + 1)%strobe_buffer_size;
