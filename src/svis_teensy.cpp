@@ -264,7 +264,7 @@ void InitInterrupts() {
 
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
-  attachInterrupt(7, ReadStrobe, RISING);  // attach pin 7 to interrupt
+  attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // attach pin 7 to interrupt
 }
 
 void Blink() {
