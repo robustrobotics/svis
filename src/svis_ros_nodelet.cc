@@ -17,6 +17,9 @@
 #include <image_transport/camera_subscriber.h>
 #include <pluginlib/class_list_macros.h>
 
+#include <svis_ros/SvisImu.h>
+#include <svis_ros/SvisStrobe.h>
+
 extern "C" {
 #include "hid/hid.h"
 }

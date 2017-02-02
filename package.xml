@@ -11,8 +11,10 @@
 
   <depend>roscpp</depend>
   <depend>nodelet</depend>
-  <depend>sensor_msgs</depend>
   <depend>image_transport</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>message_generation</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
