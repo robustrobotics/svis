@@ -205,16 +205,23 @@ class SVISNodelet : public nodelet::Nodelet {
     int16_t gyro[3];  // units?
   };
 
-  class CameraPacket {
+  class ImageMetadata {
    public:
+    uint32_t timestamp;
     uint32_t gain;
     uint32_t shutter;
     uint32_t brightness;
     uint32_t exposure;
+    uint32_t white_balance;
     uint32_t frame_counter;
     uint32_t strobe_pattern;
     uint32_t gpio_state;
     uint32_t roi_position;
+  };
+
+  class CameraPacket {
+   public:
+    ImageMetadata metadata;
     sensor_msgs::CameraInfo::ConstPtr info;
     sensor_msgs::Image::ConstPtr image;
   };
@@ -515,19 +522,57 @@ class SVISNodelet : public nodelet::Nodelet {
     printf("\n\n");
   }
 
-  void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
-                     const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
-    // PrintMetaDataRaw(image_msg);
+  void GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
+                        CameraPacket &camera_packet) {
+    // timestamp
+    memcpy(&camera_packet.metadata.timestamp, &image_msg->data[0],
+           sizeof(camera_packet.metadata.timestamp));
+
+    // gain
+    memcpy(&camera_packet.metadata.gain, &image_msg->data[4],
+           sizeof(camera_packet.metadata.gain));
+
+    // shutter
+    memcpy(&camera_packet.metadata.shutter, &image_msg->data[8],
+           sizeof(camera_packet.metadata.shutter));
+
+    // brightness
+    memcpy(&camera_packet.metadata.brightness, &image_msg->data[12],
+           sizeof(camera_packet.metadata.brightness));
+
+    // exposure
+    memcpy(&camera_packet.metadata.exposure, &image_msg->data[16],
+           sizeof(camera_packet.metadata.exposure));
+
+    // white balance
+    memcpy(&camera_packet.metadata.white_balance, &image_msg->data[20],
+           sizeof(camera_packet.metadata.white_balance));
+
+    // frame counter
     uint32_t frame_counter = 0xFF & image_msg->data[27];
     frame_counter |= (0xFF & image_msg->data[26]) << 8;
     frame_counter |= (0xFF & image_msg->data[25]) << 16;
     frame_counter |= (0xFF & image_msg->data[24]) << 24;
-    NODELET_INFO("frame_counter: %u", frame_counter);
+    camera_packet.metadata.frame_counter = frame_counter;
 
-    // store image
+    // region of interest
+    memcpy(&camera_packet.metadata.roi_position, &image_msg->data[28],
+           sizeof(camera_packet.metadata.roi_position));
+  }
+
+  void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
+                     const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
+    // PrintMetaDataRaw(image_msg);
     CameraPacket camera_packet;
+
+    // metadata
+    GetImageMetadata(image_msg, camera_packet);
+
+    // image and info
     camera_packet.image = image_msg;
     camera_packet.info = info_msg;
+
+    // add to buffer
     camera_buffer_.push_back(camera_packet);
   }
 
