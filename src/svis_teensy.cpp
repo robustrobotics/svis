@@ -5,6 +5,7 @@
 
 // hardware
 #define LED_PIN 13  // pin for on-board led
+#define STROBE_PIN 7  // pin for camera strobe
 
 /* packet structure
 [0-1]: send_count
@@ -253,6 +254,7 @@ void InitComms() {
 void InitGPIO() {
   // configure onboard LED
   pinMode(LED_PIN, OUTPUT);
+  // pinMode(STROBE_PIN, INPUT_PULLUP);  // internal pullup is not strong enough
 }
 
 void InitInterrupts() {
