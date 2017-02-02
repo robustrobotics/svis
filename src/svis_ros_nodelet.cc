@@ -145,6 +145,10 @@ class SVISNodelet : public nodelet::Nodelet {
           continue;
         }
 
+        // publish raw data
+        PublishIMURaw();
+        PublishStrobeRaw();
+
         // filter imu
         FilterIMU();
 
@@ -545,6 +549,14 @@ class SVISNodelet : public nodelet::Nodelet {
     }
 
     camera_strobe_packets_.clear();
+  }
+
+  void PublishIMURaw() {
+    // not yet implemented
+  }
+
+  void PublishStrobeRaw() {
+    // not yet implemented
   }
 
   // publishers
