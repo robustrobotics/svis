@@ -145,6 +145,7 @@ class SVISNodelet : public nodelet::Nodelet {
         // get strobe
         std::vector<StrobePacket> strobe_packets;
         GetStrobe(buf, header, strobe_packets);
+        GetStrobeTotal(strobe_packets);
 
         // publish raw data
         PublishImuRaw(imu_packets);
@@ -193,6 +194,7 @@ class SVISNodelet : public nodelet::Nodelet {
     uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
     double timestamp_teensy;  // [seconds] timestamp in teensy epoch
     uint8_t count;  // number of camera images
+    uint64_t count_total;  // total number of camera messages thus far
   };
 
   class ImuPacket {
@@ -576,16 +578,20 @@ class SVISNodelet : public nodelet::Nodelet {
     camera_buffer_.push_back(camera_packet);
   }
 
-  void AssociateStrobe() {
+  void GetStrobeTotal(std::vector<strobe_packet> &strobe_packets) {
     StrobePacket strobe;
-    while (!strobe_buffer_.empty()) {
-      NODELET_INFO("strobe_count: %u", strobe_count_);
-      strobe = strobe_buffer_[0];
-      strobe_buffer_.pop_front();
+    for (int i = 0; i <strobe_packets.size(); i++) {
+      // NODELET_INFO("strobe_count: %u", strobe_count_);
+      strobe = strobe_packets[i];
 
-      // check for rollover
+      // pass if strobe total has been set already
+      if (strobe.count_total == 0) {
+        continue;
+      }
+
       if (strobe.count > strobe_count_raw_last_) {
-        unsigned int diff = strobe.count - strobe_count_raw_last_;
+        // no rollover
+        uint8_t diff = strobe.count - strobe_count_raw_last_;
 
         // check for jump
         if (diff > 1 && !std::isinf(strobe_count_raw_last_)) {
@@ -594,7 +600,8 @@ class SVISNodelet : public nodelet::Nodelet {
 
         strobe_count_ += diff;
       } else if (strobe.count < strobe_count_raw_last_) {
-        unsigned int diff = (strobe_count_raw_last_ + strobe.count) % 127;
+        // rollover
+        uint8_t diff = strobe_count_raw_last_ + strobe.count;
 
         // check for jump
         if (diff > 1 && !std::isinf(strobe_count_raw_last_)) {
@@ -603,12 +610,20 @@ class SVISNodelet : public nodelet::Nodelet {
 
         strobe_count_ += diff;
       } else {
+        // no change
         NODELET_WARN("(svis_ros) no change in strobe count");
       }
+
+      // set packet total
+      strobe.count_total = strobe_count_;
 
       // update last value
       strobe_count_raw_last_ = strobe.count;
     }
+  }
+
+  void AssociateStrobe() {
+    // not yet implemented
   }
 
   void PublishCamera() {
