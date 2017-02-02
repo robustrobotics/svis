@@ -68,6 +68,8 @@ class SVISNodelet : public nodelet::Nodelet {
     // publishers
     // camera_pub_ = it.advertiseCamera("/flea3/image_raw_sync", 1);
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
+    svis_imu_pub_ = nh.advertise<svis_ros::SvisImu>("/svis/imu_raw", 1);
+    svis_strobe_pub_ = nh.advertise<svis_ros::SvisStrobe>("/svis/strobe_raw", 1);
 
     // initialize variables
     imu_buffer_.set_capacity(10);
@@ -132,22 +134,30 @@ class SVISNodelet : public nodelet::Nodelet {
           return;
         }
 
-        // header
+        // get header
         HeaderPacket header;
         GetHeader(buf, header);
 
-        // get data
-        GetImu(buf, header);
-        GetStrobe(buf, header);
+        // get imu
+        std::vector<ImuPacket> imu_packets;
+        GetImu(buf, header, imu_packets);
+
+        // get strobe
+        std::vector<StrobePacket> strobe_packets;
+        GetStrobe(buf, header, strobe_packets);
+
+        // publish raw data
+        PublishImuRaw(imu_packets);
+        PublishStrobeRaw(strobe_packets);
+
+        // add strobe and imu to buffers
+        PushImu(imu_packets);
+        PushStrobe(strobe_packets);
 
         if (init_flag_) {
           GetOffset();
           continue;
         }
-
-        // publish raw data
-        PublishImuRaw();
-        PublishStrobeRaw();
 
         // filter imu
         FilterImu();
@@ -197,21 +207,21 @@ class SVISNodelet : public nodelet::Nodelet {
 
   class CameraPacket {
    public:
-    double gain;
-    double shutter;
-    double brightness;
-    double exposure;
-    double frame_counter;
-    double strobe_pattern;
-    double gpio_state;
-    double roi_position;
+    uint32_t gain;
+    uint32_t shutter;
+    uint32_t brightness;
+    uint32_t exposure;
+    uint32_t frame_counter;
+    uint32_t strobe_pattern;
+    uint32_t gpio_state;
+    uint32_t roi_position;
     sensor_msgs::CameraInfo::ConstPtr info;
     sensor_msgs::Image::ConstPtr image;
   };
 
   class CameraStrobePacket {
    public:
-    CameraPacket image;
+    CameraPacket camera;
     StrobePacket strobe;
   };
 
@@ -293,7 +303,7 @@ class SVISNodelet : public nodelet::Nodelet {
     ind += sizeof(header.strobe_count);
   }
 
-  void GetImu(std::vector<char> &buf, HeaderPacket &header) {
+  void GetImu(std::vector<char> &buf, HeaderPacket &header, std::vector<ImuPacket> &imu_packets) {
     for (int i = 0; i < header.imu_count; i++) {
       ImuPacket imu;
       int ind = imu_index[i];
@@ -337,11 +347,12 @@ class SVISNodelet : public nodelet::Nodelet {
       // NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
       // save packet
-      imu_buffer_.push_back(imu);
+      imu_packets.push_back(imu);
     }
   }
 
-  void GetStrobe(std::vector<char> &buf, HeaderPacket &header) {
+  void GetStrobe(std::vector<char> &buf, HeaderPacket &header,
+                 std::vector<StrobePacket> &strobe_packets) {
     for (int i = 0; i < header.strobe_count; i++) {
       StrobePacket strobe;
       int ind = strobe_index[i];
@@ -370,6 +381,22 @@ class SVISNodelet : public nodelet::Nodelet {
       ind += strobe.count;
 
       // save packet
+      strobe_packets.push_back(strobe);
+    }
+  }
+
+  void PushImu(std::vector<ImuPacket> &imu_packets) {
+    ImuPacket imu;
+    for (int i = 0; i < imu_packets.size(); i++) {
+      imu = imu_packets[i];
+      imu_buffer_.push_back(imu);
+    }
+  }
+
+  void PushStrobe(std::vector<StrobePacket> &strobe_packets) {
+    StrobePacket strobe;
+    for (int i = 0; i < strobe_packets.size(); i++) {
+      strobe = strobe_packets[i];
       strobe_buffer_.push_back(strobe);
     }
   }
@@ -551,17 +578,55 @@ class SVISNodelet : public nodelet::Nodelet {
     camera_strobe_packets_.clear();
   }
 
-  void PublishImuRaw() {
-    // not yet implemented
+  void PublishImuRaw(std::vector<ImuPacket> &imu_packets) {
+    svis_ros::SvisImu imu;
+
+    // check sizes
+    if (imu.SIZE != imu_packets.size()) {
+      NODELET_WARN("(svis_ros) mismatch in packet size");
+      return;
+    }
+
+    imu.header.stamp = ros::Time::now();
+    imu.header.frame_id = "svis_imu_frame";
+    for (int i = 0; i < imu_packets.size(); i++) {
+      imu.timestamp_ros_rx[i] = imu_packets[i].timestamp_ros_rx;
+      imu.timestamp_ros[i] = imu_packets[i].timestamp_ros;
+      imu.timestamp_teensy_raw[i] = imu_packets[i].timestamp_teensy_raw;
+      imu.timestamp_teensy[i] = imu_packets[i].timestamp_teensy;
+      imu.accx[i] = imu_packets[i].acc[0];
+      imu.accy[i] = imu_packets[i].acc[1];
+      imu.accz[i] = imu_packets[i].acc[2];
+      imu.gyrox[i] = imu_packets[i].gyro[0];
+      imu.gyroy[i] = imu_packets[i].gyro[1];
+      imu.gyroz[i] = imu_packets[i].gyro[2];
+    }
+
+    // publish
+    svis_imu_pub_.publish(imu);
   }
 
-  void PublishStrobeRaw() {
-    // not yet implemented
+  void PublishStrobeRaw(std::vector<StrobePacket> &strobe_packets) {
+    svis_ros::SvisStrobe strobe;
+    for (int i = 0; i < strobe_packets.size(); i++) {
+      strobe.header.stamp = ros::Time::now();
+
+      strobe.timestamp_ros_rx = strobe_packets[i].timestamp_ros_rx;
+      strobe.timestamp_ros = strobe_packets[i].timestamp_ros;
+      strobe.timestamp_teensy_raw = strobe_packets[i].timestamp_teensy_raw;
+      strobe.timestamp_teensy = strobe_packets[i].timestamp_teensy;
+      strobe.count = strobe_packets[i].count;
+
+      // publish
+      svis_strobe_pub_.publish(strobe);
+    }
   }
 
   // publishers
   image_transport::CameraPublisher camera_pub_;
   ros::Publisher imu_pub_;
+  ros::Publisher svis_imu_pub_;
+  ros::Publisher svis_strobe_pub_;
 
   // subscribers
   image_transport::CameraSubscriber camera_sub_;
