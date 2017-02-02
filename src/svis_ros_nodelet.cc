@@ -137,7 +137,7 @@ class SVISNodelet : public nodelet::Nodelet {
         GetHeader(buf, header);
 
         // get data
-        GetIMU(buf, header);
+        GetImu(buf, header);
         GetStrobe(buf, header);
 
         if (init_flag_) {
@@ -146,17 +146,17 @@ class SVISNodelet : public nodelet::Nodelet {
         }
 
         // publish raw data
-        PublishIMURaw();
+        PublishImuRaw();
         PublishStrobeRaw();
 
         // filter imu
-        FilterIMU();
+        FilterImu();
 
         // associate strobe and camera
         AssociateStrobe();
 
         // publish
-        PublishIMU();
+        PublishImu();
         PublishCamera();
 
         // spin
@@ -293,7 +293,7 @@ class SVISNodelet : public nodelet::Nodelet {
     ind += sizeof(header.strobe_count);
   }
 
-  void GetIMU(std::vector<char> &buf, HeaderPacket &header) {
+  void GetImu(std::vector<char> &buf, HeaderPacket &header) {
     for (int i = 0; i < header.imu_count; i++) {
       ImuPacket imu;
       int ind = imu_index[i];
@@ -374,7 +374,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void FilterIMU() {
+  void FilterImu() {
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
       // sum
@@ -405,7 +405,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void PublishIMU() {
+  void PublishImu() {
     ImuPacket temp_packet;
     sensor_msgs::Imu imu;
 
@@ -551,7 +551,7 @@ class SVISNodelet : public nodelet::Nodelet {
     camera_strobe_packets_.clear();
   }
 
-  void PublishIMURaw() {
+  void PublishImuRaw() {
     // not yet implemented
   }
 
