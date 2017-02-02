@@ -228,8 +228,12 @@ class SVISNodelet : public nodelet::Nodelet {
   void GetOffset() {
     if (init_flag_) {
       if (time_offset_vec_.size() >= 1000) {
-        // clear out beginning of buffer
-        for (int i = 0; i < time_ffset_vec_.size(); i++) {}
+        // filter initial values that are often composed of stale data
+        NODELET_INFO("time_offset_vec.size(): %lu", time_offset_vec_.size());
+        while (fabs(time_offset_vec_.front() - time_offset_vec_.back()) > 0.1) {
+          time_offset_vec_.pop_front();
+        }
+        NODELET_INFO("filtered time_offset_vec.size(): %lu", time_offset_vec_.size());
         
         // sum time offsets
         double sum = 0.0;
@@ -237,20 +241,20 @@ class SVISNodelet : public nodelet::Nodelet {
           sum += time_offset_vec_[i];
         }
 
-        NODELET_INFO("sum: %f, count: %i", sum, time_offset_vec_.size());
+        // calculate final time offset
         time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
         NODELET_INFO("time_offset: %f", time_offset_);
         init_flag_ = false;
       } else {
         // use third imu packet since it triggers send
         ImuPacket imu = imu_buffer_[2];
-        time_offset_.push_back(imu.timestamp_ros_rx - imu.timestamp_teensy);
-        NODELET_INFO("now: %f, rx: %f, teensy: %f, offset: %f, ros: %f",
-                     ros::Time::now().toSec(),
-                     imu.timestamp_ros_rx,
-                     imu.timestamp_teensy,
-                     imu.timestamp_ros_rx - imu.timestamp_teensy,
-                     imu.timestamp_ros);
+        time_offset_vec_.push_back(imu.timestamp_ros_rx - imu.timestamp_teensy);
+        // NODELET_INFO("now: %f, rx: %f, teensy: %f, offset: %f, ros: %f",
+        //              ros::Time::now().toSec(),
+        //              imu.timestamp_ros_rx,
+        //              imu.timestamp_teensy,
+        //              imu.timestamp_ros_rx - imu.timestamp_teensy,
+        //              imu.timestamp_ros);
         imu_buffer_.clear();
       }
     }
@@ -520,7 +524,7 @@ class SVISNodelet : public nodelet::Nodelet {
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
   std::vector<CameraStrobePacket> camera_strobe_packets_;
-  std::vector<double> time_offset_vec_;
+  std::deque<double> time_offset_vec_;
   double time_offset_;
   int init_count_;
   bool init_flag_;
