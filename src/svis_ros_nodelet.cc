@@ -70,7 +70,7 @@ class SVISNodelet : public nodelet::Nodelet {
     imu_buffer_.set_capacity(10);
     imu_filter_size_ = 5;
     strobe_buffer_.set_capacity(10);
-    image_buffer_.set_capacity(10);
+    camera_buffer_.set_capacity(10);
     init_flag_ = true;
     time_offset_ = 0;
 
@@ -159,7 +159,7 @@ class SVISNodelet : public nodelet::Nodelet {
  private:
   class HeaderPacket {
    public:
-    ros::Time ros_timestamp;
+    double timestamp_ros_rx;  // time message was received
     uint16_t send_count;
     uint8_t imu_count;
     uint8_t strobe_count;
@@ -167,22 +167,25 @@ class SVISNodelet : public nodelet::Nodelet {
 
   class StrobePacket {
    public:
-    ros::Time ros_timestamp;
-    uint32_t timestamp;  // microseconds since teensy bootup
+    double timestamp_ros_rx;  // [seconds] time usb message was received in ros epoch
+    double timestamp_ros;  // [seconds] timestamp in ros epoch
+    uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
+    double timestamp_teensy;  // [seconds] timestamp in teensy epoch
     uint8_t count;  // number of camera images
   };
 
   class ImuPacket {
    public:
-    ros::Time ros_timestamp;
-    uint32_t timestamp;  // microseconds since teensy bootup
+    double timestamp_ros_rx;  // [seconds] time usb message was received in ros epoch
+    double timestamp_ros;  // [seconds] timestamp in ros epoch
+    uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
+    double timestamp_teensy;  // [seconds] timestamp in teensy epoch
     int16_t acc[3];  // units?
     int16_t gyro[3];  // units?
   };
 
-  class ImagePacket {
+  class CameraPacket {
    public:
-    double timestamp;
     double gain;
     double shutter;
     double brightness;
@@ -195,9 +198,9 @@ class SVISNodelet : public nodelet::Nodelet {
     sensor_msgs::Image::ConstPtr image;
   };
 
-  class CameraPacket {
+  class CameraStrobePacket {
    public:
-    ImagePacket image;
+    CameraPacket image;
     StrobePacket strobe;
   };
 
@@ -224,16 +227,32 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void GetOffset() {
     if (init_flag_) {
-      if(init_count_++ >= 1000) {
-        time_offset_ = time_offset_ / init_count_;
+      if (time_offset_vec_.size() >= 1000) {
+        // clear out beginning of buffer
+        for (int i = 0; i < time_ffset_vec_.size(); i++) {}
+        
+        // sum time offsets
+        double sum = 0.0;
+        for (int i = 0; i < time_offset_vec_.size(); i++) {
+          sum += time_offset_vec_[i];
+        }
+
+        NODELET_INFO("sum: %f, count: %i", sum, time_offset_vec_.size());
+        time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
+        NODELET_INFO("time_offset: %f", time_offset_);
         init_flag_ = false;
       } else {
-        while (strobe_buffer_.size() > 0) {
-          StrobePacket strobe = strobe_buffer_[0];
-          strobe_buffer_.pop_front();
-          time_offset_ += (strobe.ros_timestamp.toSec() - strobe.timestamp);
-        }
-      }      
+        // use third imu packet since it triggers send
+        ImuPacket imu = imu_buffer_[2];
+        time_offset_.push_back(imu.timestamp_ros_rx - imu.timestamp_teensy);
+        NODELET_INFO("now: %f, rx: %f, teensy: %f, offset: %f, ros: %f",
+                     ros::Time::now().toSec(),
+                     imu.timestamp_ros_rx,
+                     imu.timestamp_teensy,
+                     imu.timestamp_ros_rx - imu.timestamp_teensy,
+                     imu.timestamp_ros);
+        imu_buffer_.clear();
+      }
     }
   }
 
@@ -241,7 +260,7 @@ class SVISNodelet : public nodelet::Nodelet {
     int ind = 0;
 
     // ros time
-    header.ros_timestamp = ros::Time::now();
+    header.timestamp_ros_rx = ros::Time::now().toSec();
 
     // send_count
     memcpy(&header.send_count, &buf[ind], sizeof(header.send_count));
@@ -264,13 +283,23 @@ class SVISNodelet : public nodelet::Nodelet {
       ImuPacket imu;
       int ind = imu_index[i];
 
-      // ros time
-      imu.ros_timestamp = header.ros_timestamp;
-      
-      // timestamp
-      memcpy(&imu.timestamp, &buf[ind], sizeof(imu.timestamp));
+      // ros receive time
+      imu.timestamp_ros_rx = header.timestamp_ros_rx;
+
+      // raw teensy timestamp
+      memcpy(&imu.timestamp_teensy_raw, &buf[ind], sizeof(imu.timestamp_teensy_raw));
       // NODELET_INFO("(svis_ros) imu.timestamp: [%i, %i]", ind, imu.timestamp);
-      ind += sizeof(imu.timestamp);
+      ind += sizeof(imu.timestamp_teensy_raw);
+
+      // convert to seconds
+      imu.timestamp_teensy = static_cast<double>(imu.timestamp_teensy_raw) / 1000000.0;
+
+      // teensy time in ros epoch
+      if (init_flag_) {
+        imu.timestamp_ros = 0.0;
+      } else {
+        imu.timestamp_ros = imu.timestamp_teensy + time_offset_;
+      }
 
       // accel
       memcpy(&imu.acc[0], &buf[ind], sizeof(imu.acc[0]));
@@ -303,12 +332,22 @@ class SVISNodelet : public nodelet::Nodelet {
       int ind = strobe_index[i];
 
       // ros time
-      strobe.ros_timestamp = header.ros_timestamp;
-      
+      strobe.timestamp_ros_rx = header.timestamp_ros_rx;
+
       // timestamp
-      memcpy(&strobe.timestamp, &buf[ind], sizeof(strobe.timestamp));
+      memcpy(&strobe.timestamp_teensy_raw, &buf[ind], sizeof(strobe.timestamp_teensy_raw));
       // NODELET_INFO("(svis_ros) strobe.timestamp: [%i, %i]", ind, strobe.timestamp);
-      ind += sizeof(strobe.timestamp);
+      ind += sizeof(strobe.timestamp_teensy_raw);
+
+      // convert to seconds
+      strobe.timestamp_teensy = static_cast<double>(strobe.timestamp_teensy_raw) / 1000000.0;
+
+      // teensy time in ros epoch
+      if (init_flag_) {
+        strobe.timestamp_ros = 0.0;
+      } else {
+        strobe.timestamp_ros = strobe.timestamp_teensy + time_offset_;
+      }
 
       // count
       memcpy(&strobe.count, &buf[ind], sizeof(strobe.count));
@@ -317,6 +356,9 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // save packet
       strobe_buffer_.push_back(strobe);
+
+      // increment global strobe count
+      strobe_count_++;
     }
   }
 
@@ -332,7 +374,7 @@ class SVISNodelet : public nodelet::Nodelet {
         temp_packet = imu_buffer_[0];
         imu_buffer_.pop_front();
 
-        timestamp_total += static_cast<double>(temp_packet.timestamp);
+        timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
         for (int j = 0; j < 3; j++) {
           acc_total[j] += static_cast<double>(temp_packet.acc[j]);
           gyro_total[j] += static_cast<double>(temp_packet.gyro[j]);
@@ -340,10 +382,12 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // calculate average
-      temp_packet.timestamp = static_cast<int>(timestamp_total / static_cast<double>(imu_filter_size_));
+      temp_packet.timestamp_teensy =
+        static_cast<int>(timestamp_total / static_cast<double>(imu_filter_size_));
       for (int j = 0; j < 3; j++) {
         temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_filter_size_));
-        temp_packet.gyro[j] = static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
+        temp_packet.gyro[j] =
+          static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
       }
       imu_packets_filt_.push_back(temp_packet);
     }
@@ -356,7 +400,7 @@ class SVISNodelet : public nodelet::Nodelet {
     for (int i = 0; i < imu_packets_filt_.size(); i++) {
       temp_packet = imu_packets_filt_[i];
 
-      imu.header.stamp = ros::Time(temp_packet.timestamp);
+      imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + time_offset_);
       imu.header.frame_id = "body";
 
       // orientation
@@ -432,22 +476,24 @@ class SVISNodelet : public nodelet::Nodelet {
     printf("\n\n");
   }
 
-  void ImageCallback(const sensor_msgs::Image::ConstPtr& image_msg, const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
-    // PrintMetaDataRaw(msg);
+  void ImageCallback(const sensor_msgs::Image::ConstPtr& image_msg,
+                     const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
+    PrintMetaDataRaw(image_msg);
+    NODELET_INFO("strobe_count: %i", strobe_count_);
 
     // store image
-    ImagePacket image_packet;
-    image_packet.image = image_msg;
-    image_packet.info = info_msg;
-    image_buffer_.push_back(image_packet);
+    CameraPacket camera_packet;
+    camera_packet.image = image_msg;
+    camera_packet.info = info_msg;
+    camera_buffer_.push_back(camera_packet);
   }
 
   void AssociateStrobe() {
-
+    // not yet implemented
   }
 
   void PublishCamera() {
-    for (int i = 0; i < camera_packets_.size(); i++) {
+    for (int i = 0; i < camera_strobe_packets_.size(); i++) {
       // publish info message
       sensor_msgs::CameraInfo info_msg;
 
@@ -455,7 +501,7 @@ class SVISNodelet : public nodelet::Nodelet {
       sensor_msgs::Image image_msg;
     }
 
-    camera_packets_.clear();
+    camera_strobe_packets_.clear();
   }
 
   // publishers
@@ -472,13 +518,15 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // camera
   boost::circular_buffer<StrobePacket> strobe_buffer_;
-  boost::circular_buffer<ImagePacket> image_buffer_;
-  std::vector<CameraPacket> camera_packets_;
+  boost::circular_buffer<CameraPacket> camera_buffer_;
+  std::vector<CameraStrobePacket> camera_strobe_packets_;
+  std::vector<double> time_offset_vec_;
   double time_offset_;
   int init_count_;
   bool init_flag_;
   ros::Time init_start_;
   ros::Time init_stop_;
+  int strobe_count_;
 
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
