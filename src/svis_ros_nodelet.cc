@@ -60,10 +60,10 @@ class SVISNodelet : public nodelet::Nodelet {
     image_transport::ImageTransport it(nh);
 
     // subscribers
-    image_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::ImageCallback, this);
+    camera_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::CameraCallback, this);
 
     // publishers
-    image_pub_ = it.advertiseCamera("/flea3/image_raw_sync", 1);
+    // camera_pub_ = it.advertiseCamera("/flea3/image_raw_sync", 1);
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
 
     // initialize variables
@@ -545,11 +545,11 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   // publishers
-  image_transport::CameraPublisher image_pub_;
+  image_transport::CameraPublisher camera_pub_;
   ros::Publisher imu_pub_;
 
   // subscribers
-  image_transport::CameraSubscriber image_sub_;
+  image_transport::CameraSubscriber camera_sub_;
 
   // imu
   boost::circular_buffer<ImuPacket> imu_buffer_;
