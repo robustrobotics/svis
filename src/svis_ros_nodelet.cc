@@ -73,6 +73,7 @@ class SVISNodelet : public nodelet::Nodelet {
     camera_buffer_.set_capacity(10);
     init_flag_ = true;
     time_offset_ = 0;
+    strobe_count_ = std::numeric_limits<unsigned int>::infinity();
 
     Run();
 
@@ -150,6 +151,9 @@ class SVISNodelet : public nodelet::Nodelet {
         // publish
         PublishIMU();
         PublishCamera();
+
+        // spin
+        ros::spinOnce();
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -355,14 +359,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // count
       memcpy(&strobe.count, &buf[ind], sizeof(strobe.count));
-      // NODELET_INFO("(svis_ros) strobe.count: [%i, %i]", ind, strobe.count);
+      NODELET_INFO("(svis_ros) strobe.count: [%i, %i]", ind, strobe.count);
       ind += strobe.count;
 
       // save packet
       strobe_buffer_.push_back(strobe);
-
-      // increment global strobe count
-      strobe_count_++;
     }
   }
 
@@ -480,11 +481,15 @@ class SVISNodelet : public nodelet::Nodelet {
     printf("\n\n");
   }
 
-  void ImageCallback(const sensor_msgs::Image::ConstPtr& image_msg,
+  void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                      const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
-    PrintMetaDataRaw(image_msg);
-    NODELET_INFO("strobe_count: %i", strobe_count_);
-
+    // PrintMetaDataRaw(image_msg);
+    uint32_t frame_counter = 0xFF & image_msg->data[27];
+    frame_counter |= (0xFF & image_msg->data[26]) << 8;
+    frame_counter |= (0xFF & image_msg->data[25]) << 16;
+    frame_counter |= (0xFF & image_msg->data[24]) << 24;
+    NODELET_INFO("frame_counter: %u", frame_counter);
+    
     // store image
     CameraPacket camera_packet;
     camera_packet.image = image_msg;
@@ -493,7 +498,38 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void AssociateStrobe() {
-    // not yet implemented
+    StrobePacket strobe;
+    while (!strobe_buffer_.empty()) {
+      NODELET_INFO("strobe_count: %u", strobe_count_);
+      strobe = strobe_buffer_[0];
+      strobe_buffer_.pop_front();
+
+      // check for rollover
+      if (strobe.count > strobe_count_raw_last_) {
+        unsigned int diff = strobe.count - strobe_count_raw_last_;
+
+        // check for jump
+        if (diff > 1 && !std::isinf(strobe_count_raw_last_)) {
+          NODELET_WARN("(svis_ros) detected jump in strobe count");
+        }
+
+        strobe_count_ += diff;
+      } else if (strobe.count < strobe_count_raw_last_) {
+        unsigned int diff = (strobe_count_raw_last_ + strobe.count) % 127;
+
+        // check for jump
+        if (diff > 1 && !std::isinf(strobe_count_raw_last_)) {
+          NODELET_WARN("(svis_ros) detected jump in strobe count");
+        }
+
+        strobe_count_ += diff;
+      } else {
+        NODELET_WARN("(svis_ros) no change in strobe count");
+      }
+
+      // update last value
+      strobe_count_raw_last_ = strobe.count;
+    }
   }
 
   void PublishCamera() {
@@ -530,7 +566,8 @@ class SVISNodelet : public nodelet::Nodelet {
   bool init_flag_;
   ros::Time init_start_;
   ros::Time init_stop_;
-  int strobe_count_;
+  int strobe_count_raw_last_;
+  unsigned int strobe_count_;
 
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
