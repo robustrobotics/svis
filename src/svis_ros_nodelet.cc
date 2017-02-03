@@ -66,21 +66,18 @@ class SVISNodelet : public nodelet::Nodelet {
     camera_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::CameraCallback, this);
 
     // publishers
-    // camera_pub_ = it.advertiseCamera("/flea3/image_raw_sync", 1);
+    camera_pub_ = it.advertiseCamera("/svis/image_raw", 1);
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
-    svis_imu_pub_ = nh.advertise<svis_ros::SvisImu>("/svis/imu_raw", 1);
-    svis_strobe_pub_ = nh.advertise<svis_ros::SvisStrobe>("/svis/strobe_raw", 1);
+    svis_imu_pub_ = nh.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
+    svis_strobe_pub_ = nh.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
 
-    // initialize variables
+    // set circular buffer max lengths
     imu_buffer_.set_capacity(10);
-    imu_filter_size_ = 5;
     strobe_buffer_.set_capacity(10);
     camera_buffer_.set_capacity(20);
-    init_flag_ = true;
-    sync_flag_ = true;
-    time_offset_ = 0;
-    strobe_count_ = std::numeric_limits<unsigned int>::infinity();
+    camera_strobe_buffer_.set_capacity(10);
 
+    // loop
     Run();
 
     return;
@@ -132,7 +129,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
         // checksum
         if (GetChecksum(buf)) {
-          return;
+          continue;
         }
 
         // get header
@@ -162,17 +159,18 @@ class SVISNodelet : public nodelet::Nodelet {
           continue;
         }
 
-        // sync the camera and strobe counts
-        if (sync_flag_) {
-          GetCountOffset();
-        }
-
         // filter and publish imu
         std::vector<ImuPacket> imu_packets_filt;
         FilterImu(imu_packets_filt);
         PublishImu(imu_packets_filt);
 
-        // associate strobe and camera and publish
+        // sync the camera and strobe counts
+        if (sync_flag_) {
+          GetCountOffset();
+          continue;
+        }
+
+        // associate strobe with camera and publish
         std::vector<CameraStrobePacket> camera_strobe_packets;
         AssociateStrobe(camera_strobe_packets);
         PublishCamera(camera_strobe_packets);
@@ -575,6 +573,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // metadata
     GetImageMetadata(image_msg, camera_packet);
+    fprintf(stderr, "frame_count: %u", camera_packet.metadata.frame_counter);
 
     // image and info
     camera_packet.image = image_msg;
@@ -586,8 +585,8 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
     StrobePacket strobe;
-    for (int i = 0; i <strobe_packets.size(); i++) {
-      // NODELET_INFO("strobe_count: %u", strobe_count_);
+    for (int i = 0; i < strobe_packets.size(); i++) {
+      NODELET_INFO("strobe_count_total: %u", strobe_count_total_);
       strobe = strobe_packets[i];
 
       // pass if strobe total has been set already
@@ -673,7 +672,7 @@ class SVISNodelet : public nodelet::Nodelet {
     double time_diff_mean = time_diff_sum / static_cast<double>(time_diff_vec.size());
 
     // print vector for debug
-    fprintf(stderr, "ind_vec:");
+    fprintf(stderr, "[ind_vec, time_diff_vec]:");
     for (int i = 0; i < ind_vec.size(); i++) {
       fprintf(stderr, " %i (%f)", ind_vec[i], time_diff_vec[i]);
 
@@ -688,6 +687,22 @@ class SVISNodelet : public nodelet::Nodelet {
     // TODO(jakeware): don't hardcode rate
     if (time_diff_mean < 1.0/30.0) {
       sync_flag_ = false;
+
+      // print counts
+      fprintf(stderr, "associated counts:\n");
+      for (int i = 0; i < strobe_buffer_.size(); i++) {
+        fprintf(stderr, "[%i, %i] ",
+                camera_buffer_[ind_vec[i]].metadata.frame_counter,
+                strobe_buffer_[i].count_total);
+      }
+      fprintf(stderr, "\n");
+
+      // print times
+      fprintf(stderr, "associated times:\n");
+      for (int i = 0; i < strobe_buffer_.size(); i++) {
+        fprintf(stderr, "%f ", strobe_buffer_[i].timestamp_ros);
+      }
+      fprintf(stderr, "\n");
 
       // calculate offset
       strobe_count_offset_ = camera_buffer_[ind_vec[ind_best]].metadata.frame_counter
