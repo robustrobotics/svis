@@ -594,44 +594,44 @@ class SVISNodelet : public nodelet::Nodelet {
         continue;
       }
 
-      if (strobe.count > strobe_count_raw_last_) {
+      if (strobe.count > strobe_count_last_) {
         // no rollover
-        int diff = strobe.count - strobe_count_raw_last_;
+        int diff = strobe.count - strobe_count_last_;
 
         // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_raw_last_)) {
+        if (diff > 1 && !std::isinf(strobe_count_last_)) {
           NODELET_WARN("(svis_ros) detected jump in strobe count with no rollover");
           // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
           //              diff,
-          //              strobe_count_raw_last_,
+          //              strobe_count_last_,
           //              strobe.count);
         }
 
-        strobe_count_ += diff;
-      } else if (strobe.count < strobe_count_raw_last_) {
+        strobe_count_total_ += diff;
+      } else if (strobe.count < strobe_count_last_) {
         // rollover
-        int diff = (strobe_count_raw_last_ + strobe.count) % 255;
+        int diff = (strobe_count_last_ + strobe.count) % 255;
 
         // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_raw_last_)) {
+        if (diff > 1 && !std::isinf(strobe_count_last_)) {
           NODELET_WARN("(svis_ros) detected jump in strobe count with rollover");
           // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
           //              diff,
-          //              strobe_count_raw_last_,
+          //              strobe_count_last_,
           //              strobe.count);
         }
 
-        strobe_count_ += diff;
+        strobe_count_total_ += diff;
       } else {
         // no change
         NODELET_WARN("(svis_ros) no change in strobe count");
       }
 
       // set packet total
-      strobe.count_total = strobe_count_;
+      strobe.count_total = strobe_count_total_;
 
       // update last value
-      strobe_count_raw_last_ = strobe.count;
+      strobe_count_last_ = strobe.count;
     }
   }
 
@@ -729,6 +729,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
           // push to buffer
           camera_strobe_packets.push_back(camera_strobe);
+        } else {
+          // NODELET_INFO("strobe_count_total: %i, camera_frame_count: %i, offset: %i",
+          //              strobe_buffer_[i].count_total,
+          //              camera_buffer_[j].metadata.frame_counter,
+          //              strobe_count_offset_);
         }
       }
 
@@ -738,7 +743,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // remove old entries
     // for (int i = 0; i < strobe_buffer_.size(); i++) {
-    //   if (strobe_count_ - strobe_buffer_[i].count_total > 100) {
+    //   if (strobe_count_total_ - strobe_buffer_[i].count_total > 100) {
     //   }
     // }
   }
@@ -812,19 +817,19 @@ class SVISNodelet : public nodelet::Nodelet {
   boost::circular_buffer<CameraStrobePacket> camera_strobe_buffer_;
 
   // imu
-  int imu_filter_size_;
+  int imu_filter_size_ = 5;
 
   // camera and strobe timing
-  bool init_flag_;
+  bool init_flag_ = true;
   std::deque<double> time_offset_vec_;
-  double time_offset_;
-  int init_count_;
+  double time_offset_ = 0.0;
+  int init_count_ = 0;
 
   // camera and strobe count
-  bool sync_flag_;
-  int strobe_count_raw_last_;
-  unsigned int strobe_count_;
-  unsigned int strobe_count_offset_;
+  bool sync_flag_ = true;
+  int strobe_count_last_ = 0;
+  unsigned int strobe_count_total_ = std::numeric_limits<unsigned int>::infinity();
+  unsigned int strobe_count_offset_ = 0;
 
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
