@@ -792,17 +792,21 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
-  int imu_filter_size_;
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
   boost::circular_buffer<CameraStrobePacket> camera_strobe_buffer_;
 
-  // timing and strobe count variables
+  // imu
+  int imu_filter_size_;
+
+  // camera and strobe timing
+  bool init_flag_;
   std::deque<double> time_offset_vec_;
   double time_offset_;
   int init_count_;
+
+  // camera and strobe count
   bool sync_flag_;
-  bool init_flag_;
   int strobe_count_raw_last_;
   unsigned int strobe_count_;
   unsigned int strobe_count_offset_;
