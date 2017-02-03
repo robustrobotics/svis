@@ -156,20 +156,25 @@ class SVISNodelet : public nodelet::Nodelet {
         PushImu(imu_packets);
         PushStrobe(strobe_packets);
 
+        // get difference between ros and teensy epochs
         if (init_flag_) {
-          GetOffset();
+          GetTimeOffset();
           continue;
         }
 
-        // filter imu
-        FilterImu();
+        // sync the camera and strobe counts
+        if (sync_flag_) {
+          GetCountOffset();
+        }
 
-        // associate strobe and camera
+        // filter and publish imu
+        std::vector<ImuPacket> imu_packets_filt;
+        FilterImu(imu_packets_filt);
+        PublishImu(imu_packets_filt);
+
+        // associate strobe and camera and publish
         std::vector<CameraStrobePacket> camera_strobe_packets;
         AssociateStrobe(camera_strobe_packets);
-
-        // publish
-        PublishImu();
         PublishCamera(camera_strobe_packets);
 
         // spin
@@ -257,7 +262,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void GetOffset() {
+  void GetTimeOffset() {
     if (init_flag_) {
       if (time_offset_vec_.size() >= 1000) {
         // filter initial values that are often composed of stale data
@@ -412,7 +417,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void FilterImu() {
+  void FilterImu(std::vector<ImuPacket> &imu_packets_filt) {
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
       // sum
@@ -439,16 +444,18 @@ class SVISNodelet : public nodelet::Nodelet {
         temp_packet.gyro[j] =
           static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
       }
-      imu_packets_filt_.push_back(temp_packet);
+
+      // save packet
+      imu_packets_filt.push_back(temp_packet);
     }
   }
 
-  void PublishImu() {
+  void PublishImu(std::vector<ImuPacket> &imu_packets_filt) {
     ImuPacket temp_packet;
     sensor_msgs::Imu imu;
 
-    for (int i = 0; i < imu_packets_filt_.size(); i++) {
-      temp_packet = imu_packets_filt_[i];
+    for (int i = 0; i < imu_packets_filt.size(); i++) {
+      temp_packet = imu_packets_filt[i];
 
       imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + time_offset_);
       imu.header.frame_id = "body";
@@ -487,9 +494,6 @@ class SVISNodelet : public nodelet::Nodelet {
       // publish
       imu_pub_.publish(imu);
     }
-
-    // clear buffer
-    imu_packets_filt_.clear();
   }
 
   void PrintBuffer(std::vector<char> &buf) {
@@ -632,7 +636,7 @@ class SVISNodelet : public nodelet::Nodelet {
     }
   }
 
-  void AssociateStrobe(std::vector<CameraStrobePacket> &camera_strobe_packets) {
+  void GetCountOffset() {
     std::vector<int> ind_vec(strobe_buffer_.size());
     std::vector<double> time_diff_vec(strobe_buffer_.size(),
                                       std::numeric_limits<double>::infinity());
@@ -641,57 +645,58 @@ class SVISNodelet : public nodelet::Nodelet {
     NODELET_WARN("camera_buffer_size: %lu", camera_buffer_.size());
     NODELET_WARN("strobe_buffer_size: %lu", strobe_buffer_.size());
 
-    // sync if we need to
-    if (sync_flag_) {
-      // calculate time difference between images and strobes with corrected timestamps
-      for (int i = 0; i < strobe_buffer_.size(); i++) {
-        for (int j = 0; j < camera_buffer_.size(); j++) {
-          time_diff = fabs(strobe_buffer_[i].timestamp_ros
-                           - camera_buffer_[j].image->header.stamp.toSec());
-          if (time_diff < time_diff_vec[i]) {
-            time_diff_vec[i] = time_diff;
-            ind_vec[i] = j;
-          }
+    // calculate time difference between images and strobes with corrected timestamps
+    for (int i = 0; i < strobe_buffer_.size(); i++) {
+      for (int j = 0; j < camera_buffer_.size(); j++) {
+        time_diff = fabs(strobe_buffer_[i].timestamp_ros
+                         - camera_buffer_[j].image->header.stamp.toSec());
+        if (time_diff < time_diff_vec[i]) {
+          time_diff_vec[i] = time_diff;
+          ind_vec[i] = j;
         }
-      }
-
-      // get best match
-      double time_diff_best = std::numeric_limits<double>::infinity();
-      int ind_best = 0;
-      double time_diff_sum = 0.0;
-      for (int i = 0; i < ind_vec.size(); i++) {
-        time_diff_sum += time_diff_vec[i];
-        if (time_diff_vec[i] < time_diff_best) {
-          time_diff_best = time_diff_vec[i];
-          ind_best = i;
-        }
-      }
-      double time_diff_mean = time_diff_sum / static_cast<double>(time_diff_vec.size());
-
-      // print vector
-      fprintf(stderr, "ind_vec:");
-      for (int i = 0; i < ind_vec.size(); i++) {
-        fprintf(stderr, " %i (%f)", ind_vec[i], time_diff_vec[i]);
-        if (i == ind_best) {
-          fprintf(stderr, "*");
-        }
-      }
-      fprintf(stderr, "\n");
-
-      // check quality of match
-      // TODO(jakeware): don't hardcode rate
-      if (time_diff_mean < 1.0/30.0) {
-        sync_flag_ = false;
-
-        // calculate offset
-        strobe_count_offset_ = camera_buffer_[ind_vec[ind_best]].metadata.frame_counter
-          - strobe_buffer_[ind_best].count_total;
-        NODELET_INFO("strobe_count_offset: %i", strobe_count_offset_);
-      } else {
-        return;;
       }
     }
 
+    // find min time diff
+    double time_diff_best = std::numeric_limits<double>::infinity();
+    int ind_best = 0;
+    double time_diff_sum = 0.0;
+    for (int i = 0; i < ind_vec.size(); i++) {
+      time_diff_sum += time_diff_vec[i];
+      if (time_diff_vec[i] < time_diff_best) {
+        time_diff_best = time_diff_vec[i];
+        ind_best = i;
+      }
+    }
+
+    // calculate mean time difference for thresholding on quality of match
+    double time_diff_mean = time_diff_sum / static_cast<double>(time_diff_vec.size());
+
+    // print vector for debug
+    fprintf(stderr, "ind_vec:");
+    for (int i = 0; i < ind_vec.size(); i++) {
+      fprintf(stderr, " %i (%f)", ind_vec[i], time_diff_vec[i]);
+
+      // mark min time pair
+      if (i == ind_best) {
+        fprintf(stderr, "*");
+      }
+    }
+    fprintf(stderr, "\n");
+
+    // check quality of match
+    // TODO(jakeware): don't hardcode rate
+    if (time_diff_mean < 1.0/30.0) {
+      sync_flag_ = false;
+
+      // calculate offset
+      strobe_count_offset_ = camera_buffer_[ind_vec[ind_best]].metadata.frame_counter
+        - strobe_buffer_[ind_best].count_total;
+      NODELET_INFO("strobe_count_offset: %i", strobe_count_offset_);
+    }
+  }
+
+  void AssociateStrobe(std::vector<CameraStrobePacket> &camera_strobe_packets) {
     // create camera strobe packets
     CameraStrobePacket camera_strobe;
     int fail_count = 0;
@@ -714,14 +719,13 @@ class SVISNodelet : public nodelet::Nodelet {
 
       fail_count++;
     }
+    NODELET_INFO("fail_count: %i", fail_count);
 
-    // // remove old entries
+    // remove old entries
     // for (int i = 0; i < strobe_buffer_.size(); i++) {
     //   if (strobe_count_ - strobe_buffer_[i].count_total > 100) {
     //   }
     // }
-
-    NODELET_INFO("fail_count: %i", fail_count);
   }
 
   void PublishCamera(std::vector<CameraStrobePacket> &camera_strobe_packets) {
@@ -786,25 +790,22 @@ class SVISNodelet : public nodelet::Nodelet {
   // subscribers
   image_transport::CameraSubscriber camera_sub_;
 
-  // imu
+  // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
   int imu_filter_size_;
-  std::vector<ImuPacket> imu_packets_filt_;
-
-  // camera
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
   boost::circular_buffer<CameraStrobePacket> camera_strobe_buffer_;
+
+  // timing and strobe count variables
   std::deque<double> time_offset_vec_;
   double time_offset_;
   int init_count_;
+  bool sync_flag_;
   bool init_flag_;
-  ros::Time init_start_;
-  ros::Time init_stop_;
   int strobe_count_raw_last_;
   unsigned int strobe_count_;
   unsigned int strobe_count_offset_;
-  bool sync_flag_;
 
   // hid usb packet sizes
   const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
