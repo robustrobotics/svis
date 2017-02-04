@@ -303,37 +303,35 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void GetTimeOffset() {
-    if (init_flag_) {
-      if (time_offset_vec_.size() >= 1000) {
-        // filter initial values that are often composed of stale data
-        NODELET_INFO("time_offset_vec.size(): %lu", time_offset_vec_.size());
-        while (fabs(time_offset_vec_.front() - time_offset_vec_.back()) > 0.1) {
-          time_offset_vec_.pop_front();
-        }
-        NODELET_INFO("filtered time_offset_vec.size(): %lu", time_offset_vec_.size());
-
-        // sum time offsets
-        double sum = 0.0;
-        for (int i = 0; i < time_offset_vec_.size(); i++) {
-          sum += time_offset_vec_[i];
-        }
-
-        // calculate final time offset
-        time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
-        NODELET_INFO("time_offset: %f", time_offset_);
-        init_flag_ = false;
-      } else {
-        // use third imu packet since it triggers send
-        ImuPacket imu = imu_buffer_[2];
-        time_offset_vec_.push_back(imu.timestamp_ros_rx - imu.timestamp_teensy);
-        // NODELET_INFO("now: %f, rx: %f, teensy: %f, offset: %f, ros: %f",
-        //              ros::Time::now().toSec(),
-        //              imu.timestamp_ros_rx,
-        //              imu.timestamp_teensy,
-        //              imu.timestamp_ros_rx - imu.timestamp_teensy,
-        //              imu.timestamp_ros);
-        imu_buffer_.clear();
+    if (time_offset_vec_.size() >= 1000) {
+      // filter initial values that are often composed of stale data
+      NODELET_INFO("time_offset_vec.size(): %lu", time_offset_vec_.size());
+      while (fabs(time_offset_vec_.front() - time_offset_vec_.back()) > 0.1) {
+        time_offset_vec_.pop_front();
       }
+      NODELET_INFO("filtered time_offset_vec.size(): %lu", time_offset_vec_.size());
+
+      // sum time offsets
+      double sum = 0.0;
+      for (int i = 0; i < time_offset_vec_.size(); i++) {
+        sum += time_offset_vec_[i];
+      }
+
+      // calculate final time offset
+      time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
+      NODELET_INFO("time_offset: %f", time_offset_);
+      init_flag_ = false;
+    } else {
+      // use third imu packet since it triggers send
+      ImuPacket imu = imu_buffer_[2];
+      time_offset_vec_.push_back(imu.timestamp_ros_rx - imu.timestamp_teensy);
+      // NODELET_INFO("now: %f, rx: %f, teensy: %f, offset: %f, ros: %f",
+      //              ros::Time::now().toSec(),
+      //              imu.timestamp_ros_rx,
+      //              imu.timestamp_teensy,
+      //              imu.timestamp_ros_rx - imu.timestamp_teensy,
+      //              imu.timestamp_ros);
+      imu_buffer_.clear();
     }
   }
 
@@ -615,7 +613,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // metadata
     GetImageMetadata(image_msg, camera_packet);
-    fprintf(stderr, "frame_count: %u", camera_packet.metadata.frame_counter);
+    // NODELET_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
     // image and info
     camera_packet.image = image_msg;
@@ -626,19 +624,21 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
-    StrobePacket strobe;
     for (int i = 0; i < strobe_packets.size(); i++) {
-      NODELET_INFO("strobe_count_total: %u", strobe_count_total_);
-      strobe = strobe_packets[i];
+      // NODELET_INFO("strobe_count_total: %u", strobe_count_total_);
 
-      // pass if strobe total has been set already
-      if (strobe.count_total == 0) {
+      // initialize variables on first iteration
+      if (strobe_count_total_ == 0 && strobe_count_last_ == 0) {
+        NODELET_INFO("init strobe count");
+        strobe_count_total_ = 1;
+        strobe_count_last_ = strobe_packets[i].count_total;
+        strobe_packets[i].count_total = strobe_count_total_;
         continue;
       }
 
-      if (strobe.count > strobe_count_last_) {
+      if (strobe_packets[i].count > strobe_count_last_) {
         // no rollover
-        int diff = strobe.count - strobe_count_last_;
+        int diff = strobe_packets[i].count - strobe_count_last_;
 
         // check for jump
         if (diff > 1 && !std::isinf(strobe_count_last_)) {
@@ -646,13 +646,13 @@ class SVISNodelet : public nodelet::Nodelet {
           // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
           //              diff,
           //              strobe_count_last_,
-          //              strobe.count);
+          //              strobe_packets[i].count);
         }
 
         strobe_count_total_ += diff;
-      } else if (strobe.count < strobe_count_last_) {
+      } else if (strobe_packets[i].count < strobe_count_last_) {
         // rollover
-        int diff = (strobe_count_last_ + strobe.count) % 255;
+        int diff = (strobe_count_last_ + strobe_packets[i].count) % 255;
 
         // check for jump
         if (diff > 1 && !std::isinf(strobe_count_last_)) {
@@ -660,7 +660,7 @@ class SVISNodelet : public nodelet::Nodelet {
           // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
           //              diff,
           //              strobe_count_last_,
-          //              strobe.count);
+          //              strobe_packets[i].count);
         }
 
         strobe_count_total_ += diff;
@@ -670,10 +670,10 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // set packet total
-      strobe.count_total = strobe_count_total_;
+      strobe_packets[i].count_total = strobe_count_total_;
 
       // update last value
-      strobe_count_last_ = strobe.count;
+      strobe_count_last_ = strobe_packets[i].count;
     }
   }
 
@@ -683,8 +683,8 @@ class SVISNodelet : public nodelet::Nodelet {
                                       std::numeric_limits<double>::infinity());
     double time_diff = 0.0;
 
-    NODELET_WARN("camera_buffer_size: %lu", camera_buffer_.size());
-    NODELET_WARN("strobe_buffer_size: %lu", strobe_buffer_.size());
+    // NODELET_WARN("camera_buffer_size: %lu", camera_buffer_.size());
+    // NODELET_WARN("strobe_buffer_size: %lu", strobe_buffer_.size());
 
     // calculate time difference between images and strobes with corrected timestamps
     for (int i = 0; i < strobe_buffer_.size(); i++) {
@@ -757,7 +757,9 @@ class SVISNodelet : public nodelet::Nodelet {
     // create camera strobe packets
     CameraStrobePacket camera_strobe;
     int fail_count = 0;
+    bool match = false;
     for (int i = 0; i < strobe_buffer_.size(); i++) {
+      match = false;
       for (int j = 0; j < camera_buffer_.size(); j++) {
         if (strobe_buffer_[i].count_total + strobe_count_offset_ ==
             camera_buffer_[j].metadata.frame_counter) {
@@ -771,27 +773,32 @@ class SVISNodelet : public nodelet::Nodelet {
 
           // push to buffer
           camera_strobe_packets.push_back(camera_strobe);
-        } else {
-          // NODELET_INFO("strobe_count_total: %i, camera_frame_count: %i, offset: %i",
-          //              strobe_buffer_[i].count_total,
-          //              camera_buffer_[j].metadata.frame_counter,
-          //              strobe_count_offset_);
+          match = true;
         }
       }
 
-      fail_count++;
+      if (!match) {
+        fail_count++;
+      }
     }
-    NODELET_INFO("fail_count: %i", fail_count);
+    // NODELET_INFO("fail_count: %i", fail_count);
+    if (fail_count == strobe_buffer_.size() && fail_count > 0) {
+      sync_flag_ = true;
+    }
 
+    // TODO(jakeware): remove stale entries in queue
     // remove old entries
     // for (int i = 0; i < strobe_buffer_.size(); i++) {
     //   if (strobe_count_total_ - strobe_buffer_[i].count_total > 100) {
     //   }
     // }
+    // strobe_buffer_.clear();
+    // camera_buffer_.clear();
   }
 
   void PublishCamera(std::vector<CameraStrobePacket> &camera_strobe_packets) {
     for (int i = 0; i < camera_strobe_packets.size(); i++) {
+      NODELET_INFO("PublishCamera");
       camera_pub_.publish(camera_strobe_packets[i].camera.image,
                           camera_strobe_packets[i].camera.info);
     }
