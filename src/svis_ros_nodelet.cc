@@ -119,6 +119,9 @@ class SVISNodelet : public nodelet::Nodelet {
       } else if (num == 0) {
         NODELET_INFO("(svis_ros) 0 bytes received");
       } else if (num > 0) {
+        // spin
+        ros::spinOnce();
+
         // resize vector
         buf.resize(num);
 
@@ -174,9 +177,6 @@ class SVISNodelet : public nodelet::Nodelet {
         std::vector<CameraStrobePacket> camera_strobe_packets;
         AssociateStrobe(camera_strobe_packets);
         PublishCamera(camera_strobe_packets);
-
-        // spin
-        ros::spinOnce();
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
