@@ -758,13 +758,17 @@ class SVISNodelet : public nodelet::Nodelet {
     CameraStrobePacket camera_strobe;
     int fail_count = 0;
     bool match = false;
-    for (int i = 0; i < strobe_buffer_.size(); i++) {
+
+    for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ++it_strobe) {
       match = false;
-      for (int j = 0; j < camera_buffer_.size(); j++) {
-        if (strobe_buffer_[i].count_total + strobe_count_offset_ ==
-            camera_buffer_[j].metadata.frame_counter) {
-          camera_strobe.camera = camera_buffer_[j];
-          camera_strobe.strobe = strobe_buffer_[i];
+      for (auto it_camera = camera_buffer_.begin(); it_camera != camera_buffer_.end(); ++it_camera) {
+        if ((*it_strobe).count_total + strobe_count_offset_ ==
+            (*it_camera).metadata.frame_counter) {
+          camera_strobe.camera = *it_camera;
+          camera_strobe.strobe = *it_strobe;
+
+          camera_buffer_.erase(it_camera);
+          strobe_buffer_.erase(it_strobe);
 
           // fix timestamps
           // TODO(jakeware) fix issues with const here!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -782,7 +786,7 @@ class SVISNodelet : public nodelet::Nodelet {
       }
     }
     // NODELET_INFO("fail_count: %i", fail_count);
-    if (fail_count == strobe_buffer_.size() && fail_count > 0) {
+    if (fail_count == strobe_buffer_.max_size()) {
       sync_flag_ = true;
     }
 
@@ -792,13 +796,10 @@ class SVISNodelet : public nodelet::Nodelet {
     //   if (strobe_count_total_ - strobe_buffer_[i].count_total > 100) {
     //   }
     // }
-    // strobe_buffer_.clear();
-    // camera_buffer_.clear();
   }
 
   void PublishCamera(std::vector<CameraStrobePacket> &camera_strobe_packets) {
     for (int i = 0; i < camera_strobe_packets.size(); i++) {
-      NODELET_INFO("PublishCamera");
       camera_pub_.publish(camera_strobe_packets[i].camera.image,
                           camera_strobe_packets[i].camera.info);
     }
