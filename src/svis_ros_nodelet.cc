@@ -186,6 +186,14 @@ class SVISNodelet : public nodelet::Nodelet {
  private:
   class HeaderPacket {
    public:
+    HeaderPacket() :
+      timestamp_ros_rx(0.0),
+      send_count(0),
+      imu_count(0),
+      strobe_count(0) {
+      // nothing
+    }
+    ~HeaderPacket() = default;
     double timestamp_ros_rx;  // time message was received
     uint16_t send_count;
     uint8_t imu_count;
@@ -194,6 +202,16 @@ class SVISNodelet : public nodelet::Nodelet {
 
   class StrobePacket {
    public:
+    StrobePacket() :
+      timestamp_ros_rx(0.0),
+      timestamp_ros(0.0),
+      timestamp_teensy_raw(0),
+      timestamp_teensy(0.0),
+      count(0),
+      count_total(0) {
+      // nothing
+    }
+    ~StrobePacket() = default;
     double timestamp_ros_rx;  // [seconds] time usb message was received in ros epoch
     double timestamp_ros;  // [seconds] timestamp in ros epoch
     uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
@@ -204,6 +222,16 @@ class SVISNodelet : public nodelet::Nodelet {
 
   class ImuPacket {
    public:
+    ImuPacket() :
+      timestamp_ros_rx(0.0),
+      timestamp_ros(0.0),
+      timestamp_teensy_raw(0),
+      timestamp_teensy(0.0),
+      acc{0},
+      gyro{0} {
+        // nothing
+      }
+    ~ImuPacket() = default;
     double timestamp_ros_rx;  // [seconds] time usb message was received in ros epoch
     double timestamp_ros;  // [seconds] timestamp in ros epoch
     uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
@@ -214,6 +242,20 @@ class SVISNodelet : public nodelet::Nodelet {
 
   class ImageMetadata {
    public:
+    ImageMetadata() :
+      timestamp(0),
+      gain(0),
+      shutter(0),
+      brightness(0),
+      exposure(0),
+      white_balance(0),
+      frame_counter(0),
+      strobe_pattern(0),
+      gpio_state(0),
+      roi_position(0) {
+      // nothing
+    }
+    ~ImageMetadata() = default;
     uint32_t timestamp;
     uint32_t gain;
     uint32_t shutter;
