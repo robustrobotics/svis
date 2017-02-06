@@ -63,11 +63,11 @@ class SVISNodelet : public nodelet::Nodelet {
     image_transport::ImageTransport it(nh);
 
     // subscribers
-    // camera_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::CameraCallback, this);
-    image_sub_ = nh.subscribe("/flea3/image_raw", 10, &SVISNodelet::ImageCallback, this);
+    camera_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::CameraCallback, this);
+    // image_sub_ = nh.subscribe("/flea3/image_raw", 10, &SVISNodelet::ImageCallback, this);
 
     // publishers
-    // camera_pub_ = it.advertiseCamera("/svis/image_raw", 1);
+    camera_pub_ = it.advertiseCamera("/svis/image_raw", 1);
     image_pub_ = nh.advertise<sensor_msgs::Image>("/svis/image_raw", 1);
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
     svis_imu_pub_ = nh.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
@@ -110,7 +110,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // timing
       t_now_ = ros::Time::now();
-      // NODELET_INFO("(svis_ros) [n: %i, dt: %f]", num, (t_now - t_last).toSec());
+      NODELET_INFO("(svis_ros) [n: %i, dt: %f]", num, (t_now_ - t_last_).toSec());
       t_last_ = t_now_;
 
       // check byte count
@@ -151,8 +151,8 @@ class SVISNodelet : public nodelet::Nodelet {
         GetStrobeTotal(strobe_packets);
 
         // publish raw data
-        PublishImuRaw(imu_packets);
-        PublishStrobeRaw(strobe_packets);
+        // PublishImuRaw(imu_packets);
+        // PublishStrobeRaw(strobe_packets);
 
         // add strobe and imu to buffers
         PushImu(imu_packets);
@@ -165,9 +165,9 @@ class SVISNodelet : public nodelet::Nodelet {
         }
 
         // filter and publish imu
-        std::vector<ImuPacket> imu_packets_filt;
-        FilterImu(imu_packets_filt);
-        PublishImu(imu_packets_filt);
+        // std::vector<ImuPacket> imu_packets_filt;
+        // FilterImu(imu_packets_filt);
+        // PublishImu(imu_packets_filt);
 
         // sync the camera and strobe counts
         if (sync_flag_) {
@@ -178,7 +178,11 @@ class SVISNodelet : public nodelet::Nodelet {
         // associate strobe with camera and publish
         std::vector<CameraStrobePacket> camera_strobe_packets;
         AssociateStrobe(camera_strobe_packets);
-        PublishCamera(camera_strobe_packets);
+        // PublishCamera(camera_strobe_packets);
+
+        // if (strobe_buffer_.size() > 0) {
+        //   PrintCameraBuffer();
+        // }
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -273,8 +277,8 @@ class SVISNodelet : public nodelet::Nodelet {
   class CameraPacket {
    public:
     ImageMetadata metadata;
-    sensor_msgs::CameraInfo::Ptr info;
-    sensor_msgs::Image::Ptr image;
+    sensor_msgs::CameraInfo::ConstPtr info;
+    sensor_msgs::Image::ConstPtr image;
   };
 
   class CameraStrobePacket {
@@ -628,13 +632,13 @@ class SVISNodelet : public nodelet::Nodelet {
     // NODELET_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
     // set image
-    // camera_packet.image = image_msg;
+    camera_packet.image = image_msg;
 
     // set info
-    // camera_packet.info = info_msg;
+    camera_packet.info = info_msg;
 
     // add to buffer
-    // camera_buffer_.push_back(camera_packet);
+    camera_buffer_.push_back(camera_packet);
   }
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
@@ -774,8 +778,8 @@ class SVISNodelet : public nodelet::Nodelet {
     int match_count = 0;
     bool match = false;
 
-    NODELET_WARN("strobe_buffer size: %lu", strobe_buffer_.size());
-    NODELET_WARN("camera_buffer size: %lu", camera_buffer_.size());
+    // NODELET_WARN("strobe_buffer size: %lu", strobe_buffer_.size());
+    // NODELET_WARN("camera_buffer size: %lu", camera_buffer_.size());
 
     for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ) {
       // NODELET_INFO("i: %lu", std::distance(strobe_buffer_.begin(), it_strobe));
@@ -791,8 +795,8 @@ class SVISNodelet : public nodelet::Nodelet {
 
           // fix timestamps
           // TODO(jakeware) fix issues with const here!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          camera_strobe.camera.info->header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
-          camera_strobe.camera.image->header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
+          // camera_strobe.camera.info->header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
+          // camera_strobe.camera.image->header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
 
           // push to buffer
           camera_strobe_packets.push_back(camera_strobe);
@@ -844,15 +848,35 @@ class SVISNodelet : public nodelet::Nodelet {
       NODELET_WARN("Failure to match.  Resyncing...");
       sync_flag_ = true;
     }
+
+    // // erase camera images that are older than all strobes
+    // bool stale = true;
+    // for (auto it_camera = camera_buffer_.begin(); it_camera != camera_buffer_.end(); ) {
+    //   stale = true;
+    //   for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ++it_strobe) {
+    //     // check if strobe is older than camera
+    //     if ((*it_strobe).count_total + strobe_count_offset_ <=
+    //         (*it_camera).metadata.frame_counter) {
+    //       stale = false;
+    //     }
+    //   }
+
+    //   // remove camera if stale
+    //   if (stale) {
+    //     it_camera = camera_buffer_.erase(it_camera);
+    //   } else {
+    //     ++it_camera;
+    //   }
+    // }
   }
 
   void PublishCamera(std::vector<CameraStrobePacket> &camera_strobe_packets) {
     for (int i = 0; i < camera_strobe_packets.size(); i++) {
-      // camera_pub_.publish(camera_strobe_packets[i].camera.image,
-      //                     camera_strobe_packets[i].camera.info);
+      camera_pub_.publish(camera_strobe_packets[i].camera.image,
+                          camera_strobe_packets[i].camera.info);
       // camera_pub_.publish(camera_strobe_packets[i].camera.image,
       //                     camera_strobe_packets[i].camera.info, ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
-      image_pub_.publish(camera_strobe_packets[i].camera.image);
+      // image_pub_.publish(camera_strobe_packets[i].camera.image);
     }
 
     camera_strobe_packets.clear();
@@ -900,6 +924,15 @@ class SVISNodelet : public nodelet::Nodelet {
       // publish
       svis_strobe_pub_.publish(strobe);
     }
+  }
+
+  void PrintCameraBuffer() {
+    double t_now = ros::Time::now().toSec();
+    printf("camera_buffer: %lu\n", camera_buffer_.size());
+    for (int i = 0; i < camera_buffer_.size(); i++) {
+      printf("%i:(%i)%f ", i, camera_buffer_[i].metadata.frame_counter, t_now - camera_buffer_[i].image->header.stamp.toSec());
+    }
+    printf("\n");
   }
 
   // publishers
