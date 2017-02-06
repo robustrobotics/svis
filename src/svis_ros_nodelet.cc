@@ -63,10 +63,12 @@ class SVISNodelet : public nodelet::Nodelet {
     image_transport::ImageTransport it(nh);
 
     // subscribers
-    camera_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::CameraCallback, this);
+    // camera_sub_ = it.subscribeCamera("/flea3/image_raw", 10, &SVISNodelet::CameraCallback, this);
+    image_sub_ = nh.subscribe("/flea3/image_raw", 10, &SVISNodelet::ImageCallback, this);
 
     // publishers
-    camera_pub_ = it.advertiseCamera("/svis/image_raw", 1);
+    // camera_pub_ = it.advertiseCamera("/svis/image_raw", 1);
+    image_pub_ = nh.advertise<sensor_msgs::Image>("/svis/image_raw", 1);
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
     svis_imu_pub_ = nh.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
     svis_strobe_pub_ = nh.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
@@ -271,8 +273,8 @@ class SVISNodelet : public nodelet::Nodelet {
   class CameraPacket {
    public:
     ImageMetadata metadata;
-    sensor_msgs::CameraInfo info;
-    sensor_msgs::Image image;
+    sensor_msgs::CameraInfo::Ptr info;
+    sensor_msgs::Image::Ptr image;
   };
 
   class CameraStrobePacket {
@@ -606,6 +608,16 @@ class SVISNodelet : public nodelet::Nodelet {
            sizeof(camera_packet.metadata.roi_position));
   }
 
+  void ImageCallback(const boost::shared_ptr<sensor_msgs::Image>& image_msg) {
+    // http://wiki.ros.org/roscpp/Overview/Publishers%20and%20Subscribers
+    CameraPacket camera_packet;
+
+    GetImageMetadata(image_msg, camera_packet);
+    camera_packet.image = image_msg;
+
+    camera_buffer_.push_back(camera_packet);
+  }
+
   void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                      const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
     // PrintMetaDataRaw(image_msg);
@@ -615,16 +627,14 @@ class SVISNodelet : public nodelet::Nodelet {
     GetImageMetadata(image_msg, camera_packet);
     // NODELET_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
-    // super hack to get around const
-    sensor_msgs::Image image = *image_msg;
-    sensor_msgs::CameraInfo info = *info_msg;
+    // set image
+    // camera_packet.image = image_msg;
 
-    // image and info
-    camera_packet.image = image;
-    camera_packet.info = info;
+    // set info
+    // camera_packet.info = info_msg;
 
     // add to buffer
-    camera_buffer_.push_back(camera_packet);
+    // camera_buffer_.push_back(camera_packet);
   }
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
@@ -694,7 +704,7 @@ class SVISNodelet : public nodelet::Nodelet {
     for (int i = 0; i < strobe_buffer_.size(); i++) {
       for (int j = 0; j < camera_buffer_.size(); j++) {
         time_diff = fabs(strobe_buffer_[i].timestamp_ros
-                         - camera_buffer_[j].image.header.stamp.toSec());
+                         - camera_buffer_[j].image->header.stamp.toSec());
         if (time_diff < time_diff_vec[i]) {
           time_diff_vec[i] = time_diff;
           ind_vec[i] = j;
@@ -781,8 +791,8 @@ class SVISNodelet : public nodelet::Nodelet {
 
           // fix timestamps
           // TODO(jakeware) fix issues with const here!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          // camera_strobe.camera.info.header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
-          // camera_strobe.camera.image.header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
+          camera_strobe.camera.info->header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
+          camera_strobe.camera.image->header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
 
           // push to buffer
           camera_strobe_packets.push_back(camera_strobe);
@@ -798,7 +808,7 @@ class SVISNodelet : public nodelet::Nodelet {
           break;
         } else {
           // check for stale entry and delete
-          if ((ros::Time::now().toSec() - (*it_camera).image.header.stamp.toSec()) > 1.0) {
+          if ((ros::Time::now().toSec() - (*it_camera).image->header.stamp.toSec()) > 1.0) {
             // NODELET_INFO("delete stale camera");
             it_camera = camera_buffer_.erase(it_camera);
           } else {
@@ -840,8 +850,9 @@ class SVISNodelet : public nodelet::Nodelet {
     for (int i = 0; i < camera_strobe_packets.size(); i++) {
       // camera_pub_.publish(camera_strobe_packets[i].camera.image,
       //                     camera_strobe_packets[i].camera.info);
-      camera_pub_.publish(camera_strobe_packets[i].camera.image,
-                          camera_strobe_packets[i].camera.info, ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
+      // camera_pub_.publish(camera_strobe_packets[i].camera.image,
+      //                     camera_strobe_packets[i].camera.info, ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
+      image_pub_.publish(camera_strobe_packets[i].camera.image);
     }
 
     camera_strobe_packets.clear();
@@ -893,12 +904,14 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // publishers
   image_transport::CameraPublisher camera_pub_;
+  ros::Publisher image_pub_;
   ros::Publisher imu_pub_;
   ros::Publisher svis_imu_pub_;
   ros::Publisher svis_strobe_pub_;
 
   // subscribers
   image_transport::CameraSubscriber camera_sub_;
+  ros::Subscriber image_sub_;
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
