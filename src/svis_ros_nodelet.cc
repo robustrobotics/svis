@@ -761,18 +761,23 @@ class SVISNodelet : public nodelet::Nodelet {
     // create camera strobe packets
     CameraStrobePacket camera_strobe;
     int fail_count = 0;
+    int match_count = 0;
     bool match = false;
 
-    for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ++it_strobe) {
+    NODELET_WARN("strobe_buffer size: %lu", strobe_buffer_.size());
+    NODELET_WARN("camera_buffer size: %lu", camera_buffer_.size());
+
+    for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ) {
+      // NODELET_INFO("i: %lu", std::distance(strobe_buffer_.begin(), it_strobe));
       match = false;
-      for (auto it_camera = camera_buffer_.begin(); it_camera != camera_buffer_.end(); ++it_camera) {
+      for (auto it_camera = camera_buffer_.begin(); it_camera != camera_buffer_.end(); ) {
+        // NODELET_INFO("j: %lu", std::distance(camera_buffer_.begin(), it_camera));
+        // check for strobe/camera match
         if ((*it_strobe).count_total + strobe_count_offset_ ==
             (*it_camera).metadata.frame_counter) {
+          // copy matched elements
           camera_strobe.camera = *it_camera;
           camera_strobe.strobe = *it_strobe;
-
-          camera_buffer_.erase(it_camera);
-          strobe_buffer_.erase(it_strobe);
 
           // fix timestamps
           // TODO(jakeware) fix issues with const here!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -781,26 +786,54 @@ class SVISNodelet : public nodelet::Nodelet {
 
           // push to buffer
           camera_strobe_packets.push_back(camera_strobe);
+
+          // remove matched strobe
+          // NODELET_INFO("delete matched camera");
+          it_camera = camera_buffer_.erase(it_camera);
+
+          // record match
+          match_count++;
           match = true;
+          // NODELET_INFO("match");
+          break;
+        } else {
+          // check for stale entry and delete
+          if ((ros::Time::now().toSec() - (*it_camera).image.header.stamp.toSec()) > 1.0) {
+            // NODELET_INFO("delete stale camera");
+            it_camera = camera_buffer_.erase(it_camera);
+          } else {
+            // NODELET_INFO("increment camera");
+            ++it_camera;
+          }
         }
       }
 
-      if (!match) {
+      // increment fail count for no images for a given strobe message
+      if (match) {
+        // remove matched strobe
+        // NODELET_INFO("delete matched strobe");
+        it_strobe = strobe_buffer_.erase(it_strobe);
+      } else {
         fail_count++;
+        // NODELET_INFO("fail");
+
+        // check for stale entry and delete
+        if ((ros::Time::now().toSec() - (*it_strobe).timestamp_ros_rx) > 1.0) {
+          // NODELET_INFO("delete stale strobe");
+          it_strobe = strobe_buffer_.erase(it_strobe);
+        } else {
+          // NODELET_INFO("increment strobe");
+          ++it_strobe;
+        }
       }
     }
-    // NODELET_INFO("fail_count: %i", fail_count);
+
+    // NODELET_INFO("final fail_count: %i", fail_count);
+    // NODELET_INFO("final match_count: %i", match_count);
     if (fail_count == strobe_buffer_.max_size()) {
       NODELET_WARN("Failure to match.  Resyncing...");
       sync_flag_ = true;
     }
-
-    // TODO(jakeware): remove stale entries in queue
-    // remove old entries
-    // for (int i = 0; i < strobe_buffer_.size(); i++) {
-    //   if (strobe_count_total_ - strobe_buffer_[i].count_total > 100) {
-    //   }
-    // }
   }
 
   void PublishCamera(std::vector<CameraStrobePacket> &camera_strobe_packets) {
