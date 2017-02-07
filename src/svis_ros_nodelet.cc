@@ -966,7 +966,7 @@ class SVISNodelet : public nodelet::Nodelet {
     double t_now = ros::Time::now().toSec();
     printf("strobe_buffer: %lu\n", strobe_buffer_.size());
     for (int i = 0; i < strobe_buffer_.size(); i++) {
-      printf("%i:(%i)%f ", i, strobe_buffer_[i].count_total + strobe_count_offset_, t_now - strobe_buffer_[i].timestamp_ros);
+      printf("%i:(%i, %i)%f ", i, strobe_buffer_[i].count, strobe_buffer_[i].count_total + strobe_count_offset_, t_now - strobe_buffer_[i].timestamp_ros);
     }
     printf("\n");
   }
