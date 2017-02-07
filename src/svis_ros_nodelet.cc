@@ -132,9 +132,9 @@ class SVISNodelet : public nodelet::Nodelet {
       int num = rawhid_recv(0, buf.data(), buf.size(), 220);
 
       // timing
-      t_now_ = ros::Time::now();
-      NODELET_INFO("(svis_ros) [n: %i, dt: %f]", num, (t_now_ - t_last_).toSec());
-      t_last_ = t_now_;
+      // t_now_ = ros::Time::now();
+      // NODELET_INFO("(svis_ros) [n: %i, dt: %f]", num, (t_now_ - t_last_).toSec());
+      // t_last_ = t_now_;
 
       // check byte count
       if (num < 0) {
@@ -144,6 +144,8 @@ class SVISNodelet : public nodelet::Nodelet {
       } else if (num == 0) {
         NODELET_INFO("(svis_ros) 0 bytes received");
       } else if (num > 0) {
+        ros::Time t_start = ros::Time::now();
+
         // spin
         ros::spinOnce();
 
@@ -206,6 +208,11 @@ class SVISNodelet : public nodelet::Nodelet {
         AssociateStrobe(camera_strobe_packets);
         // PublishCamera(camera_strobe_packets);
 
+        ros::Time t_stop = ros::Time::now();
+        double loop_time = (t_stop - t_start).toSec();
+        if (loop_time > 0.003) {
+          NODELET_INFO("(svis_ros) loop time: %f", loop_time);
+        }
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
