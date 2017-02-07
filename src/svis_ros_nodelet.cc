@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <csignal>
 
 #include <boost/circular_buffer.hpp>
 
@@ -49,12 +50,34 @@ class SVISNodelet : public nodelet::Nodelet {
   SVISNodelet& operator=(SVISNodelet&& rhs) = delete;
 
   /**
+   * We override the default ROS SIGINT handler to set a global variable which
+   * tells the other threads to stop.
+   */
+  static void signal_handler(int signal) {
+    printf("SIGINT Received!\n");
+
+    // Tell other threads to stop.
+    SVISNodelet::stop_signal_ = 1;
+
+    // Tell ROS to shutdown nodes.
+    ros::shutdown();
+
+    return;
+  }
+
+  // sigint
+  static volatile std::sig_atomic_t stop_signal_;
+
+  /**
    * \brief Nodelet initialization.
    *
    * Subclasses of nodelet::Nodelet need to override this virtual method.
    * It takes the place of the nodelet constructor.
    */
   virtual void onInit() {
+    // Install signal handler.
+    std::signal(SIGINT, signal_handler);
+
     // Grab a handle to the parent node.
     ros::NodeHandle nh;
     ros::NodeHandle pnh("~");
@@ -104,7 +127,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // loop
     std::vector<char> buf(64);
-    while (ros::ok()) {
+    while (ros::ok() && !stop_signal_) {
       // check if any Raw HID packet has arrived
       int num = rawhid_recv(0, buf.data(), buf.size(), 220);
 
@@ -989,6 +1012,8 @@ class SVISNodelet : public nodelet::Nodelet {
   ros::Time t_now_;
   ros::Time t_last_;
 };
+
+volatile std::sig_atomic_t SVISNodelet::stop_signal_ = 0;
 
 }  // namespace svis_ros
 
