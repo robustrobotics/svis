@@ -198,14 +198,14 @@ class SVISNodelet : public nodelet::Nodelet {
           continue;
         }
 
+        PrintStrobeBuffer();
+        PrintCameraBuffer();
+
         // associate strobe with camera and publish
         std::vector<CameraStrobePacket> camera_strobe_packets;
         AssociateStrobe(camera_strobe_packets);
         // PublishCamera(camera_strobe_packets);
 
-        // if (strobe_buffer_.size() > 0) {
-        //   PrintCameraBuffer();
-        // }
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -954,6 +954,15 @@ class SVISNodelet : public nodelet::Nodelet {
     printf("camera_buffer: %lu\n", camera_buffer_.size());
     for (int i = 0; i < camera_buffer_.size(); i++) {
       printf("%i:(%i)%f ", i, camera_buffer_[i].metadata.frame_counter, t_now - camera_buffer_[i].image->header.stamp.toSec());
+    }
+    printf("\n\n");
+  }
+
+  void PrintStrobeBuffer() {
+    double t_now = ros::Time::now().toSec();
+    printf("strobe_buffer: %lu\n", strobe_buffer_.size());
+    for (int i = 0; i < strobe_buffer_.size(); i++) {
+      printf("%i:(%i)%f ", i, strobe_buffer_[i].count_total + strobe_count_offset_, t_now - strobe_buffer_[i].timestamp_ros);
     }
     printf("\n");
   }
