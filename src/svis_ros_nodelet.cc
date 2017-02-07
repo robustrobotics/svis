@@ -342,11 +342,11 @@ class SVISNodelet : public nodelet::Nodelet {
   void GetTimeOffset() {
     if (time_offset_vec_.size() >= 1000) {
       // filter initial values that are often composed of stale data
-      NODELET_INFO("time_offset_vec.size(): %lu", time_offset_vec_.size());
+      // NODELET_INFO("(svis_ros) time_offset_vec.size(): %lu", time_offset_vec_.size());
       while (fabs(time_offset_vec_.front() - time_offset_vec_.back()) > 0.1) {
         time_offset_vec_.pop_front();
       }
-      NODELET_INFO("filtered time_offset_vec.size(): %lu", time_offset_vec_.size());
+      // NODELET_INFO("(svis_ros) filtered time_offset_vec.size(): %lu", time_offset_vec_.size());
 
       // sum time offsets
       double sum = 0.0;
@@ -356,7 +356,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // calculate final time offset
       time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
-      NODELET_INFO("time_offset: %f", time_offset_);
+      NODELET_INFO("(svis_ros) time_offset: %f", time_offset_);
       init_flag_ = false;
     } else {
       // use third imu packet since it triggers send
@@ -696,7 +696,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // initialize variables on first iteration
       if (strobe_count_total_ == 0 && strobe_count_last_ == 0) {
-        NODELET_INFO("init strobe count");
+        // NODELET_INFO("init strobe count");
         strobe_count_total_ = 1;
         strobe_count_last_ = strobe_packets[i].count_total;
         strobe_packets[i].count_total = strobe_count_total_;
@@ -708,7 +708,7 @@ class SVISNodelet : public nodelet::Nodelet {
         uint8_t diff = strobe_packets[i].count - strobe_count_last_;
 
         // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_last_)) {
+        if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
           NODELET_WARN("(svis_ros) detected jump in strobe count with no rollover");
           // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
           //              diff,
@@ -726,7 +726,7 @@ class SVISNodelet : public nodelet::Nodelet {
         }
 
         // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_last_)) {
+        if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
           NODELET_WARN("(svis_ros) detected jump in strobe count with rollover");
           // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
           //              diff,
@@ -789,16 +789,16 @@ class SVISNodelet : public nodelet::Nodelet {
     double time_diff_mean = time_diff_sum / static_cast<double>(time_diff_vec.size());
 
     // print vector for debug
-    fprintf(stderr, "[ind_vec, time_diff_vec]:");
-    for (int i = 0; i < ind_vec.size(); i++) {
-      fprintf(stderr, " %i (%f)", ind_vec[i], time_diff_vec[i]);
+    // fprintf(stderr, "[ind_vec, time_diff_vec]:");
+    // for (int i = 0; i < ind_vec.size(); i++) {
+    //   fprintf(stderr, " %i (%f)", ind_vec[i], time_diff_vec[i]);
 
-      // mark min time pair
-      if (i == ind_best) {
-        fprintf(stderr, "*");
-      }
-    }
-    fprintf(stderr, "\n");
+    //   // mark min time pair
+    //   if (i == ind_best) {
+    //     fprintf(stderr, "*");
+    //   }
+    // }
+    // fprintf(stderr, "\n");
 
     // check quality of match
     // TODO(jakeware): don't hardcode rate
@@ -806,25 +806,25 @@ class SVISNodelet : public nodelet::Nodelet {
       sync_flag_ = false;
 
       // print counts
-      fprintf(stderr, "associated counts:\n");
-      for (int i = 0; i < strobe_buffer_.size(); i++) {
-        fprintf(stderr, "[%i, %i] ",
-                camera_buffer_[ind_vec[i]].metadata.frame_counter,
-                strobe_buffer_[i].count_total);
-      }
-      fprintf(stderr, "\n");
+      // fprintf(stderr, "associated counts:\n");
+      // for (int i = 0; i < strobe_buffer_.size(); i++) {
+      //   fprintf(stderr, "[%i, %i] ",
+      //           camera_buffer_[ind_vec[i]].metadata.frame_counter,
+      //           strobe_buffer_[i].count_total);
+      // }
+      // fprintf(stderr, "\n");
 
       // print times
-      fprintf(stderr, "associated times:\n");
-      for (int i = 0; i < strobe_buffer_.size(); i++) {
-        fprintf(stderr, "%f ", strobe_buffer_[i].timestamp_ros);
-      }
-      fprintf(stderr, "\n");
+      // fprintf(stderr, "associated times:\n");
+      // for (int i = 0; i < strobe_buffer_.size(); i++) {
+      //   fprintf(stderr, "%f ", strobe_buffer_[i].timestamp_ros);
+      // }
+      // fprintf(stderr, "\n");
 
       // calculate offset
       strobe_count_offset_ = camera_buffer_[ind_vec[ind_best]].metadata.frame_counter
         - strobe_buffer_[ind_best].count_total;
-      NODELET_INFO("strobe_count_offset: %i", strobe_count_offset_);
+      NODELET_INFO("(svis_ros) strobe_count_offset: %i", strobe_count_offset_);
     }
 
     timing_.get_count_offset = toc();
