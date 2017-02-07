@@ -679,7 +679,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
       if (strobe_packets[i].count > strobe_count_last_) {
         // no rollover
-        int diff = strobe_packets[i].count - strobe_count_last_;
+        uint8_t diff = strobe_packets[i].count - strobe_count_last_;
 
         // check for jump
         if (diff > 1 && !std::isinf(strobe_count_last_)) {
@@ -693,7 +693,11 @@ class SVISNodelet : public nodelet::Nodelet {
         strobe_count_total_ += diff;
       } else if (strobe_packets[i].count < strobe_count_last_) {
         // rollover
-        int diff = (strobe_count_last_ + strobe_packets[i].count) % 255;
+        uint8_t diff = (strobe_count_last_ + strobe_packets[i].count);
+
+        if (diff == 255) {
+          diff = 1;
+        }
 
         // check for jump
         if (diff > 1 && !std::isinf(strobe_count_last_)) {
@@ -995,7 +999,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // camera and strobe count
   bool sync_flag_ = true;
-  int strobe_count_last_ = 0;
+  uint8_t strobe_count_last_ = 0;
   unsigned int strobe_count_total_ = std::numeric_limits<unsigned int>::infinity();
   unsigned int strobe_count_offset_ = 0;
 
