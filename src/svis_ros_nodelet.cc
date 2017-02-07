@@ -20,6 +20,7 @@
 
 #include <svis_ros/SvisImu.h>
 #include <svis_ros/SvisStrobe.h>
+#include <svis_ros/SvisTiming.h>
 
 extern "C" {
 #include "hid/hid.h"
@@ -95,6 +96,7 @@ class SVISNodelet : public nodelet::Nodelet {
     imu_pub_ = nh.advertise<sensor_msgs::Imu>("/svis/imu", 1);
     svis_imu_pub_ = nh.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
     svis_strobe_pub_ = nh.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
+    svis_timing_pub_ = nh.advertise<svis_ros::SvisTiming>("/svis/timing", 1);
 
     // set circular buffer max lengths
     imu_buffer_.set_capacity(10);
@@ -128,13 +130,15 @@ class SVISNodelet : public nodelet::Nodelet {
     // loop
     std::vector<char> buf(64);
     while (ros::ok() && !stop_signal_) {
-      // check if any Raw HID packet has arrived
-      int num = rawhid_recv(0, buf.data(), buf.size(), 220);
+      // period
+      t_period_ = ros::Time::now();
+      timing_.period = (t_period_ - t_period_last_).toSec();
+      t_period_last_ = t_period_;
 
-      // timing
-      // t_now_ = ros::Time::now();
-      // NODELET_INFO("(svis_ros) [n: %i, dt: %f]", num, (t_now_ - t_last_).toSec());
-      // t_last_ = t_now_;
+      // check if any Raw HID packet has arrived
+      tic();
+      int num = rawhid_recv(0, buf.data(), buf.size(), 220);
+      timing_.rawhid_recv = toc();
 
       // check byte count
       if (num < 0) {
@@ -144,10 +148,12 @@ class SVISNodelet : public nodelet::Nodelet {
       } else if (num == 0) {
         NODELET_INFO("(svis_ros) 0 bytes received");
       } else if (num > 0) {
-        ros::Time t_start = ros::Time::now();
+        t_loop_start_ = ros::Time::now();
 
         // spin
+        tic();
         ros::spinOnce();
+        timing_.ros_spin_once = toc();
 
         // resize vector
         buf.resize(num);
@@ -157,30 +163,26 @@ class SVISNodelet : public nodelet::Nodelet {
           PrintBuffer(buf);
         }
 
-        // checksum
+        // bail if checksums don't match
         if (GetChecksum(buf)) {
           continue;
         }
 
-        // get header
+        // parse header
         HeaderPacket header;
         GetHeader(buf, header);
 
-        // get imu
+        // parse, publish, push imu
         std::vector<ImuPacket> imu_packets;
         GetImu(buf, header, imu_packets);
+        PublishImuRaw(imu_packets);
+        PushImu(imu_packets);
 
-        // get strobe
+        // parse, publish, push strobe
         std::vector<StrobePacket> strobe_packets;
         GetStrobe(buf, header, strobe_packets);
         GetStrobeTotal(strobe_packets);
-
-        // publish raw data
-        // PublishImuRaw(imu_packets);
-        // PublishStrobeRaw(strobe_packets);
-
-        // add strobe and imu to buffers
-        PushImu(imu_packets);
+        PublishStrobeRaw(strobe_packets);
         PushStrobe(strobe_packets);
 
         // get difference between ros and teensy epochs
@@ -190,9 +192,9 @@ class SVISNodelet : public nodelet::Nodelet {
         }
 
         // filter and publish imu
-        // std::vector<ImuPacket> imu_packets_filt;
-        // FilterImu(imu_packets_filt);
-        // PublishImu(imu_packets_filt);
+        std::vector<ImuPacket> imu_packets_filt;
+        FilterImu(imu_packets_filt);
+        PublishImu(imu_packets_filt);
 
         // sync the camera and strobe counts
         if (sync_flag_) {
@@ -200,19 +202,16 @@ class SVISNodelet : public nodelet::Nodelet {
           continue;
         }
 
-        PrintStrobeBuffer();
-        PrintCameraBuffer();
+        // PrintStrobeBuffer();
+        // PrintCameraBuffer();
 
         // associate strobe with camera and publish
         std::vector<CameraStrobePacket> camera_strobe_packets;
         AssociateStrobe(camera_strobe_packets);
-        // PublishCamera(camera_strobe_packets);
+        PublishCamera(camera_strobe_packets);
 
-        ros::Time t_stop = ros::Time::now();
-        double loop_time = (t_stop - t_start).toSec();
-        if (loop_time > 0.003) {
-          NODELET_INFO("(svis_ros) loop time: %f", loop_time);
-        }
+        timing_.loop = (ros::Time::now() - t_loop_start_).toSec();
+        PublishTiming();
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -318,6 +317,8 @@ class SVISNodelet : public nodelet::Nodelet {
   };
 
   int GetChecksum(std::vector<char> &buf) {
+    tic();
+
     // calculate checksum
     uint16_t checksum_calc = 0;
     for (int i = 0; i < send_buffer_size - 2; i++) {
@@ -327,15 +328,17 @@ class SVISNodelet : public nodelet::Nodelet {
     // get packet chechsum
     uint16_t checksum_orig = 0;
     memcpy(&checksum_orig, &buf[checksum_index], sizeof(checksum_orig));
+    int ret = (checksum_calc != checksum_orig);
 
     // check match and return result
-    if (checksum_calc != checksum_orig) {
+    if (ret) {
       NODELET_INFO("(svis_ros) checksum error [%02X, %02X] [%02X, %02X]",
                    buf[checksum_index] & 0xFF, buf[checksum_index + 1] & 0xFF, checksum_calc, checksum_orig);
-      return 1;
-    } else {
-      return 0;
     }
+
+    timing_.get_checksum = toc();
+
+    return ret;
   }
 
   void GetTimeOffset() {
@@ -372,6 +375,8 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void GetHeader(std::vector<char> &buf, HeaderPacket &header) {
+    tic();
+
     int ind = 0;
 
     // ros time
@@ -391,9 +396,13 @@ class SVISNodelet : public nodelet::Nodelet {
     memcpy(&header.strobe_count, &buf[ind], sizeof(header.strobe_count));
     // NODELET_INFO("(svis_ros) strobe_packet_count: [%i, %i]", ind, header.strobe_count);
     ind += sizeof(header.strobe_count);
+
+    timing_.get_header = toc();
   }
 
   void GetImu(std::vector<char> &buf, HeaderPacket &header, std::vector<ImuPacket> &imu_packets) {
+    tic();
+
     for (int i = 0; i < header.imu_count; i++) {
       ImuPacket imu;
       int ind = imu_index[i];
@@ -439,10 +448,14 @@ class SVISNodelet : public nodelet::Nodelet {
       // save packet
       imu_packets.push_back(imu);
     }
+
+    timing_.get_imu = toc();
   }
 
   void GetStrobe(std::vector<char> &buf, HeaderPacket &header,
                  std::vector<StrobePacket> &strobe_packets) {
+    tic();
+
     for (int i = 0; i < header.strobe_count; i++) {
       StrobePacket strobe;
       int ind = strobe_index[i];
@@ -473,25 +486,37 @@ class SVISNodelet : public nodelet::Nodelet {
       // save packet
       strobe_packets.push_back(strobe);
     }
+
+    timing_.get_strobe = toc();
   }
 
   void PushImu(std::vector<ImuPacket> &imu_packets) {
+    tic();
+
     ImuPacket imu;
     for (int i = 0; i < imu_packets.size(); i++) {
       imu = imu_packets[i];
       imu_buffer_.push_back(imu);
     }
+
+    timing_.push_imu = toc();
   }
 
   void PushStrobe(std::vector<StrobePacket> &strobe_packets) {
+    tic();
+
     StrobePacket strobe;
     for (int i = 0; i < strobe_packets.size(); i++) {
       strobe = strobe_packets[i];
       strobe_buffer_.push_back(strobe);
     }
+
+    timing_.push_strobe = toc();
   }
 
   void FilterImu(std::vector<ImuPacket> &imu_packets_filt) {
+    tic();
+
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
       // sum
@@ -522,9 +547,13 @@ class SVISNodelet : public nodelet::Nodelet {
       // save packet
       imu_packets_filt.push_back(temp_packet);
     }
+
+    timing_.filter_imu = toc();
   }
 
   void PublishImu(std::vector<ImuPacket> &imu_packets_filt) {
+    tic();
+
     ImuPacket temp_packet;
     sensor_msgs::Imu imu;
 
@@ -568,6 +597,8 @@ class SVISNodelet : public nodelet::Nodelet {
       // publish
       imu_pub_.publish(imu);
     }
+
+    timing_.publish_imu = toc();
   }
 
   void PrintBuffer(std::vector<char> &buf) {
@@ -672,6 +703,8 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
+    tic();
+
     for (int i = 0; i < strobe_packets.size(); i++) {
       // NODELET_INFO("strobe_count_total: %u", strobe_count_total_);
 
@@ -727,9 +760,13 @@ class SVISNodelet : public nodelet::Nodelet {
       // update last value
       strobe_count_last_ = strobe_packets[i].count;
     }
+
+    timing_.get_strobe_total = toc();
   }
 
   void GetCountOffset() {
+    tic();
+
     std::vector<int> ind_vec(strobe_buffer_.size());
     std::vector<double> time_diff_vec(strobe_buffer_.size(),
                                       std::numeric_limits<double>::infinity());
@@ -803,9 +840,13 @@ class SVISNodelet : public nodelet::Nodelet {
         - strobe_buffer_[ind_best].count_total;
       NODELET_INFO("strobe_count_offset: %i", strobe_count_offset_);
     }
+
+    timing_.get_count_offset = toc();
   }
 
   void AssociateStrobe(std::vector<CameraStrobePacket> &camera_strobe_packets) {
+    tic();
+
     // create camera strobe packets
     CameraStrobePacket camera_strobe;
     int fail_count = 0;
@@ -902,9 +943,13 @@ class SVISNodelet : public nodelet::Nodelet {
     //     ++it_camera;
     //   }
     // }
+
+    timing_.associate_strobe = toc();
   }
 
   void PublishCamera(std::vector<CameraStrobePacket> &camera_strobe_packets) {
+    tic();
+
     for (int i = 0; i < camera_strobe_packets.size(); i++) {
       camera_pub_.publish(camera_strobe_packets[i].camera.image,
                           camera_strobe_packets[i].camera.info);
@@ -914,9 +959,13 @@ class SVISNodelet : public nodelet::Nodelet {
     }
 
     camera_strobe_packets.clear();
+
+    timing_.publish_camera = toc();
   }
 
   void PublishImuRaw(std::vector<ImuPacket> &imu_packets) {
+    tic();
+
     svis_ros::SvisImu imu;
 
     // check sizes
@@ -942,9 +991,13 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // publish
     svis_imu_pub_.publish(imu);
+
+    timing_.publish_imu_raw = toc();
   }
 
   void PublishStrobeRaw(std::vector<StrobePacket> &strobe_packets) {
+    tic();
+
     svis_ros::SvisStrobe strobe;
     for (int i = 0; i < strobe_packets.size(); i++) {
       strobe.header.stamp = ros::Time::now();
@@ -958,6 +1011,8 @@ class SVISNodelet : public nodelet::Nodelet {
       // publish
       svis_strobe_pub_.publish(strobe);
     }
+
+    timing_.publish_strobe_raw = toc();
   }
 
   void PrintCameraBuffer() {
@@ -978,12 +1033,27 @@ class SVISNodelet : public nodelet::Nodelet {
     printf("\n");
   }
 
+  void tic() {
+    tic_ = ros::Time::now();
+  }
+
+  double toc() {
+    toc_ = ros::Time::now();
+
+    return (toc_ - tic_).toSec();
+  }
+
+  void PublishTiming() {
+    svis_timing_pub_.publish(timing_);
+  }
+
   // publishers
   image_transport::CameraPublisher camera_pub_;
   ros::Publisher image_pub_;
   ros::Publisher imu_pub_;
   ros::Publisher svis_imu_pub_;
   ros::Publisher svis_strobe_pub_;
+  ros::Publisher svis_timing_pub_;
 
   // subscribers
   image_transport::CameraSubscriber camera_sub_;
@@ -1029,8 +1099,12 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // debug
   bool print_buffer_ = false;
-  ros::Time t_now_;
-  ros::Time t_last_;
+  ros::Time t_loop_start_;
+  ros::Time t_period_;
+  ros::Time t_period_last_;
+  ros::Time tic_;
+  ros::Time toc_;
+  svis_ros::SvisTiming timing_;
 };
 
 volatile std::sig_atomic_t SVISNodelet::stop_signal_ = 0;

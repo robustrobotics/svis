@@ -35,6 +35,7 @@ add_message_files (
   FILES
   SvisImu.msg
   SvisStrobe.msg
+  SvisTiming.msg
   )
 
 generate_messages(
