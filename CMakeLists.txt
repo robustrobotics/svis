@@ -21,11 +21,29 @@ endif (NOT CMAKE_BUILD_TYPE)
 set(REQ_CATKIN_PKGS   
   roscpp
   nodelet
+  image_transport
+  std_msgs
+  sensor_msgs
+  message_generation
 )
 find_package(catkin REQUIRED COMPONENTS ${REQ_CATKIN_PKGS})
 
 # find_package(libusb-1.0 REQUIRED)
 find_package(libusb REQUIRED)
+
+add_message_files (
+  FILES
+  SvisImu.msg
+  SvisStrobe.msg
+  SvisTiming.msg
+  )
+
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+  std_msgs
+  svis_ros
+  )
 
 catkin_package(
  INCLUDE_DIRS src
