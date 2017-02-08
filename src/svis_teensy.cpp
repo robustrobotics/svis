@@ -262,24 +262,18 @@ void InitICM20689() {
 
   // verify connection
   Serial.println("Testing device connections...");
-  Serial.println(mpu6050.testConnection() ?
-                 "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.println(icm20689.testConnection() ?
+                 "ICM20689 connection successful" : "ICM20689 connection failed");
 
   // print registers
   Serial.print("Sample Rate Divisor: ");
-  Serial.println(mpu6050.getRate());
-
-  Serial.print("DLPF Mode: ");
-  Serial.println(mpu6050.getDLPFMode());
-
-  Serial.print("DHPF Mode: ");
-  Serial.println(mpu6050.getDHPFMode());
+  Serial.println(icm20689.getRate());
 
   Serial.print("Gyro Range: ");
-  Serial.println(mpu6050.getFullScaleGyroRange());
+  Serial.println(icm20689.getFullScaleGyroRange());
 
   Serial.print("Accel Range: ");
-  Serial.println(mpu6050.getFullScaleAccelRange());
+  Serial.println(icm20689.getFullScaleAccelRange());
 
   // Serial.print("Interrupt Mode: ");
   // icm20689.setInterruptMode(0);
