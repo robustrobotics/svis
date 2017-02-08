@@ -1,6 +1,7 @@
 #include "WProgram.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include "ICM20689.h"
 #include "Wire.h"
 
 // hardware
@@ -48,6 +49,7 @@ uint8_t imu_packet_count = 0;
 // imu variables
 IntervalTimer imu_timer;
 MPU6050 mpu6050;
+ICM20689 icm20689;
 uint32_t imu_stamp_buffer[imu_buffer_size];
 int16_t imu_data_buffer[imu_data_size*imu_buffer_size];
 uint8_t imu_buffer_head = 0;
@@ -132,7 +134,13 @@ void ReadIMU() {
   imu_stamp_buffer[imu_buffer_head] = micros();
 
   // imu data
-  mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
+  // mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 1],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 2],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 4],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 5]);
+  icm20689.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
                      &imu_data_buffer[imu_buffer_head*imu_data_size + 1],
                      &imu_data_buffer[imu_buffer_head*imu_data_size + 2],
                      &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
@@ -247,31 +255,62 @@ void WriteStrobe() {
   }
 }
 
+void InitICM20689() {
+  // initialize device
+  Serial.println("Initializing I2C devices...");
+  icm20689.initialize();
+
+  // verify connection
+  Serial.println("Testing device connections...");
+  Serial.println(mpu6050.testConnection() ?
+                 "MPU6050 connection successful" : "MPU6050 connection failed");
+
+  // print registers
+  Serial.print("Sample Rate Divisor: ");
+  Serial.println(mpu6050.getRate());
+
+  Serial.print("DLPF Mode: ");
+  Serial.println(mpu6050.getDLPFMode());
+
+  Serial.print("DHPF Mode: ");
+  Serial.println(mpu6050.getDHPFMode());
+
+  Serial.print("Gyro Range: ");
+  Serial.println(mpu6050.getFullScaleGyroRange());
+
+  Serial.print("Accel Range: ");
+  Serial.println(mpu6050.getFullScaleAccelRange());
+
+  // Serial.print("Interrupt Mode: ");
+  // icm20689.setInterruptMode(0);
+  // Serial.println(mpu6050.getInterruptMode());
+}
+
 void InitMPU6050() {
   // initialize device
   Serial.println("Initializing I2C devices...");
   mpu6050.initialize();
 
   // verify connection
-  // Serial.println("Testing device connections...");
-  // Serial.println(mpu6050.testConnection() ?
-  //                "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.println("Testing device connections...");
+  Serial.println(mpu6050.testConnection() ?
+                 "MPU6050 connection successful" : "MPU6050 connection failed");
 
-  // // print registers
-  // Serial.print("Sample Rate Divisor: ");
-  // Serial.println(mpu6050.getRate());
+  // print registers
+  Serial.print("Sample Rate Divisor: ");
+  Serial.println(mpu6050.getRate());
 
-  // Serial.print("DLPF Mode: ");
-  // Serial.println(mpu6050.getDLPFMode());
+  Serial.print("DLPF Mode: ");
+  Serial.println(mpu6050.getDLPFMode());
 
-  // Serial.print("DHPF Mode: ");
-  // Serial.println(mpu6050.getDHPFMode());
+  Serial.print("DHPF Mode: ");
+  Serial.println(mpu6050.getDHPFMode());
 
-  // Serial.print("Gyro Range: ");
-  // Serial.println(mpu6050.getFullScaleGyroRange());
+  Serial.print("Gyro Range: ");
+  Serial.println(mpu6050.getFullScaleGyroRange());
 
-  // Serial.print("Accel Range: ");
-  // Serial.println(mpu6050.getFullScaleAccelRange());
+  Serial.print("Accel Range: ");
+  Serial.println(mpu6050.getFullScaleAccelRange());
 
   // Serial.print("Interrupt Mode: ");
   // mpu6050.setInterruptMode(0);
@@ -293,15 +332,16 @@ void InitGPIO() {
   // configure onboard LED
   pinMode(LED_PIN, OUTPUT);
   pinMode(TRIGGER_PIN, OUTPUT);
+  // pinMode(IMU_INT_PIN, INPUT_PULLUP);
   // pinMode(STROBE_PIN, INPUT_PULLUP);  // internal pullup is not strong enough
 }
 
 void InitInterrupts() {
   // setup interrupt timers
-  // imu_timer.begin(ReadIMU, 1000);  // microseconds
-  // imu_timer.priority(0);  // [0,255] with 0 as highest
-  // strobe_timer.begin(WriteStrobe, 16667);  // microseconds
-  // strobe_timer.priority(1);  // [0,255] with 0 as highest
+  imu_timer.begin(ReadIMU, 1000);  // microseconds
+  imu_timer.priority(0);  // [0,255] with 0 as highest
+  strobe_timer.begin(WriteStrobe, 16667);  // microseconds
+  strobe_timer.priority(1);  // [0,255] with 0 as highest
 
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
@@ -316,11 +356,12 @@ void Blink() {
   delay(500);
 }
 
-void setup() {
+void Setup() {
   InitComms();
   InitGPIO();
   Blink();
-  InitMPU6050();
+  // InitMPU6050();
+  InitICM20689();
   InitInterrupts();
 }
 
@@ -501,15 +542,15 @@ void Send() {
   memcpy(&send_buffer[checksum_index], &checksum, sizeof(checksum));
 
   // send packet
-  // if (RawHID.send(send_buffer, send_buffer_size)) {
-  //   // blink led
-  //   if (send_count%10 == 0) {
-  //     led_state = !led_state;
-  //     digitalWrite(LED_PIN, led_state);
-  //   }
-  // } else {
-  //   send_errors++;
-  // }
+  if (RawHID.send(send_buffer, send_buffer_size)) {
+    // blink led
+    if (send_count%10 == 0) {
+      led_state = !led_state;
+      digitalWrite(LED_PIN, led_state);
+    }
+  } else {
+    send_errors++;
+  }
 
   // debug print
   if (send_debug_flag) {
@@ -526,16 +567,16 @@ void Send() {
 }
 
 extern "C" int main() {
-  setup();
+  Setup();
 
   while (true) {
     if (imu_buffer_count >= 3) {
-      // Send();
+      Send();
     }
 
     if (since_print > 1000) {
       since_print = 0;
-      Serial.println("check");
+      // Serial.println("check");
     }
 
     yield();  // yield() is mandatory!
