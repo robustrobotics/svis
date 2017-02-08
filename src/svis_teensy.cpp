@@ -5,7 +5,9 @@
 
 // hardware
 #define LED_PIN 13  // pin for on-board led
-#define STROBE_PIN 7  // pin for camera strobe
+#define STROBE_PIN 5  // pin for camera strobe
+#define TRIGGER_PIN 3  // pin for camera trigger
+#define IMU_INT_PIN 20  // pin for imu interrupt
 
 /* packet structure
 [0-1]: send_count
@@ -53,6 +55,7 @@ uint8_t imu_buffer_tail = 0;
 uint8_t imu_buffer_count = 0;
 
 // strobe variables
+IntervalTimer strobe_timer;
 uint32_t strobe_stamp_buffer[strobe_buffer_size];
 uint8_t strobe_count = 0;
 uint8_t strobe_count_buffer[strobe_buffer_size];
@@ -213,31 +216,66 @@ void ReadStrobe() {
   }
 }
 
+void WriteStrobe() {
+  // strobe timestamp
+  strobe_stamp_buffer[strobe_buffer_head] = micros();
+
+  digitalWrite(STROBE_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWriteFast(LED_PIN, LOW);
+
+  // strobe count
+  strobe_count_buffer[strobe_buffer_head] = strobe_count;
+  strobe_count = (strobe_count + 1);
+
+  // set counts and flags
+  strobe_buffer_head = (strobe_buffer_head + 1)%strobe_buffer_size;
+
+  // check tail
+  if (strobe_buffer_head == strobe_buffer_tail) {
+    strobe_buffer_tail = (strobe_buffer_tail + 1)%strobe_buffer_size;
+  }
+
+  // increment count
+  strobe_buffer_count++;
+  if (strobe_buffer_count > strobe_buffer_size) {
+    strobe_buffer_count = strobe_buffer_size;
+  }
+
+  if (strobe_debug_flag) {
+    PrintStrobeDebug();
+  }
+}
+
 void InitMPU6050() {
   // initialize device
   Serial.println("Initializing I2C devices...");
   mpu6050.initialize();
 
   // verify connection
-  Serial.println("Testing device connections...");
-  Serial.println(mpu6050.testConnection() ?
-                 "MPU6050 connection successful" : "MPU6050 connection failed");
+  // Serial.println("Testing device connections...");
+  // Serial.println(mpu6050.testConnection() ?
+  //                "MPU6050 connection successful" : "MPU6050 connection failed");
 
-  // print registers
-  Serial.print("Sample Rate Divisor: ");
-  Serial.println(mpu6050.getRate());
+  // // print registers
+  // Serial.print("Sample Rate Divisor: ");
+  // Serial.println(mpu6050.getRate());
 
-  Serial.print("DLPF Mode: ");
-  Serial.println(mpu6050.getDLPFMode());
+  // Serial.print("DLPF Mode: ");
+  // Serial.println(mpu6050.getDLPFMode());
 
-  Serial.print("DHPF Mode: ");
-  Serial.println(mpu6050.getDHPFMode());
+  // Serial.print("DHPF Mode: ");
+  // Serial.println(mpu6050.getDHPFMode());
 
-  Serial.print("Gyro Range: ");
-  Serial.println(mpu6050.getFullScaleGyroRange());
+  // Serial.print("Gyro Range: ");
+  // Serial.println(mpu6050.getFullScaleGyroRange());
 
-  Serial.print("Accel Range: ");
-  Serial.println(mpu6050.getFullScaleAccelRange());
+  // Serial.print("Accel Range: ");
+  // Serial.println(mpu6050.getFullScaleAccelRange());
+
+  // Serial.print("Interrupt Mode: ");
+  // mpu6050.setInterruptMode(0);
+  // Serial.println(mpu6050.getInterruptMode());
 }
 
 void InitComms() {
@@ -254,17 +292,21 @@ void InitComms() {
 void InitGPIO() {
   // configure onboard LED
   pinMode(LED_PIN, OUTPUT);
+  pinMode(TRIGGER_PIN, OUTPUT);
   // pinMode(STROBE_PIN, INPUT_PULLUP);  // internal pullup is not strong enough
 }
 
 void InitInterrupts() {
   // setup interrupt timers
-  imu_timer.begin(ReadIMU, 1000);  // microseconds
-  imu_timer.priority(0);  // [0,255] with 0 as highest
+  // imu_timer.begin(ReadIMU, 1000);  // microseconds
+  // imu_timer.priority(0);  // [0,255] with 0 as highest
+  // strobe_timer.begin(WriteStrobe, 16667);  // microseconds
+  // strobe_timer.priority(1);  // [0,255] with 0 as highest
 
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
-  attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // attach pin 7 to interrupt
+  // attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // read camera strobe
+  // attachInterrupt(IMU_INT_PIN, ReadIMU, RISING);  // read imu
 }
 
 void Blink() {
@@ -459,15 +501,15 @@ void Send() {
   memcpy(&send_buffer[checksum_index], &checksum, sizeof(checksum));
 
   // send packet
-  if (RawHID.send(send_buffer, send_buffer_size)) {
-    // blink led
-    if (send_count%10 == 0) {
-      led_state = !led_state;
-      digitalWrite(LED_PIN, led_state);
-    }
-  } else {
-    send_errors++;
-  }
+  // if (RawHID.send(send_buffer, send_buffer_size)) {
+  //   // blink led
+  //   if (send_count%10 == 0) {
+  //     led_state = !led_state;
+  //     digitalWrite(LED_PIN, led_state);
+  //   }
+  // } else {
+  //   send_errors++;
+  // }
 
   // debug print
   if (send_debug_flag) {
@@ -488,12 +530,12 @@ extern "C" int main() {
 
   while (true) {
     if (imu_buffer_count >= 3) {
-      Send();
+      // Send();
     }
 
     if (since_print > 1000) {
       since_print = 0;
-      // Serial.println("check");
+      Serial.println("check");
     }
 
     yield();  // yield() is mandatory!
