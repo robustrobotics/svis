@@ -153,7 +153,9 @@ class SVISNodelet : public nodelet::Nodelet {
         rawhid_close(0);
         return;
       } else if (num == 0) {
-        NODELET_INFO("(svis_ros) 0 bytes received");
+        if (!init_flag_) {
+          NODELET_INFO("(svis_ros) 0 bytes received");
+        }
       } else if (num > 0) {
         t_loop_start_ = ros::Time::now();
 
