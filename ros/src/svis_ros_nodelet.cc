@@ -907,7 +907,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
         // check for stale entry and delete
         if ((ros::Time::now().toSec() - (*it_strobe).timestamp_ros_rx) > 1.0) {
-          // NODELET_INFO("delete stale strobe");
+          NODELET_WARN("(svis ros) Delete stale strobe");
           it_strobe = strobe_buffer_.erase(it_strobe);
         } else {
           // NODELET_INFO("increment strobe");
