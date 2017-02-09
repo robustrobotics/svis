@@ -128,7 +128,7 @@ class SVISNodelet : public nodelet::Nodelet {
     // send config packet
     std::vector<char> buf(64, 0);
     buf[0] = 0xAB;
-    buf[1] = 0xBC;
+    buf[1] = 0xCD;
     NODELET_INFO("(svis_ros) Sending configuration packet...");
     rawhid_send(0, buf.data(), buf.size(), 100);
     buf.clear();
