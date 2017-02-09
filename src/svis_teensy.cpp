@@ -7,7 +7,7 @@
 // hardware
 #define LED_PIN 13  // pin for on-board led
 #define STROBE_PIN 5  // pin for camera strobe
-#define TRIGGER_PIN 3  // pin for camera trigger
+#define TRIGGER_PIN 2  // pin for camera trigger
 #define IMU_INT_PIN 20  // pin for imu interrupt
 
 /* packet structure
@@ -64,6 +64,11 @@ uint8_t strobe_count_buffer[strobe_buffer_size];
 uint8_t strobe_buffer_head = 0;
 uint8_t strobe_buffer_tail = 0;
 uint8_t strobe_buffer_count = 0;
+elapsedMicros since_strobe;
+float strobe_rate_offset = 4.0;
+float strobe_rate = 60.0 + strobe_rate_offset;  // Hz
+uint32_t strobe_period = uint32_t(1.0/strobe_rate * 1000000.0);  // microseconds
+uint32_t strobe_duration = 1000;  // microseconds
 
 // debug
 elapsedMillis since_print;
@@ -225,33 +230,36 @@ void ReadStrobe() {
 }
 
 void WriteStrobe() {
-  // strobe timestamp
-  strobe_stamp_buffer[strobe_buffer_head] = micros();
+  if ((since_strobe > strobe_period) && (since_strobe < strobe_period + strobe_duration)) {
+    digitalWrite(TRIGGER_PIN, HIGH);
 
-  digitalWrite(STROBE_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWriteFast(LED_PIN, LOW);
+    // strobe timestamp
+    strobe_stamp_buffer[strobe_buffer_head] = micros();
 
-  // strobe count
-  strobe_count_buffer[strobe_buffer_head] = strobe_count;
-  strobe_count = (strobe_count + 1);
+    // strobe count
+    strobe_count_buffer[strobe_buffer_head] = strobe_count;
+    strobe_count = (strobe_count + 1);
 
-  // set counts and flags
-  strobe_buffer_head = (strobe_buffer_head + 1)%strobe_buffer_size;
+    // set counts and flags
+    strobe_buffer_head = (strobe_buffer_head + 1)%strobe_buffer_size;
 
-  // check tail
-  if (strobe_buffer_head == strobe_buffer_tail) {
-    strobe_buffer_tail = (strobe_buffer_tail + 1)%strobe_buffer_size;
-  }
+    // check tail
+    if (strobe_buffer_head == strobe_buffer_tail) {
+      strobe_buffer_tail = (strobe_buffer_tail + 1)%strobe_buffer_size;
+    }
 
-  // increment count
-  strobe_buffer_count++;
-  if (strobe_buffer_count > strobe_buffer_size) {
-    strobe_buffer_count = strobe_buffer_size;
-  }
+    // increment count
+    strobe_buffer_count++;
+    if (strobe_buffer_count > strobe_buffer_size) {
+      strobe_buffer_count = strobe_buffer_size;
+    }
 
-  if (strobe_debug_flag) {
-    PrintStrobeDebug();
+    if (strobe_debug_flag) {
+      PrintStrobeDebug();
+    }
+  } else if ((since_strobe > strobe_period) && (since_strobe >= strobe_period + strobe_duration)) {
+    since_strobe = 0;
+    digitalWriteFast(TRIGGER_PIN, LOW);
   }
 }
 
@@ -334,7 +342,7 @@ void InitInterrupts() {
   // setup interrupt timers
   imu_timer.begin(ReadIMU, 1000);  // microseconds
   imu_timer.priority(0);  // [0,255] with 0 as highest
-  strobe_timer.begin(WriteStrobe, 16667);  // microseconds
+  strobe_timer.begin(WriteStrobe, 100);  // microseconds
   strobe_timer.priority(1);  // [0,255] with 0 as highest
 
   // setup pin interrupt
