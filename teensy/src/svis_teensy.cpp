@@ -40,7 +40,7 @@ const int strobe_index[2] = {52, 57};
 const int checksum_index = 62;
 
 // hid usb
-bool config_flag = false;
+bool setup_flag = false;
 uint8_t send_buffer[send_buffer_size];
 uint8_t recv_buffer[send_buffer_size];
 uint16_t send_count = 0;
@@ -389,6 +389,7 @@ void Setup() {
   // InitMPU6050();
   InitICM20689();
   InitInterrupts();
+  setup_flag = true;
 }
 
 void PrintSendBuffer() {
@@ -592,33 +593,77 @@ void Send() {
   }
 }
 
+void Reset() {
+  // hid usb
+  setup_flag = false;
+  send_count = 0;
+  send_errors = 0;
+  strobe_packet_count = 0;
+  imu_packet_count = 0;
+
+  // imu variables
+  imu_buffer_head = 0;
+  imu_buffer_tail = 0;
+  imu_buffer_count = 0;
+
+  // strobe variables
+  strobe_count = 0;
+  strobe_buffer_head = 0;
+  strobe_buffer_tail = 0;
+  strobe_buffer_count = 0;
+
+  // trigger variables
+  trigger_flag = false;
+  since_trigger = 0;
+  trigger_rate = 60.0;  // Hz
+  trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+  trigger_duration = 1000;  // microseconds
+
+  // debug
+  since_print = 0;
+  since_blink = 0;
+  led_state = false;
+  imu_debug_flag = false;
+  strobe_debug_flag = false;
+  send_debug_flag = false;
+}
+
 extern "C" int main() {
   Initialize();
 
-  // get configuration
+  // loop while collecting and sending data
   int num = 0;
-  while (!config_flag) {
+  uint8_t header[2] = {0};
+  while (true) {
     num = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
 
-    if (num > 0) {
-      config_flag = true;
+    // received a packet and it is the right length
+    if (num == 64) {
+      header[0] = recv_buffer[0];
+      header[1] = recv_buffer[1];
+
+      // got configure header packet
+      if (header[0] == 0xAB && header[1] == 0xCD) {
+        // check whether or not we have setup the device
+        if (!setup_flag) {
+          // we have not setup the device and need to configure it
+
+          // wait led to show an unconfigured device
+          if (since_blink > 1000) {
+            since_blink = 0;
+            led_state = !led_state;
+            digitalWriteFast(LED_PIN, led_state);
+          }
+
+          // initialize device
+          Setup();
+        } else {
+          // reset state if we have already setup the device
+          Reset();
+        }
+      }
     }
 
-    // wait led
-    if (since_blink > 1000) {
-      since_blink = 0;
-      led_state = !led_state;
-      digitalWriteFast(LED_PIN, led_state);
-    }
-
-    yield();
-  }
-
-  // initialize device
-  Setup();
-
-  // loop while collecting and sending data
-  while (true) {
     // send usb data
     if (imu_buffer_count >= 3) {
       Send();
