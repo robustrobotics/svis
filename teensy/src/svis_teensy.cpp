@@ -354,24 +354,67 @@ void InitInterrupts() {
   // attachInterrupt(IMU_INT_PIN, ReadIMU, RISING);  // read imu
 }
 
-void Blink() {
+void BlinkInit() {
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, LOW);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, LOW);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, LOW);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
 
   digitalWriteFast(LED_PIN, LOW);
   delay(2000);
+}
+
+void BlinkSetup() {
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(100);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(100);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(100);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+}
+
+void BlinkReset() {
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(400);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(400);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(400);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+}
+
+void Heartbeat() {
+  // wait led to show an unconfigured device
+  if (since_blink > 1000) {
+    since_blink = 0;
+    led_state = !led_state;
+    digitalWriteFast(LED_PIN, led_state);
+  }
 }
 
 void Initialize() {
@@ -380,10 +423,11 @@ void Initialize() {
 
   // setup led for visual feedback
   pinMode(LED_PIN, OUTPUT);
-  Blink();
+  BlinkInit();
 }
 
 void Setup() {
+  BlinkSetup();
   InitComms();
   InitGPIO();
   // InitMPU6050();
@@ -594,6 +638,8 @@ void Send() {
 }
 
 void Reset() {
+  BlinkReset();
+
   // hid usb
   setup_flag = false;
   send_count = 0;
@@ -647,15 +693,6 @@ extern "C" int main() {
         // check whether or not we have setup the device
         if (!setup_flag) {
           // we have not setup the device and need to configure it
-
-          // wait led to show an unconfigured device
-          if (since_blink > 1000) {
-            since_blink = 0;
-            led_state = !led_state;
-            digitalWriteFast(LED_PIN, led_state);
-          }
-
-          // initialize device
           Setup();
         } else {
           // reset state if we have already setup the device
@@ -667,6 +704,11 @@ extern "C" int main() {
     // send usb data
     if (imu_buffer_count >= 3) {
       Send();
+    }
+
+    // indicate idle
+    if (!setup_flag) {
+      Heartbeat();
     }
 
     // debug print statement
