@@ -55,7 +55,7 @@ class SVISNodelet : public nodelet::Nodelet {
    * tells the other threads to stop.
    */
   static void signal_handler(int signal) {
-    printf("SIGINT Received!\n");
+    printf("(svis_ros) SIGINT received\n");
 
     // Tell other threads to stop.
     SVISNodelet::stop_signal_ = 1;
