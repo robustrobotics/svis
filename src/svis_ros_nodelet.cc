@@ -125,8 +125,17 @@ class SVISNodelet : public nodelet::Nodelet {
       NODELET_INFO("(svis_ros) Found svis_teensy device\n");
     }
 
+    // send config packet
+    std::vector<char> buf(64, 0);
+    buf[0] = 0xAB;
+    buf[1] = 0xBC;
+    NODELET_INFO("(svis_ros) Sending configuration packet...");
+    rawhid_send(0, buf.data(), buf.size(), 100);
+    buf.clear();
+    buf.resize(64);
+    NODELET_INFO("(svis_ros) Complete");
+
     // loop
-    std::vector<char> buf(64);
     while (ros::ok() && !stop_signal_) {
       // period
       t_period_ = ros::Time::now();
