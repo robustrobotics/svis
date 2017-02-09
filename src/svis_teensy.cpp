@@ -40,7 +40,9 @@ const int strobe_index[2] = {52, 57};
 const int checksum_index = 62;
 
 // hid usb
+bool config_flag = false;
 uint8_t send_buffer[send_buffer_size];
+uint8_t recv_buffer[send_buffer_size];
 uint16_t send_count = 0;
 uint8_t send_errors = 0;
 uint8_t strobe_packet_count = 0;
@@ -74,6 +76,7 @@ uint32_t trigger_duration = 1000;  // microseconds
 
 // debug
 elapsedMillis since_print;
+elapsedMillis since_blink;
 bool led_state = false;
 bool imu_debug_flag = false;
 bool strobe_debug_flag = false;
@@ -324,9 +327,6 @@ void InitMPU6050() {
 }
 
 void InitComms() {
-  // initialize serial communication
-  Serial.begin(115200);
-
   // initialize i2c communication
   Wire.begin();
   Wire.setClock(400000);
@@ -336,7 +336,6 @@ void InitComms() {
 
 void InitGPIO() {
   // configure onboard LED
-  pinMode(LED_PIN, OUTPUT);
   pinMode(TRIGGER_PIN, OUTPUT);
   // pinMode(IMU_INT_PIN, INPUT_PULLUP);
   // pinMode(STROBE_PIN, INPUT_PULLUP);  // internal pullup is not strong enough
@@ -357,15 +356,36 @@ void InitInterrupts() {
 
 void Blink() {
   digitalWriteFast(LED_PIN, HIGH);
-  delay(500);
+  delay(300);
   digitalWriteFast(LED_PIN, LOW);
-  delay(500);
+  delay(300);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(300);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(300);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
+
+  digitalWriteFast(LED_PIN, LOW);
+  delay(2000);
+}
+
+void Initialize() {
+  // initialize serial communication
+  Serial.begin(115200);
+
+  // setup led for visual feedback
+  pinMode(LED_PIN, OUTPUT);
+  Blink();
 }
 
 void Setup() {
   InitComms();
   InitGPIO();
-  Blink();
   // InitMPU6050();
   InitICM20689();
   InitInterrupts();
@@ -573,8 +593,31 @@ void Send() {
 }
 
 extern "C" int main() {
+  Initialize();
+
+  // get configuration
+  int num = 0;
+  while (!config_flag) {
+    num = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
+
+    if (num > 0) {
+      config_flag = true;
+    }
+
+    // wait led
+    if (since_blink > 1000) {
+      since_blink = 0;
+      led_state = !led_state;
+      digitalWriteFast(LED_PIN, led_state);
+    }
+
+    yield();
+  }
+
+  // initialize device
   Setup();
 
+  // loop while collecting and sending data
   while (true) {
     // send usb data
     if (imu_buffer_count >= 3) {
