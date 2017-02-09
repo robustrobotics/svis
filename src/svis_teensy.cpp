@@ -57,18 +57,20 @@ uint8_t imu_buffer_tail = 0;
 uint8_t imu_buffer_count = 0;
 
 // strobe variables
-IntervalTimer strobe_timer;
 uint32_t strobe_stamp_buffer[strobe_buffer_size];
 uint8_t strobe_count = 0;
 uint8_t strobe_count_buffer[strobe_buffer_size];
 uint8_t strobe_buffer_head = 0;
 uint8_t strobe_buffer_tail = 0;
 uint8_t strobe_buffer_count = 0;
-elapsedMicros since_strobe;
-float strobe_rate_offset = 4.0;
-float strobe_rate = 60.0 + strobe_rate_offset;  // Hz
-uint32_t strobe_period = uint32_t(1.0/strobe_rate * 1000000.0);  // microseconds
-uint32_t strobe_duration = 1000;  // microseconds
+
+// trigger variables
+IntervalTimer trigger_timer;
+bool trigger_flag = false;
+elapsedMicros since_trigger;
+float trigger_rate = 60.0;  // Hz
+uint32_t trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+uint32_t trigger_duration = 1000;  // microseconds
 
 // debug
 elapsedMillis since_print;
@@ -229,9 +231,11 @@ void ReadStrobe() {
   }
 }
 
-void WriteStrobe() {
-  if ((since_strobe > strobe_period) && (since_strobe < strobe_period + strobe_duration)) {
-    digitalWrite(TRIGGER_PIN, HIGH);
+void SetTrigger() {
+  if ((since_trigger > trigger_period) && !trigger_flag) {
+    digitalWriteFast(TRIGGER_PIN, HIGH);
+    since_trigger = 0;
+    trigger_flag = true;
 
     // strobe timestamp
     strobe_stamp_buffer[strobe_buffer_head] = micros();
@@ -257,9 +261,9 @@ void WriteStrobe() {
     if (strobe_debug_flag) {
       PrintStrobeDebug();
     }
-  } else if ((since_strobe > strobe_period) && (since_strobe >= strobe_period + strobe_duration)) {
-    since_strobe = 0;
+  } else if ((since_trigger > trigger_duration) && trigger_flag) {
     digitalWriteFast(TRIGGER_PIN, LOW);
+    trigger_flag = false;
   }
 }
 
@@ -342,8 +346,8 @@ void InitInterrupts() {
   // setup interrupt timers
   imu_timer.begin(ReadIMU, 1000);  // microseconds
   imu_timer.priority(0);  // [0,255] with 0 as highest
-  strobe_timer.begin(WriteStrobe, 100);  // microseconds
-  strobe_timer.priority(1);  // [0,255] with 0 as highest
+  trigger_timer.begin(SetTrigger, 100);  // microseconds
+  trigger_timer.priority(1);  // [0,255] with 0 as highest
 
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
@@ -352,7 +356,7 @@ void InitInterrupts() {
 }
 
 void Blink() {
-  digitalWrite(LED_PIN, HIGH);
+  digitalWriteFast(LED_PIN, HIGH);
   delay(500);
   digitalWriteFast(LED_PIN, LOW);
   delay(500);
@@ -572,10 +576,12 @@ extern "C" int main() {
   Setup();
 
   while (true) {
+    // send usb data
     if (imu_buffer_count >= 3) {
       Send();
     }
 
+    // debug print statement
     if (since_print > 1000) {
       since_print = 0;
       // Serial.println("check");
