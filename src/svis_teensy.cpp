@@ -1,11 +1,14 @@
 #include "WProgram.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include "ICM20689.h"
 #include "Wire.h"
 
 // hardware
 #define LED_PIN 13  // pin for on-board led
-#define STROBE_PIN 7  // pin for camera strobe
+#define STROBE_PIN 5  // pin for camera strobe
+#define TRIGGER_PIN 2  // pin for camera trigger
+#define IMU_INT_PIN 20  // pin for imu interrupt
 
 /* packet structure
 [0-1]: send_count
@@ -37,7 +40,9 @@ const int strobe_index[2] = {52, 57};
 const int checksum_index = 62;
 
 // hid usb
+bool config_flag = false;
 uint8_t send_buffer[send_buffer_size];
+uint8_t recv_buffer[send_buffer_size];
 uint16_t send_count = 0;
 uint8_t send_errors = 0;
 uint8_t strobe_packet_count = 0;
@@ -46,6 +51,7 @@ uint8_t imu_packet_count = 0;
 // imu variables
 IntervalTimer imu_timer;
 MPU6050 mpu6050;
+ICM20689 icm20689;
 uint32_t imu_stamp_buffer[imu_buffer_size];
 int16_t imu_data_buffer[imu_data_size*imu_buffer_size];
 uint8_t imu_buffer_head = 0;
@@ -60,8 +66,17 @@ uint8_t strobe_buffer_head = 0;
 uint8_t strobe_buffer_tail = 0;
 uint8_t strobe_buffer_count = 0;
 
+// trigger variables
+IntervalTimer trigger_timer;
+bool trigger_flag = false;
+elapsedMicros since_trigger;
+float trigger_rate = 60.0;  // Hz
+uint32_t trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+uint32_t trigger_duration = 1000;  // microseconds
+
 // debug
 elapsedMillis since_print;
+elapsedMillis since_blink;
 bool led_state = false;
 bool imu_debug_flag = false;
 bool strobe_debug_flag = false;
@@ -129,7 +144,13 @@ void ReadIMU() {
   imu_stamp_buffer[imu_buffer_head] = micros();
 
   // imu data
-  mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
+  // mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 1],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 2],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 4],
+  //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 5]);
+  icm20689.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
                      &imu_data_buffer[imu_buffer_head*imu_data_size + 1],
                      &imu_data_buffer[imu_buffer_head*imu_data_size + 2],
                      &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
@@ -213,6 +234,67 @@ void ReadStrobe() {
   }
 }
 
+void SetTrigger() {
+  if ((since_trigger > trigger_period) && !trigger_flag) {
+    digitalWriteFast(TRIGGER_PIN, HIGH);
+    since_trigger = 0;
+    trigger_flag = true;
+
+    // strobe timestamp
+    strobe_stamp_buffer[strobe_buffer_head] = micros();
+
+    // strobe count
+    strobe_count_buffer[strobe_buffer_head] = strobe_count;
+    strobe_count = (strobe_count + 1);
+
+    // set counts and flags
+    strobe_buffer_head = (strobe_buffer_head + 1)%strobe_buffer_size;
+
+    // check tail
+    if (strobe_buffer_head == strobe_buffer_tail) {
+      strobe_buffer_tail = (strobe_buffer_tail + 1)%strobe_buffer_size;
+    }
+
+    // increment count
+    strobe_buffer_count++;
+    if (strobe_buffer_count > strobe_buffer_size) {
+      strobe_buffer_count = strobe_buffer_size;
+    }
+
+    if (strobe_debug_flag) {
+      PrintStrobeDebug();
+    }
+  } else if ((since_trigger > trigger_duration) && trigger_flag) {
+    digitalWriteFast(TRIGGER_PIN, LOW);
+    trigger_flag = false;
+  }
+}
+
+void InitICM20689() {
+  // initialize device
+  Serial.println("Initializing I2C devices...");
+  icm20689.initialize();
+
+  // verify connection
+  Serial.println("Testing device connections...");
+  Serial.println(icm20689.testConnection() ?
+                 "ICM20689 connection successful" : "ICM20689 connection failed");
+
+  // print registers
+  Serial.print("Sample Rate Divisor: ");
+  Serial.println(icm20689.getRate());
+
+  Serial.print("Gyro Range: ");
+  Serial.println(icm20689.getFullScaleGyroRange());
+
+  Serial.print("Accel Range: ");
+  Serial.println(icm20689.getFullScaleAccelRange());
+
+  // Serial.print("Interrupt Mode: ");
+  // icm20689.setInterruptMode(0);
+  // Serial.println(mpu6050.getInterruptMode());
+}
+
 void InitMPU6050() {
   // initialize device
   Serial.println("Initializing I2C devices...");
@@ -238,12 +320,13 @@ void InitMPU6050() {
 
   Serial.print("Accel Range: ");
   Serial.println(mpu6050.getFullScaleAccelRange());
+
+  // Serial.print("Interrupt Mode: ");
+  // mpu6050.setInterruptMode(0);
+  // Serial.println(mpu6050.getInterruptMode());
 }
 
 void InitComms() {
-  // initialize serial communication
-  Serial.begin(115200);
-
   // initialize i2c communication
   Wire.begin();
   Wire.setClock(400000);
@@ -253,7 +336,8 @@ void InitComms() {
 
 void InitGPIO() {
   // configure onboard LED
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(TRIGGER_PIN, OUTPUT);
+  // pinMode(IMU_INT_PIN, INPUT_PULLUP);
   // pinMode(STROBE_PIN, INPUT_PULLUP);  // internal pullup is not strong enough
 }
 
@@ -261,24 +345,49 @@ void InitInterrupts() {
   // setup interrupt timers
   imu_timer.begin(ReadIMU, 1000);  // microseconds
   imu_timer.priority(0);  // [0,255] with 0 as highest
+  trigger_timer.begin(SetTrigger, 100);  // microseconds
+  trigger_timer.priority(1);  // [0,255] with 0 as highest
 
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
-  attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // attach pin 7 to interrupt
+  // attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // read camera strobe
+  // attachInterrupt(IMU_INT_PIN, ReadIMU, RISING);  // read imu
 }
 
 void Blink() {
-  digitalWrite(LED_PIN, HIGH);
-  delay(500);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
   digitalWriteFast(LED_PIN, LOW);
-  delay(500);
+  delay(300);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(300);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(300);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(300);
+
+  digitalWriteFast(LED_PIN, LOW);
+  delay(2000);
 }
 
-void setup() {
+void Initialize() {
+  // initialize serial communication
+  Serial.begin(115200);
+
+  // setup led for visual feedback
+  pinMode(LED_PIN, OUTPUT);
+  Blink();
+}
+
+void Setup() {
   InitComms();
   InitGPIO();
-  Blink();
-  InitMPU6050();
+  // InitMPU6050();
+  InitICM20689();
   InitInterrupts();
 }
 
@@ -484,13 +593,38 @@ void Send() {
 }
 
 extern "C" int main() {
-  setup();
+  Initialize();
 
+  // get configuration
+  int num = 0;
+  while (!config_flag) {
+    num = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
+
+    if (num > 0) {
+      config_flag = true;
+    }
+
+    // wait led
+    if (since_blink > 1000) {
+      since_blink = 0;
+      led_state = !led_state;
+      digitalWriteFast(LED_PIN, led_state);
+    }
+
+    yield();
+  }
+
+  // initialize device
+  Setup();
+
+  // loop while collecting and sending data
   while (true) {
+    // send usb data
     if (imu_buffer_count >= 3) {
       Send();
     }
 
+    // debug print statement
     if (since_print > 1000) {
       since_print = 0;
       // Serial.println("check");
