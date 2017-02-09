@@ -219,6 +219,10 @@ class SVISNodelet : public nodelet::Nodelet {
 
         timing_.loop = (ros::Time::now() - t_loop_start_).toSec();
         PublishTiming();
+
+        if (use_camera_ && !received_camera_) {
+          NODELET_WARN_THROTTLE(0.5, "(svis_ros) Have not received camera message");
+        }
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -682,6 +686,10 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                      const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
+    if (!received_camera_) {
+      received_camera_ = true;
+    }
+
     // PrintMetaDataRaw(image_msg);
     CameraPacket camera_packet;
 
@@ -1054,6 +1062,10 @@ class SVISNodelet : public nodelet::Nodelet {
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
   boost::circular_buffer<CameraStrobePacket> camera_strobe_buffer_;
+
+  // configuration
+  bool use_camera_ = true;
+  bool received_camera_ = false;
 
   // imu
   int imu_filter_size_ = 5;
