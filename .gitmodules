@@ -1,6 +1,3 @@
 [submodule "svis_cad"]
 	path = svis_cad
 	url = https://github.com/jakeware/svis_cad.git
-[submodule "svis_pcb"]
-	path = svis_pcb
-	url = https://github.com/jakeware/svis_pcb.git
