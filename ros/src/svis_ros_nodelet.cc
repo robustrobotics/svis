@@ -720,42 +720,38 @@ class SVISNodelet : public nodelet::Nodelet {
         continue;
       }
 
+      // get count difference between two most recent strobe messages
+      uint8_t diff = 0;
       if (strobe_packets[i].count > strobe_count_last_) {
         // no rollover
-        uint8_t diff = strobe_packets[i].count - strobe_count_last_;
-
-        // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
-          NODELET_WARN("(svis_ros) detected jump in strobe count with no rollover");
-          // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
-          //              diff,
-          //              strobe_count_last_,
-          //              strobe_packets[i].count);
-        }
-
-        strobe_count_total_ += diff;
+        diff = strobe_packets[i].count - strobe_count_last_;
       } else if (strobe_packets[i].count < strobe_count_last_) {
         // rollover
-        uint8_t diff = (strobe_count_last_ + strobe_packets[i].count);
+        diff = (strobe_count_last_ + strobe_packets[i].count);
 
+        // handle rollover
         if (diff == 255) {
+          NODELET_WARN("(svis_ros) Handle rollover");
           diff = 1;
         }
-
-        // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
-          NODELET_WARN("(svis_ros) detected jump in strobe count with rollover");
-          // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
-          //              diff,
-          //              strobe_count_last_,
-          //              strobe_packets[i].count);
-        }
-
-        strobe_count_total_ += diff;
       } else {
         // no change
         NODELET_WARN("(svis_ros) no change in strobe count");
       }
+
+      // check diff value
+      if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
+        NODELET_WARN("(svis_ros) detected jump in strobe count");
+        // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
+        //              diff,
+        //              strobe_count_last_,
+        //              strobe_packets[i].count);
+      } else if (diff < 1 && !std::isinf(strobe_count_last_)) {
+        NODELET_WARN("(svis_ros) detected lag in strobe count");
+      }
+
+      // update count
+      strobe_count_total_ += diff;
 
       // set packet total
       strobe_packets[i].count_total = strobe_count_total_;
