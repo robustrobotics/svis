@@ -515,6 +515,11 @@ class SVISNodelet : public nodelet::Nodelet {
       imu_buffer_.push_back(imu);
     }
 
+    // warn if buffer is at max size
+    if (imu_buffer_.size() == imu_buffer_.max_size()) {
+      NODELET_WARN("(svis_ros) imu buffer at max size");
+    }
+
     timing_.push_imu = toc();
   }
 
@@ -525,6 +530,11 @@ class SVISNodelet : public nodelet::Nodelet {
     for (int i = 0; i < strobe_packets.size(); i++) {
       strobe = strobe_packets[i];
       strobe_buffer_.push_back(strobe);
+    }
+
+    // warn if buffer is at max size
+    if (strobe_buffer_.size() == strobe_buffer_.max_size()) {
+      NODELET_WARN("(svis_ros) strobe buffer at max size");
     }
 
     timing_.push_strobe = toc();
@@ -708,6 +718,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // add to buffer
     camera_buffer_.push_back(camera_packet);
+
+    // warn if buffer is at max size
+    if (camera_buffer_.size() == camera_buffer_.max_size() && !sync_flag_) {
+      NODELET_WARN("(svis_ros) camera buffer at max size");
+    }
   }
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
