@@ -40,7 +40,7 @@ const int strobe_index[2] = {52, 57};
 const int checksum_index = 62;
 
 // hid usb
-bool config_flag = false;
+bool setup_flag = false;
 uint8_t send_buffer[send_buffer_size];
 uint8_t recv_buffer[send_buffer_size];
 uint16_t send_count = 0;
@@ -354,24 +354,67 @@ void InitInterrupts() {
   // attachInterrupt(IMU_INT_PIN, ReadIMU, RISING);  // read imu
 }
 
-void Blink() {
+void BlinkInit() {
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, LOW);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, LOW);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, LOW);
-  delay(300);
+  delay(200);
   digitalWriteFast(LED_PIN, HIGH);
-  delay(300);
+  delay(200);
 
   digitalWriteFast(LED_PIN, LOW);
   delay(2000);
+}
+
+void BlinkSetup() {
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(100);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(100);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(100);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(400);
+}
+
+void BlinkReset() {
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(400);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(400);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+  digitalWriteFast(LED_PIN, LOW);
+  delay(400);
+  digitalWriteFast(LED_PIN, HIGH);
+  delay(100);
+}
+
+void Heartbeat() {
+  // wait led to show an unconfigured device
+  if (since_blink > 1000) {
+    since_blink = 0;
+    led_state = !led_state;
+    digitalWriteFast(LED_PIN, led_state);
+  }
 }
 
 void Initialize() {
@@ -380,15 +423,17 @@ void Initialize() {
 
   // setup led for visual feedback
   pinMode(LED_PIN, OUTPUT);
-  Blink();
+  BlinkInit();
 }
 
 void Setup() {
+  BlinkSetup();
   InitComms();
   InitGPIO();
   // InitMPU6050();
   InitICM20689();
   InitInterrupts();
+  setup_flag = true;
 }
 
 void PrintSendBuffer() {
@@ -592,36 +637,81 @@ void Send() {
   }
 }
 
+void Reset() {
+  BlinkReset();
+
+  // hid usb
+  setup_flag = false;
+  send_count = 0;
+  send_errors = 0;
+  strobe_packet_count = 0;
+  imu_packet_count = 0;
+
+  // imu variables
+  imu_buffer_head = 0;
+  imu_buffer_tail = 0;
+  imu_buffer_count = 0;
+
+  // strobe variables
+  strobe_count = 0;
+  strobe_buffer_head = 0;
+  strobe_buffer_tail = 0;
+  strobe_buffer_count = 0;
+
+  // trigger variables
+  trigger_flag = false;
+  since_trigger = 0;
+  trigger_rate = 60.0;  // Hz
+  trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+  trigger_duration = 1000;  // microseconds
+
+  // debug
+  since_print = 0;
+  since_blink = 0;
+  led_state = false;
+  imu_debug_flag = false;
+  strobe_debug_flag = false;
+  send_debug_flag = false;
+}
+
+void ProcessPacket(int num) {
+  // received a packet and it is the right length
+  if (num == 64) {
+    uint8_t header[2] = {0};
+    header[0] = recv_buffer[0];
+    header[1] = recv_buffer[1];
+
+    // got setup header packet
+    if (header[0] == 0xAB && header[1] == 0) {
+      // check whether or not we have setup the device
+      if (!setup_flag) {
+        // we have not setup the device and need to configure it
+        Setup();
+      } else {
+        // reset state if we have already setup the device
+        Reset();
+      }
+    }
+  }
+}
+
 extern "C" int main() {
   Initialize();
 
-  // get configuration
-  int num = 0;
-  while (!config_flag) {
-    num = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
-
-    if (num > 0) {
-      config_flag = true;
-    }
-
-    // wait led
-    if (since_blink > 1000) {
-      since_blink = 0;
-      led_state = !led_state;
-      digitalWriteFast(LED_PIN, led_state);
-    }
-
-    yield();
-  }
-
-  // initialize device
-  Setup();
-
   // loop while collecting and sending data
+  int num = 0;
   while (true) {
+    num = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
+    ProcessPacket(num);
+
     // send usb data
     if (imu_buffer_count >= 3) {
       Send();
+    }
+
+    // indicate idle
+    if (!setup_flag) {
+      Heartbeat();
     }
 
     // debug print statement

@@ -55,7 +55,7 @@ class SVISNodelet : public nodelet::Nodelet {
    * tells the other threads to stop.
    */
   static void signal_handler(int signal) {
-    printf("SIGINT Received!\n");
+    printf("(svis_ros) SIGINT received\n");
 
     // Tell other threads to stop.
     SVISNodelet::stop_signal_ = 1;
@@ -125,17 +125,11 @@ class SVISNodelet : public nodelet::Nodelet {
       NODELET_INFO("(svis_ros) Found svis_teensy device\n");
     }
 
-    // send config packet
-    std::vector<char> buf(64, 0);
-    buf[0] = 0xAB;
-    buf[1] = 0xBC;
-    NODELET_INFO("(svis_ros) Sending configuration packet...");
-    rawhid_send(0, buf.data(), buf.size(), 100);
-    buf.clear();
-    buf.resize(64);
-    NODELET_INFO("(svis_ros) Complete");
+    // send setup packet
+    SendSetup();
 
     // loop
+    std::vector<char> buf(64, 0);
     while (ros::ok() && !stop_signal_) {
       // period
       t_period_ = ros::Time::now();
@@ -153,7 +147,9 @@ class SVISNodelet : public nodelet::Nodelet {
         rawhid_close(0);
         return;
       } else if (num == 0) {
-        NODELET_INFO("(svis_ros) 0 bytes received");
+        if (!init_flag_) {
+          NODELET_INFO("(svis_ros) 0 bytes received");
+        }
       } else if (num > 0) {
         t_loop_start_ = ros::Time::now();
 
@@ -219,6 +215,10 @@ class SVISNodelet : public nodelet::Nodelet {
 
         timing_.loop = (ros::Time::now() - t_loop_start_).toSec();
         PublishTiming();
+
+        if (use_camera_ && !received_camera_) {
+          NODELET_WARN_THROTTLE(0.5, "(svis_ros) Have not received camera message");
+        }
       } else {
         NODELET_WARN("(svis_ros) Bad return value from rawhid_recv");
       }
@@ -322,6 +322,15 @@ class SVISNodelet : public nodelet::Nodelet {
     CameraPacket camera;
     StrobePacket strobe;
   };
+
+  void SendSetup() {
+    std::vector<char> buf(64, 0);
+    buf[0] = 0xAB;
+    buf[1] = 0;
+    NODELET_INFO("(svis_ros) Sending configuration packet...");
+    rawhid_send(0, buf.data(), buf.size(), 100);
+    NODELET_INFO("(svis_ros) Complete");
+  }
 
   int GetChecksum(std::vector<char> &buf) {
     tic();
@@ -506,6 +515,11 @@ class SVISNodelet : public nodelet::Nodelet {
       imu_buffer_.push_back(imu);
     }
 
+    // warn if buffer is at max size
+    if (imu_buffer_.size() == imu_buffer_.max_size()) {
+      NODELET_WARN("(svis_ros) imu buffer at max size");
+    }
+
     timing_.push_imu = toc();
   }
 
@@ -516,6 +530,11 @@ class SVISNodelet : public nodelet::Nodelet {
     for (int i = 0; i < strobe_packets.size(); i++) {
       strobe = strobe_packets[i];
       strobe_buffer_.push_back(strobe);
+    }
+
+    // warn if buffer is at max size
+    if (strobe_buffer_.size() == strobe_buffer_.max_size()) {
+      NODELET_WARN("(svis_ros) strobe buffer at max size");
     }
 
     timing_.push_strobe = toc();
@@ -682,6 +701,10 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                      const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
+    if (!received_camera_) {
+      received_camera_ = true;
+    }
+
     // PrintMetaDataRaw(image_msg);
     CameraPacket camera_packet;
 
@@ -695,6 +718,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // add to buffer
     camera_buffer_.push_back(camera_packet);
+
+    // warn if buffer is at max size
+    if (camera_buffer_.size() == camera_buffer_.max_size() && !sync_flag_) {
+      NODELET_WARN("(svis_ros) camera buffer at max size");
+    }
   }
 
   void GetStrobeTotal(std::vector<StrobePacket> &strobe_packets) {
@@ -712,42 +740,38 @@ class SVISNodelet : public nodelet::Nodelet {
         continue;
       }
 
+      // get count difference between two most recent strobe messages
+      uint8_t diff = 0;
       if (strobe_packets[i].count > strobe_count_last_) {
         // no rollover
-        uint8_t diff = strobe_packets[i].count - strobe_count_last_;
-
-        // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
-          NODELET_WARN("(svis_ros) detected jump in strobe count with no rollover");
-          // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
-          //              diff,
-          //              strobe_count_last_,
-          //              strobe_packets[i].count);
-        }
-
-        strobe_count_total_ += diff;
+        diff = strobe_packets[i].count - strobe_count_last_;
       } else if (strobe_packets[i].count < strobe_count_last_) {
         // rollover
-        uint8_t diff = (strobe_count_last_ + strobe_packets[i].count);
+        diff = (strobe_count_last_ + strobe_packets[i].count);
 
+        // handle rollover
         if (diff == 255) {
+          // NODELET_WARN("(svis_ros) Handle rollover");
           diff = 1;
         }
-
-        // check for jump
-        if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
-          NODELET_WARN("(svis_ros) detected jump in strobe count with rollover");
-          // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
-          //              diff,
-          //              strobe_count_last_,
-          //              strobe_packets[i].count);
-        }
-
-        strobe_count_total_ += diff;
       } else {
         // no change
         NODELET_WARN("(svis_ros) no change in strobe count");
       }
+
+      // check diff value
+      if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
+        NODELET_WARN("(svis_ros) detected jump in strobe count");
+        // NODELET_WARN("(svis_ros) diff: %i, last: %i, count: %i",
+        //              diff,
+        //              strobe_count_last_,
+        //              strobe_packets[i].count);
+      } else if (diff < 1 && !std::isinf(strobe_count_last_)) {
+        NODELET_WARN("(svis_ros) detected lag in strobe count");
+      }
+
+      // update count
+      strobe_count_total_ += diff;
 
       // set packet total
       strobe_packets[i].count_total = strobe_count_total_;
@@ -903,7 +927,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
         // check for stale entry and delete
         if ((ros::Time::now().toSec() - (*it_strobe).timestamp_ros_rx) > 1.0) {
-          // NODELET_INFO("delete stale strobe");
+          NODELET_WARN("(svis ros) Delete stale strobe");
           it_strobe = strobe_buffer_.erase(it_strobe);
         } else {
           // NODELET_INFO("increment strobe");
@@ -1054,6 +1078,10 @@ class SVISNodelet : public nodelet::Nodelet {
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
   boost::circular_buffer<CameraStrobePacket> camera_strobe_buffer_;
+
+  // configuration
+  bool use_camera_ = true;
+  bool received_camera_ = false;
 
   // imu
   int imu_filter_size_ = 5;
