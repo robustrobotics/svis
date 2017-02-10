@@ -674,32 +674,35 @@ void Reset() {
   send_debug_flag = false;
 }
 
+void ProcessPacket(int num) {
+  // received a packet and it is the right length
+  if (num == 64) {
+    uint8_t header[2] = {0};
+    header[0] = recv_buffer[0];
+    header[1] = recv_buffer[1];
+
+    // got setup header packet
+    if (header[0] == 0xAB && header[1] == 0) {
+      // check whether or not we have setup the device
+      if (!setup_flag) {
+        // we have not setup the device and need to configure it
+        Setup();
+      } else {
+        // reset state if we have already setup the device
+        Reset();
+      }
+    }
+  }
+}
+
 extern "C" int main() {
   Initialize();
 
   // loop while collecting and sending data
   int num = 0;
-  uint8_t header[2] = {0};
   while (true) {
     num = RawHID.recv(recv_buffer, 0); // 0 timeout = do not wait
-
-    // received a packet and it is the right length
-    if (num == 64) {
-      header[0] = recv_buffer[0];
-      header[1] = recv_buffer[1];
-
-      // got configure header packet
-      if (header[0] == 0xAB && header[1] == 0xCD) {
-        // check whether or not we have setup the device
-        if (!setup_flag) {
-          // we have not setup the device and need to configure it
-          Setup();
-        } else {
-          // reset state if we have already setup the device
-          Reset();
-        }
-      }
-    }
+    ProcessPacket(num);
 
     // send usb data
     if (imu_buffer_count >= 3) {
