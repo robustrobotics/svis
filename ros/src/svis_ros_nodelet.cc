@@ -751,7 +751,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
         // handle rollover
         if (diff == 255) {
-          NODELET_WARN("(svis_ros) Handle rollover");
+          // NODELET_WARN("(svis_ros) Handle rollover");
           diff = 1;
         }
       } else {
