@@ -4,9 +4,9 @@
   <arg name="namespace" default="svis_ros" />
   <arg name="manager" default="manager" />
   <arg name="standalone" default="true" />
+  <arg name="param_file" default="adaptive_mesh_sensor_nodelet.yml" />
 
   <group ns="$(arg namespace)" >
-
     <!-- Launch the nodelet manager. -->
     <node if="$(arg standalone)"
           pkg="nodelet" type="nodelet" name="$(arg manager)"
@@ -16,7 +16,7 @@
     <!-- Launch the nodelet.. -->
     <node pkg="nodelet" type="nodelet" name="svis_ros"
           args="load svis_ros/SVISNodelet $(arg manager)" output="screen">
+      <rosparam command="load" file="$(find svis_ros)/cfg/$(arg param_file)"/>
     </node>
-
   </group>
 </launch>

@@ -25,6 +25,7 @@ set(REQ_CATKIN_PKGS
   std_msgs
   sensor_msgs
   message_generation
+  fla_utils
 )
 find_package(catkin REQUIRED COMPONENTS ${REQ_CATKIN_PKGS})
 
