@@ -125,17 +125,11 @@ class SVISNodelet : public nodelet::Nodelet {
       NODELET_INFO("(svis_ros) Found svis_teensy device\n");
     }
 
-    // send config packet
-    std::vector<char> buf(64, 0);
-    buf[0] = 0xAB;
-    buf[1] = 0xCD;
-    NODELET_INFO("(svis_ros) Sending configuration packet...");
-    rawhid_send(0, buf.data(), buf.size(), 100);
-    buf.clear();
-    buf.resize(64);
-    NODELET_INFO("(svis_ros) Complete");
+    // send setup packet
+    SendSetup();
 
     // loop
+    std::vector<char> buf(64, 0);
     while (ros::ok() && !stop_signal_) {
       // period
       t_period_ = ros::Time::now();
@@ -328,6 +322,15 @@ class SVISNodelet : public nodelet::Nodelet {
     CameraPacket camera;
     StrobePacket strobe;
   };
+
+  void SendSetup() {
+    std::vector<char> buf(64, 0);
+    buf[0] = 0xAB;
+    buf[1] = 0;
+    NODELET_INFO("(svis_ros) Sending configuration packet...");
+    rawhid_send(0, buf.data(), buf.size(), 100);
+    NODELET_INFO("(svis_ros) Complete");
+  }
 
   int GetChecksum(std::vector<char> &buf) {
     tic();
