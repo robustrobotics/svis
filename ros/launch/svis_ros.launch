@@ -4,7 +4,7 @@
   <arg name="namespace" default="svis_ros" />
   <arg name="manager" default="manager" />
   <arg name="standalone" default="true" />
-  <arg name="param_file" default="adaptive_mesh_sensor_nodelet.yml" />
+  <arg name="param_file" default="svis_ros.yaml" />
 
   <group ns="$(arg namespace)" >
     <!-- Launch the nodelet manager. -->
