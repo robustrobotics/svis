@@ -335,12 +335,19 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void SendSetup() {
     std::vector<char> buf(64, 0);
+
     // header
     buf[0] = 0xAB;
     buf[1] = 0;
 
     // camera rate
-    buf[2] = uint8_t(camera_rate_);
+    buf[2] = uint8_t(camera_rate_);  // Hz
+
+    // accel range
+    buf[3] = fs_sel_;  // FS_SEL
+
+    // gyro range
+    buf[4] = afs_sel_;  // AFS_SEL
 
     NODELET_INFO("(svis_ros) Sending configuration packet...");
     rawhid_send(0, buf.data(), buf.size(), 100);
@@ -616,9 +623,9 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // angular velocity
-      imu.angular_velocity.x = temp_packet.gyro[0];
-      imu.angular_velocity.y = temp_packet.gyro[1];
-      imu.angular_velocity.z = temp_packet.gyro[2];
+      imu.angular_velocity.x = static_cast<float>(temp_packet.gyro[0]) / gyro_sens_arr_[fs_sel_];
+      imu.angular_velocity.y = static_cast<float>(temp_packet.gyro[1]) / gyro_sens_arr_[fs_sel_];
+      imu.angular_velocity.z = static_cast<float>(temp_packet.gyro[2]) / gyro_sens_arr_[fs_sel_];
 
       // angular velocity covariance
       for (int i = 0; i < 9; i++) {
@@ -626,9 +633,9 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // linear acceleration
-      imu.linear_acceleration.x = temp_packet.acc[0];
-      imu.linear_acceleration.y = temp_packet.acc[1];
-      imu.linear_acceleration.z = temp_packet.acc[2];
+      imu.linear_acceleration.x = static_cast<float>(temp_packet.acc[0]) / acc_sens_arr_[afs_sel_];
+      imu.linear_acceleration.y = static_cast<float>(temp_packet.acc[1]) / acc_sens_arr_[afs_sel_];
+      imu.linear_acceleration.z = static_cast<float>(temp_packet.acc[2]) / acc_sens_arr_[afs_sel_];
 
       // acceleration covariance
       for (int i = 0; i < 9; i++) {
@@ -1101,6 +1108,10 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // imu
   int imu_filter_size_ = 5;
+  double gyro_sens_arr_[4] = {131, 65.5, 32.8, 16.4};  // LSB/(deg/s)
+  double acc_sens_arr_[4] = {8192, 4096, 2048, 1024};  // LSB/mg
+  int fs_sel_ = 1;  // gyro sensitivity selection [0,3]
+  int afs_sel_ = 1;  // acc sensitivity selection [0,3]
 
   // camera and strobe timing
   bool init_flag_ = true;
