@@ -22,6 +22,22 @@
 [62-63]: checksum
 */
 
+/**
+ * FS_SEL | Full Scale Range   | LSB Sensitivity
+ * -------+--------------------+----------------
+ * 0      | +/- 250 degrees/s  | 131 LSB/deg/s
+ * 1      | +/- 500 degrees/s  | 65.5 LSB/deg/s
+ * 2      | +/- 1000 degrees/s | 32.8 LSB/deg/s
+ * 3      | +/- 2000 degrees/s | 16.4 LSB/deg/s
+ *
+ * AFS_SEL | Full Scale Range | LSB Sensitivity
+ * --------+------------------+----------------
+ * 0       | +/- 2g           | 8192 LSB/mg
+ * 1       | +/- 4g           | 4096 LSB/mg
+ * 2       | +/- 8g           | 2048 LSB/mg
+ * 3       | +/- 16g          | 1024 LSB/mg
+ **/
+
 // hid usb packet sizes
 const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
 const int imu_buffer_size = 10;  // store 10 samples (imu_stamp, imu_data) in circular buffers
@@ -57,6 +73,8 @@ int16_t imu_data_buffer[imu_data_size*imu_buffer_size];
 uint8_t imu_buffer_head = 0;
 uint8_t imu_buffer_tail = 0;
 uint8_t imu_buffer_count = 0;
+uint8_t fs_sel = 0;  // gyro range selection
+uint8_t afs_sel = 0;  // accelerometer range selection
 
 // strobe variables
 uint32_t strobe_stamp_buffer[strobe_buffer_size];
@@ -286,9 +304,11 @@ void InitICM20689() {
 
   Serial.print("Gyro Range: ");
   Serial.println(icm20689.getFullScaleGyroRange());
+  icm20689.setFullScaleGyroRange(fs_sel);
 
   Serial.print("Accel Range: ");
   Serial.println(icm20689.getFullScaleAccelRange());
+  icm20689.setFullScaleAccelRange(afs_sel);
 
   // Serial.print("Interrupt Mode: ");
   // icm20689.setInterruptMode(0);
@@ -317,9 +337,11 @@ void InitMPU6050() {
 
   Serial.print("Gyro Range: ");
   Serial.println(mpu6050.getFullScaleGyroRange());
+  mpu6050.setFullScaleGyroRange(fs_sel);
 
   Serial.print("Accel Range: ");
   Serial.println(mpu6050.getFullScaleAccelRange());
+  mpu6050.setFullScaleAccelRange(afs_sel);
 
   // Serial.print("Interrupt Mode: ");
   // mpu6050.setInterruptMode(0);
@@ -683,6 +705,10 @@ void ProcessPacket(int num) {
 
     // got setup header packet
     if (header[0] == 0xAB && header[1] == 0) {
+      // parse packet
+      fs_sel = recv_buffer[2];
+      afs_sel = recv_buffer[3];
+
       // check whether or not we have setup the device
       if (!setup_flag) {
         // we have not setup the device and need to configure it
