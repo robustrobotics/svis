@@ -670,6 +670,8 @@ void SetParams() {
   imu_buffer_head = 0;
   imu_buffer_tail = 0;
   imu_buffer_count = 0;
+  fs_sel = recv_buffer[3];
+  afs_sel = recv_buffer[4];
 
   // strobe variables
   strobe_count = 0;
@@ -739,10 +741,6 @@ void ProcessPacket(int num) {
 
     // got setup header packet
     if (header[0] == 0xAB && header[1] == 0) {
-      // parse packet
-      fs_sel = recv_buffer[2];
-      afs_sel = recv_buffer[3];
-
       // check whether or not we have setup the device
       if (!setup_flag) {
         // we have not setup the device and need to configure it
