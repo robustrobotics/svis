@@ -622,7 +622,7 @@ class SVISNodelet : public nodelet::Nodelet {
         imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
-      // angular velocity
+      // angular velocity [deg/s]
       imu.angular_velocity.x = static_cast<float>(temp_packet.gyro[0]) / gyro_sens_arr_[fs_sel_];
       imu.angular_velocity.y = static_cast<float>(temp_packet.gyro[1]) / gyro_sens_arr_[fs_sel_];
       imu.angular_velocity.z = static_cast<float>(temp_packet.gyro[2]) / gyro_sens_arr_[fs_sel_];
@@ -632,10 +632,10 @@ class SVISNodelet : public nodelet::Nodelet {
         imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
-      // linear acceleration
-      imu.linear_acceleration.x = static_cast<float>(temp_packet.acc[0]) / acc_sens_arr_[afs_sel_];
-      imu.linear_acceleration.y = static_cast<float>(temp_packet.acc[1]) / acc_sens_arr_[afs_sel_];
-      imu.linear_acceleration.z = static_cast<float>(temp_packet.acc[2]) / acc_sens_arr_[afs_sel_];
+      // linear acceleration [m/s]
+      imu.linear_acceleration.x = static_cast<float>(temp_packet.acc[0]) / acc_sens_arr_[afs_sel_] * g_;
+      imu.linear_acceleration.y = static_cast<float>(temp_packet.acc[1]) / acc_sens_arr_[afs_sel_] * g_;
+      imu.linear_acceleration.z = static_cast<float>(temp_packet.acc[2]) / acc_sens_arr_[afs_sel_] * g_;
 
       // acceleration covariance
       for (int i = 0; i < 9; i++) {
@@ -1106,10 +1106,13 @@ class SVISNodelet : public nodelet::Nodelet {
   bool received_camera_ = false;
   int camera_rate_ = 0;
 
+  // constants
+  double g_ = 9.80665;
+
   // imu
   int imu_filter_size_ = 5;
   double gyro_sens_arr_[4] = {131, 65.5, 32.8, 16.4};  // LSB/(deg/s)
-  double acc_sens_arr_[4] = {8192, 4096, 2048, 1024};  // LSB/mg
+  double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
   int fs_sel_ = 1;  // gyro sensitivity selection [0,3]
   int afs_sel_ = 1;  // acc sensitivity selection [0,3]
 
