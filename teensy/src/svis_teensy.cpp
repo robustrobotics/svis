@@ -696,6 +696,43 @@ void SetParams() {
   send_debug_flag = false;
 }
 
+void ResetParams() {
+  // hid usb
+  setup_flag = false;
+  send_count = 0;
+  send_errors = 0;
+  strobe_packet_count = 0;
+  imu_packet_count = 0;
+
+  // imu variables
+  imu_buffer_head = 0;
+  imu_buffer_tail = 0;
+  imu_buffer_count = 0;
+  // fs_sel = recv_buffer[2];
+  // afs_sel = recv_buffer[3];
+
+  // strobe variables
+  strobe_count = 0;
+  strobe_buffer_head = 0;
+  strobe_buffer_tail = 0;
+  strobe_buffer_count = 0;
+
+  // trigger variables
+  trigger_flag = false;
+  since_trigger = 0;
+  trigger_rate = float(recv_buffer[2]);  // Hz
+  // trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+  trigger_duration = 1000;  // microseconds
+
+  // debug
+  since_print = 0;
+  since_blink = 0;
+  led_state = false;
+  imu_debug_flag = false;
+  strobe_debug_flag = false;
+  send_debug_flag = false;
+}
+
 void ProcessPacket(int num) {
   // received a packet and it is the right length
   if (num == 64) {
@@ -716,7 +753,7 @@ void ProcessPacket(int num) {
         Setup();
       } else {
         // reset state if we have already setup the device
-        SetParams();
+        ResetParams();
       }
     }
   }
