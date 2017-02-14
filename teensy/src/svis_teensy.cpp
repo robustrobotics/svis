@@ -637,7 +637,7 @@ void Send() {
   }
 }
 
-void Reset() {
+void SetParams() {
   BlinkReset();
 
   // hid usb
@@ -661,7 +661,7 @@ void Reset() {
   // trigger variables
   trigger_flag = false;
   since_trigger = 0;
-  trigger_rate = 60.0;  // Hz
+  trigger_rate = float(recv_buffer[2]);  // Hz
   trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
   trigger_duration = 1000;  // microseconds
 
@@ -686,10 +686,11 @@ void ProcessPacket(int num) {
       // check whether or not we have setup the device
       if (!setup_flag) {
         // we have not setup the device and need to configure it
+        SetParams();
         Setup();
       } else {
         // reset state if we have already setup the device
-        Reset();
+        SetParams();
       }
     }
   }

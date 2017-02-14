@@ -18,6 +18,8 @@
 #include <image_transport/camera_subscriber.h>
 #include <pluginlib/class_list_macros.h>
 
+#include <fla_utils/param_utils.h>
+
 #include <svis_ros/SvisImu.h>
 #include <svis_ros/SvisStrobe.h>
 #include <svis_ros/SvisTiming.h>
@@ -81,7 +83,9 @@ class SVISNodelet : public nodelet::Nodelet {
 
     // Grab a handle to the parent node.
     ros::NodeHandle nh;
-    ros::NodeHandle pnh("~");
+
+    // params
+    GetParams();
 
     // image transport
     image_transport::ImageTransport it(nh);
@@ -106,6 +110,12 @@ class SVISNodelet : public nodelet::Nodelet {
     Run();
 
     return;
+  }
+
+  void GetParams() {
+    ros::NodeHandle pnh("~");
+
+    fla_utils::SafeGetParam(pnh, "camera_rate", camera_rate_);
   }
 
   /**
@@ -325,8 +335,13 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void SendSetup() {
     std::vector<char> buf(64, 0);
+    // header
     buf[0] = 0xAB;
     buf[1] = 0;
+
+    // camera rate
+    buf[2] = uint8_t(camera_rate_);
+
     NODELET_INFO("(svis_ros) Sending configuration packet...");
     rawhid_send(0, buf.data(), buf.size(), 100);
     NODELET_INFO("(svis_ros) Complete");
@@ -1082,6 +1097,7 @@ class SVISNodelet : public nodelet::Nodelet {
   // configuration
   bool use_camera_ = true;
   bool received_camera_ = false;
+  int camera_rate_ = 0;
 
   // imu
   int imu_filter_size_ = 5;
