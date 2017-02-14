@@ -116,6 +116,8 @@ class SVISNodelet : public nodelet::Nodelet {
     ros::NodeHandle pnh("~");
 
     fla_utils::SafeGetParam(pnh, "camera_rate", camera_rate_);
+    fla_utils::SafeGetParam(pnh, "gyro_sens", gyro_sens_);
+    fla_utils::SafeGetParam(pnh, "acc_sens", acc_sens_);
   }
 
   /**
@@ -344,10 +346,10 @@ class SVISNodelet : public nodelet::Nodelet {
     buf[2] = uint8_t(camera_rate_);  // Hz
 
     // accel range
-    buf[3] = fs_sel_;  // FS_SEL
+    buf[3] = gyro_sens_;  // FS_SEL
 
     // gyro range
-    buf[4] = afs_sel_;  // AFS_SEL
+    buf[4] = acc_sens_;  // AFS_SEL
 
     NODELET_INFO("(svis_ros) Sending configuration packet...");
     rawhid_send(0, buf.data(), buf.size(), 100);
@@ -623,9 +625,9 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // angular velocity [deg/s]
-      imu.angular_velocity.x = static_cast<float>(temp_packet.gyro[0]) / gyro_sens_arr_[fs_sel_];
-      imu.angular_velocity.y = static_cast<float>(temp_packet.gyro[1]) / gyro_sens_arr_[fs_sel_];
-      imu.angular_velocity.z = static_cast<float>(temp_packet.gyro[2]) / gyro_sens_arr_[fs_sel_];
+      imu.angular_velocity.x = static_cast<float>(temp_packet.gyro[0]) / gyro_sens_arr_[gyro_sens_];
+      imu.angular_velocity.y = static_cast<float>(temp_packet.gyro[1]) / gyro_sens_arr_[gyro_sens_];
+      imu.angular_velocity.z = static_cast<float>(temp_packet.gyro[2]) / gyro_sens_arr_[gyro_sens_];
 
       // angular velocity covariance
       for (int i = 0; i < 9; i++) {
@@ -633,9 +635,9 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // linear acceleration [m/s]
-      imu.linear_acceleration.x = static_cast<float>(temp_packet.acc[0]) / acc_sens_arr_[afs_sel_] * g_;
-      imu.linear_acceleration.y = static_cast<float>(temp_packet.acc[1]) / acc_sens_arr_[afs_sel_] * g_;
-      imu.linear_acceleration.z = static_cast<float>(temp_packet.acc[2]) / acc_sens_arr_[afs_sel_] * g_;
+      imu.linear_acceleration.x = static_cast<float>(temp_packet.acc[0]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.linear_acceleration.y = static_cast<float>(temp_packet.acc[1]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.linear_acceleration.z = static_cast<float>(temp_packet.acc[2]) / acc_sens_arr_[acc_sens_] * g_;
 
       // acceleration covariance
       for (int i = 0; i < 9; i++) {
@@ -1113,8 +1115,8 @@ class SVISNodelet : public nodelet::Nodelet {
   int imu_filter_size_ = 5;
   double gyro_sens_arr_[4] = {131, 65.5, 32.8, 16.4};  // LSB/(deg/s)
   double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
-  int fs_sel_ = 1;  // gyro sensitivity selection [0,3]
-  int afs_sel_ = 1;  // acc sensitivity selection [0,3]
+  int gyro_sens_ = 1;  // gyro sensitivity selection [0,3]
+  int acc_sens_ = 1;  // acc sensitivity selection [0,3]
 
   // camera and strobe timing
   bool init_flag_ = true;
