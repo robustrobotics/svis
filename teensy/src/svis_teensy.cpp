@@ -449,7 +449,6 @@ void Initialize() {
 }
 
 void Setup() {
-  BlinkSetup();
   InitComms();
   InitGPIO();
   // InitMPU6050();
@@ -660,8 +659,6 @@ void Send() {
 }
 
 void SetParams() {
-  BlinkReset();
-
   // hid usb
   setup_flag = false;
   send_count = 0;
@@ -749,10 +746,12 @@ void ProcessPacket(int num) {
       // check whether or not we have setup the device
       if (!setup_flag) {
         // we have not setup the device and need to configure it
+        BlinkSetup();
         SetParams();
         Setup();
       } else {
         // reset state if we have already setup the device
+        BlinkReset();
         ResetParams();
       }
     }
