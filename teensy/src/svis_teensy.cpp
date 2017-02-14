@@ -303,12 +303,12 @@ void InitICM20689() {
   Serial.println(icm20689.getRate());
 
   Serial.print("Gyro Range: ");
-  Serial.println(icm20689.getFullScaleGyroRange());
   icm20689.setFullScaleGyroRange(fs_sel);
+  Serial.println(icm20689.getFullScaleGyroRange());
 
   Serial.print("Accel Range: ");
-  Serial.println(icm20689.getFullScaleAccelRange());
   icm20689.setFullScaleAccelRange(afs_sel);
+  Serial.println(icm20689.getFullScaleAccelRange());
 
   // Serial.print("Interrupt Mode: ");
   // icm20689.setInterruptMode(0);
