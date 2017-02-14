@@ -7,13 +7,13 @@
   <arg name="param_file" default="svis_ros.yaml" />
 
   <group ns="$(arg namespace)" >
-    <!-- Launch the nodelet manager. -->
+    <!-- Manager -->
     <node if="$(arg standalone)"
           pkg="nodelet" type="nodelet" name="$(arg manager)"
           args="manager" output="screen" >
     </node>
 
-    <!-- Launch the nodelet.. -->
+    <!-- Nodelet -->
     <node pkg="nodelet" type="nodelet" name="svis_ros"
           args="load svis_ros/SVISNodelet $(arg manager)" output="screen">
       <rosparam command="load" file="$(find svis_ros)/cfg/$(arg param_file)"/>
