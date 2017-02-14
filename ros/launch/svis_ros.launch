@@ -11,10 +11,9 @@
     <node if="$(arg standalone)"
           pkg="nodelet" type="nodelet" name="$(arg manager)"
           args="manager" output="screen" >
+      <!-- Params -->
+      <rosparam command="load" file="$(find svis_ros)/cfg/$(arg param_file)"/>
     </node>
-
-    <!-- Params -->
-    <rosparam command="load" file="$(find svis_ros)/cfg/$(arg param_file)"/>
 
     <!-- Nodelet -->
     <node pkg="nodelet" type="nodelet" name="svis_ros"
