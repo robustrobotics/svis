@@ -32,10 +32,10 @@
  *
  * AFS_SEL | Full Scale Range | LSB Sensitivity
  * --------+------------------+----------------
- * 0       | +/- 2g           | 8192 LSB/mg
- * 1       | +/- 4g           | 4096 LSB/mg
- * 2       | +/- 8g           | 2048 LSB/mg
- * 3       | +/- 16g          | 1024 LSB/mg
+ * 0       | +/- 2g           | 16384 LSB/mg
+ * 1       | +/- 4g           | 8192 LSB/mg
+ * 2       | +/- 8g           | 4096 LSB/mg
+ * 3       | +/- 16g          | 2048 LSB/mg
  **/
 
 // hid usb packet sizes
