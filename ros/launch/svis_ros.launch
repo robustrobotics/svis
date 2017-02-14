@@ -13,10 +13,12 @@
           args="manager" output="screen" >
     </node>
 
+    <!-- Params -->
+    <rosparam command="load" file="$(find svis_ros)/cfg/$(arg param_file)"/>
+
     <!-- Nodelet -->
     <node pkg="nodelet" type="nodelet" name="svis_ros"
           args="load svis_ros/SVISNodelet $(arg manager)" output="screen">
-      <rosparam command="load" file="$(find svis_ros)/cfg/$(arg param_file)"/>
     </node>
   </group>
 </launch>
