@@ -16,6 +16,7 @@
   <depend>sensor_msgs</depend>
   <depend>message_generation</depend>
   <depend>fla_utils</depend>
+  <depend>dynamic_reconfigure</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
