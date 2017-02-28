@@ -22,6 +22,22 @@
 [62-63]: checksum
 */
 
+/**
+ * FS_SEL | Full Scale Range   | LSB Sensitivity
+ * -------+--------------------+----------------
+ * 0      | +/- 250 degrees/s  | 131 LSB/deg/s
+ * 1      | +/- 500 degrees/s  | 65.5 LSB/deg/s
+ * 2      | +/- 1000 degrees/s | 32.8 LSB/deg/s
+ * 3      | +/- 2000 degrees/s | 16.4 LSB/deg/s
+ *
+ * AFS_SEL | Full Scale Range | LSB Sensitivity
+ * --------+------------------+----------------
+ * 0       | +/- 2g           | 16384 LSB/mg
+ * 1       | +/- 4g           | 8192 LSB/mg
+ * 2       | +/- 8g           | 4096 LSB/mg
+ * 3       | +/- 16g          | 2048 LSB/mg
+ **/
+
 // hid usb packet sizes
 const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
 const int imu_buffer_size = 10;  // store 10 samples (imu_stamp, imu_data) in circular buffers
@@ -57,6 +73,8 @@ int16_t imu_data_buffer[imu_data_size*imu_buffer_size];
 uint8_t imu_buffer_head = 0;
 uint8_t imu_buffer_tail = 0;
 uint8_t imu_buffer_count = 0;
+uint8_t fs_sel = 0;  // gyro range selection
+uint8_t afs_sel = 0;  // accelerometer range selection
 
 // strobe variables
 uint32_t strobe_stamp_buffer[strobe_buffer_size];
@@ -285,9 +303,11 @@ void InitICM20689() {
   Serial.println(icm20689.getRate());
 
   Serial.print("Gyro Range: ");
+  icm20689.setFullScaleGyroRange(fs_sel);
   Serial.println(icm20689.getFullScaleGyroRange());
 
   Serial.print("Accel Range: ");
+  icm20689.setFullScaleAccelRange(afs_sel);
   Serial.println(icm20689.getFullScaleAccelRange());
 
   // Serial.print("Interrupt Mode: ");
@@ -317,9 +337,11 @@ void InitMPU6050() {
 
   Serial.print("Gyro Range: ");
   Serial.println(mpu6050.getFullScaleGyroRange());
+  mpu6050.setFullScaleGyroRange(fs_sel);
 
   Serial.print("Accel Range: ");
   Serial.println(mpu6050.getFullScaleAccelRange());
+  mpu6050.setFullScaleAccelRange(afs_sel);
 
   // Serial.print("Interrupt Mode: ");
   // mpu6050.setInterruptMode(0);
@@ -427,7 +449,6 @@ void Initialize() {
 }
 
 void Setup() {
-  BlinkSetup();
   InitComms();
   InitGPIO();
   // InitMPU6050();
@@ -638,8 +659,6 @@ void Send() {
 }
 
 void SetParams() {
-  BlinkReset();
-
   // hid usb
   setup_flag = false;
   send_count = 0;
@@ -651,6 +670,8 @@ void SetParams() {
   imu_buffer_head = 0;
   imu_buffer_tail = 0;
   imu_buffer_count = 0;
+  fs_sel = recv_buffer[3];
+  afs_sel = recv_buffer[4];
 
   // strobe variables
   strobe_count = 0;
@@ -674,6 +695,43 @@ void SetParams() {
   send_debug_flag = false;
 }
 
+void ResetParams() {
+  // hid usb
+  setup_flag = false;
+  send_count = 0;
+  send_errors = 0;
+  strobe_packet_count = 0;
+  imu_packet_count = 0;
+
+  // imu variables
+  imu_buffer_head = 0;
+  imu_buffer_tail = 0;
+  imu_buffer_count = 0;
+  // fs_sel = recv_buffer[2];
+  // afs_sel = recv_buffer[3];
+
+  // strobe variables
+  strobe_count = 0;
+  strobe_buffer_head = 0;
+  strobe_buffer_tail = 0;
+  strobe_buffer_count = 0;
+
+  // trigger variables
+  trigger_flag = false;
+  since_trigger = 0;
+  trigger_rate = float(recv_buffer[2]);  // Hz
+  // trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+  trigger_duration = 1000;  // microseconds
+
+  // debug
+  since_print = 0;
+  since_blink = 0;
+  led_state = false;
+  imu_debug_flag = false;
+  strobe_debug_flag = false;
+  send_debug_flag = false;
+}
+
 void ProcessPacket(int num) {
   // received a packet and it is the right length
   if (num == 64) {
@@ -686,11 +744,13 @@ void ProcessPacket(int num) {
       // check whether or not we have setup the device
       if (!setup_flag) {
         // we have not setup the device and need to configure it
+        BlinkSetup();
         SetParams();
         Setup();
       } else {
         // reset state if we have already setup the device
-        SetParams();
+        BlinkReset();
+        ResetParams();
       }
     }
   }

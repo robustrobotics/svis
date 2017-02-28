@@ -33,7 +33,9 @@ namespace svis_ros {
 /**
  * \brief A simple visual inertial synchronization approach.
  *
- * This package contains the ROS portion of a Simple Visual Inertial Synchronization approach that accepts camera strobe messages * from the Teensy microcontroller and synchronizes them with camera image messages.
+ * This package contains the ROS portion of a Simple Visual Inertial
+ * Synchronization approach that accepts camera strobe messages from the
+ * Teensy microcontroller and synchronizes them with camera image messages.
  */
 class SVISNodelet : public nodelet::Nodelet {
  public:
@@ -116,6 +118,9 @@ class SVISNodelet : public nodelet::Nodelet {
     ros::NodeHandle pnh("~");
 
     fla_utils::SafeGetParam(pnh, "camera_rate", camera_rate_);
+    fla_utils::SafeGetParam(pnh, "gyro_sens", gyro_sens_);
+    fla_utils::SafeGetParam(pnh, "acc_sens", acc_sens_);
+    fla_utils::SafeGetParam(pnh, "imu_filter_size", imu_filter_size_);
   }
 
   /**
@@ -279,7 +284,9 @@ class SVISNodelet : public nodelet::Nodelet {
       timestamp_ros(0.0),
       timestamp_teensy_raw(0),
       timestamp_teensy(0.0),
+      acc_raw{0},
       acc{0},
+      gyro_raw{0},
       gyro{0} {
         // nothing
       }
@@ -288,8 +295,10 @@ class SVISNodelet : public nodelet::Nodelet {
     double timestamp_ros;  // [seconds] timestamp in ros epoch
     uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
     double timestamp_teensy;  // [seconds] timestamp in teensy epoch
-    int16_t acc[3];  // units?
-    int16_t gyro[3];  // units?
+    int16_t acc_raw[3];  // counts
+    float acc[3];  // m/s^2
+    int16_t gyro_raw[3];  // counts
+    float gyro[3];  // rad/sec
   };
 
   class ImageMetadata {
@@ -335,12 +344,19 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void SendSetup() {
     std::vector<char> buf(64, 0);
+
     // header
     buf[0] = 0xAB;
     buf[1] = 0;
 
     // camera rate
-    buf[2] = uint8_t(camera_rate_);
+    buf[2] = static_cast<uint8_t>(camera_rate_);  // Hz
+
+    // gyro range
+    buf[3] = gyro_sens_;  // FS_SEL
+
+    // accel range
+    buf[4] = acc_sens_;  // AFS_SEL
 
     NODELET_INFO("(svis_ros) Sending configuration packet...");
     rawhid_send(0, buf.data(), buf.size(), 100);
@@ -466,6 +482,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // NODELET_INFO("(svis_ros) imu.acc: [%i, %i, %i]", imu.acc[0], imu.acc[1], imu.acc[2]);
 
+      // convert accel
+      imu.acc[0] = static_cast<float>(imu.acc_raw[0]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.acc[1] = static_cast<float>(imu.acc_raw[1]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.acc[2] = static_cast<float>(imu.acc_raw[2]) / acc_sens_arr_[acc_sens_] * g_;
+
       // gyro
       memcpy(&imu.gyro[0], &buf[ind], sizeof(imu.gyro[0]));
       ind += sizeof(imu.gyro[0]);
@@ -475,6 +496,11 @@ class SVISNodelet : public nodelet::Nodelet {
       ind += sizeof(imu.gyro[2]);
 
       // NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
+
+      // convert gyro
+      imu.gyro[0] = static_cast<float>(imu.gyro_raw[0]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
+      imu.gyro[1] = static_cast<float>(imu.gyro_raw[1]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
+      imu.gyro[2] = static_cast<float>(imu.gyro_raw[2]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
 
       // save packet
       imu_packets.push_back(imu);
@@ -561,9 +587,9 @@ class SVISNodelet : public nodelet::Nodelet {
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
       // sum
-      double timestamp_total = 0.0;
-      double acc_total[3] = {0.0};
-      double gyro_total[3] = {0.0};
+      float timestamp_total = 0.0;
+      float acc_total[3] = {0.0};
+      float gyro_total[3] = {0.0};
       ImuPacket temp_packet;
       for (int i = 0; i < imu_filter_size_; i++) {
         temp_packet = imu_buffer_[0];
@@ -571,18 +597,17 @@ class SVISNodelet : public nodelet::Nodelet {
 
         timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
         for (int j = 0; j < 3; j++) {
-          acc_total[j] += static_cast<double>(temp_packet.acc[j]);
-          gyro_total[j] += static_cast<double>(temp_packet.gyro[j]);
+          acc_total[j] += temp_packet.acc[j];
+          gyro_total[j] += temp_packet.gyro[j];
         }
       }
 
-      // calculate average
+      // calculate average (add 0.5 for rounding)
       temp_packet.timestamp_teensy =
-        static_cast<int>(timestamp_total / static_cast<double>(imu_filter_size_));
+        static_cast<int>(timestamp_total / static_cast<float>(imu_filter_size_) + 0.5);
       for (int j = 0; j < 3; j++) {
-        temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_filter_size_));
-        temp_packet.gyro[j] =
-          static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
+        temp_packet.acc[j] = acc_total[j] / static_cast<float>(imu_filter_size_);
+        temp_packet.gyro[j] = gyro_total[j] / static_cast<float>(imu_filter_size_);
       }
 
       // save packet
@@ -611,27 +636,27 @@ class SVISNodelet : public nodelet::Nodelet {
       imu.orientation.w = std::numeric_limits<double>::quiet_NaN();
 
       // orientation covariance
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < imu.orientation_covariance.size(); i++) {
         imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
-      // angular velocity
+      // angular velocity [rad/s]
       imu.angular_velocity.x = temp_packet.gyro[0];
       imu.angular_velocity.y = temp_packet.gyro[1];
       imu.angular_velocity.z = temp_packet.gyro[2];
 
       // angular velocity covariance
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < imu.angular_velocity_covariance.size(); i++) {
         imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
-      // linear acceleration
+      // linear acceleration [m/s^2]
       imu.linear_acceleration.x = temp_packet.acc[0];
       imu.linear_acceleration.y = temp_packet.acc[1];
       imu.linear_acceleration.z = temp_packet.acc[2];
 
       // acceleration covariance
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < imu.linear_acceleration_covariance.size(); i++) {
         imu.linear_acceleration_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
@@ -1099,8 +1124,16 @@ class SVISNodelet : public nodelet::Nodelet {
   bool received_camera_ = false;
   int camera_rate_ = 0;
 
+  // constants
+  const double g_ = 9.80665;
+  const double rad_per_deg_ = 0.0174533;
+
   // imu
-  int imu_filter_size_ = 5;
+  int imu_filter_size_ = 0;
+  double gyro_sens_arr_[4] = {131, 65.5, 32.8, 16.4};  // LSB/(deg/s)
+  double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
+  int gyro_sens_ = 0;  // gyro sensitivity selection [0,3]
+  int acc_sens_ = 0;  // acc sensitivity selection [0,3]
 
   // camera and strobe timing
   bool init_flag_ = true;
