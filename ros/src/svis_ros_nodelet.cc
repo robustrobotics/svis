@@ -641,7 +641,7 @@ class SVISNodelet : public nodelet::Nodelet {
         imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
-      // angular velocity [deg/s]
+      // angular velocity [rad/s]
       imu.angular_velocity.x = temp_packet.gyro[0];
       imu.angular_velocity.y = temp_packet.gyro[1];
       imu.angular_velocity.z = temp_packet.gyro[2];
@@ -651,7 +651,7 @@ class SVISNodelet : public nodelet::Nodelet {
         imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
       }
 
-      // linear acceleration [m/s]
+      // linear acceleration [m/s^2]
       imu.linear_acceleration.x = temp_packet.acc[0];
       imu.linear_acceleration.y = temp_packet.acc[1];
       imu.linear_acceleration.z = temp_packet.acc[2];
