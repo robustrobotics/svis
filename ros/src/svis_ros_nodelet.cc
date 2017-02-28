@@ -118,7 +118,7 @@ class SVISNodelet : public nodelet::Nodelet {
     fla_utils::SafeGetParam(pnh, "camera_rate", camera_rate_);
     fla_utils::SafeGetParam(pnh, "gyro_sens", gyro_sens_);
     fla_utils::SafeGetParam(pnh, "acc_sens", acc_sens_);
-    fla_utils::SafeGetParam(pnh, "lp_win_size", lp_win_size_);
+    fla_utils::SafeGetParam(pnh, "imu_filter_size", imu_filter_size_);
   }
 
   /**
@@ -569,13 +569,13 @@ class SVISNodelet : public nodelet::Nodelet {
     tic();
 
     // create filter packets
-    while (imu_buffer_.size() >= lp_win_size_) {
+    while (imu_buffer_.size() >= imu_filter_size_) {
       // sum
       double timestamp_total = 0.0;
       double acc_total[3] = {0.0};
       double gyro_total[3] = {0.0};
       ImuPacket temp_packet;
-      for (int i = 0; i < lp_win_size_; i++) {
+      for (int i = 0; i < imu_filter_size_; i++) {
         temp_packet = imu_buffer_[0];
         imu_buffer_.pop_front();
 
@@ -588,11 +588,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // calculate average
       temp_packet.timestamp_teensy =
-        static_cast<int>(timestamp_total / static_cast<double>(lp_win_size_));
+        static_cast<int>(timestamp_total / static_cast<double>(imu_filter_size_));
       for (int j = 0; j < 3; j++) {
-        temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(lp_win_size_));
+        temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_filter_size_));
         temp_packet.gyro[j] =
-          static_cast<int>(gyro_total[j] / static_cast<double>(lp_win_size_));
+          static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
       }
 
       // save packet
@@ -1113,7 +1113,7 @@ class SVISNodelet : public nodelet::Nodelet {
   double g_ = 9.80665;
 
   // imu
-  int lp_win_size_ = 0;
+  int imu_filter_size_ = 0;
   double gyro_sens_arr_[4] = {131, 65.5, 32.8, 16.4};  // LSB/(deg/s)
   double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
   int gyro_sens_ = 0;  // gyro sensitivity selection [0,3]

@@ -4,4 +4,4 @@ camera_rate: 60  # [Hz] camera frame rate commanded by teensy
 # imu
 gyro_sens: 1  # [0,3] gyro full-scale range and sensitivity
 acc_sens: 1  # [0,3] accel full-scale range and sensitivity
-lp_win_size: 5  # window size for low-pass filter on imu
+imu_filter_size: 5  # window size for low-pass filter on imu
