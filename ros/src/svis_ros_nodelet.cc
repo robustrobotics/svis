@@ -33,7 +33,9 @@ namespace svis_ros {
 /**
  * \brief A simple visual inertial synchronization approach.
  *
- * This package contains the ROS portion of a Simple Visual Inertial Synchronization approach that accepts camera strobe messages * from the Teensy microcontroller and synchronizes them with camera image messages.
+ * This package contains the ROS portion of a Simple Visual Inertial
+ * Synchronization approach that accepts camera strobe messages from the
+ * Teensy microcontroller and synchronizes them with camera image messages.
  */
 class SVISNodelet : public nodelet::Nodelet {
  public:
