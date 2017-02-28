@@ -352,10 +352,10 @@ class SVISNodelet : public nodelet::Nodelet {
     // camera rate
     buf[2] = static_cast<uint8_t>(camera_rate_);  // Hz
 
-    // accel range
+    // gyro range
     buf[3] = gyro_sens_;  // FS_SEL
 
-    // gyro range
+    // accel range
     buf[4] = acc_sens_;  // AFS_SEL
 
     NODELET_INFO("(svis_ros) Sending configuration packet...");
