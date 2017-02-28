@@ -587,9 +587,9 @@ class SVISNodelet : public nodelet::Nodelet {
     // create filter packets
     while (imu_buffer_.size() >= imu_filter_size_) {
       // sum
-      double timestamp_total = 0.0;
-      double acc_total[3] = {0.0};
-      double gyro_total[3] = {0.0};
+      float timestamp_total = 0.0;
+      float acc_total[3] = {0.0};
+      float gyro_total[3] = {0.0};
       ImuPacket temp_packet;
       for (int i = 0; i < imu_filter_size_; i++) {
         temp_packet = imu_buffer_[0];
@@ -597,18 +597,17 @@ class SVISNodelet : public nodelet::Nodelet {
 
         timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
         for (int j = 0; j < 3; j++) {
-          acc_total[j] += static_cast<double>(temp_packet.acc[j]);
-          gyro_total[j] += static_cast<double>(temp_packet.gyro[j]);
+          acc_total[j] += temp_packet.acc[j];
+          gyro_total[j] += temp_packet.gyro[j];
         }
       }
 
-      // calculate average
+      // calculate average (add 0.5 for rounding)
       temp_packet.timestamp_teensy =
-        static_cast<int>(timestamp_total / static_cast<double>(imu_filter_size_));
+        static_cast<int>(timestamp_total / static_cast<float>(imu_filter_size_) + 0.5);
       for (int j = 0; j < 3; j++) {
-        temp_packet.acc[j] = static_cast<int>(acc_total[j] / static_cast<double>(imu_filter_size_));
-        temp_packet.gyro[j] =
-          static_cast<int>(gyro_total[j] / static_cast<double>(imu_filter_size_));
+        temp_packet.acc[j] = acc_total[j] / static_cast<float>(imu_filter_size_);
+        temp_packet.gyro[j] = gyro_total[j] / static_cast<float>(imu_filter_size_);
       }
 
       // save packet
