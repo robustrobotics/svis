@@ -350,7 +350,7 @@ class SVISNodelet : public nodelet::Nodelet {
     buf[1] = 0;
 
     // camera rate
-    buf[2] = uint8_t(camera_rate_);  // Hz
+    buf[2] = static_cast<uint8_t>(camera_rate_);  // Hz
 
     // accel range
     buf[3] = gyro_sens_;  // FS_SEL
