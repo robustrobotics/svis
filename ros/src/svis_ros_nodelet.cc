@@ -1110,7 +1110,8 @@ class SVISNodelet : public nodelet::Nodelet {
   int camera_rate_ = 0;
 
   // constants
-  double g_ = 9.80665;
+  const double g_ = 9.80665;
+  const double rad_per_deg_ = 0.0174533;
 
   // imu
   int imu_filter_size_ = 0;
