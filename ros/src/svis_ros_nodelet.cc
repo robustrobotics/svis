@@ -482,6 +482,11 @@ class SVISNodelet : public nodelet::Nodelet {
 
       // NODELET_INFO("(svis_ros) imu.acc: [%i, %i, %i]", imu.acc[0], imu.acc[1], imu.acc[2]);
 
+      // convert accel
+      imu.acc[0] = static_cast<float>(imu.acc_raw[0]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.acc[1] = static_cast<float>(imu.acc_raw[1]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.acc[2] = static_cast<float>(imu.acc_raw[2]) / acc_sens_arr_[acc_sens_] * g_;
+
       // gyro
       memcpy(&imu.gyro[0], &buf[ind], sizeof(imu.gyro[0]));
       ind += sizeof(imu.gyro[0]);
@@ -491,6 +496,11 @@ class SVISNodelet : public nodelet::Nodelet {
       ind += sizeof(imu.gyro[2]);
 
       // NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
+
+      // convert gyro
+      imu.gyro[0] = static_cast<float>(imu.gyro_raw[0]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
+      imu.gyro[1] = static_cast<float>(imu.gyro_raw[1]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
+      imu.gyro[2] = static_cast<float>(imu.gyro_raw[2]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
 
       // save packet
       imu_packets.push_back(imu);
@@ -632,9 +642,9 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // angular velocity [deg/s]
-      imu.angular_velocity.x = static_cast<float>(temp_packet.gyro[0]) / gyro_sens_arr_[gyro_sens_];
-      imu.angular_velocity.y = static_cast<float>(temp_packet.gyro[1]) / gyro_sens_arr_[gyro_sens_];
-      imu.angular_velocity.z = static_cast<float>(temp_packet.gyro[2]) / gyro_sens_arr_[gyro_sens_];
+      imu.angular_velocity.x = temp_packet.gyro[0];
+      imu.angular_velocity.y = temp_packet.gyro[1];
+      imu.angular_velocity.z = temp_packet.gyro[2];
 
       // angular velocity covariance
       for (int i = 0; i < 9; i++) {
@@ -642,9 +652,9 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // linear acceleration [m/s]
-      imu.linear_acceleration.x = static_cast<float>(temp_packet.acc[0]) / acc_sens_arr_[acc_sens_] * g_;
-      imu.linear_acceleration.y = static_cast<float>(temp_packet.acc[1]) / acc_sens_arr_[acc_sens_] * g_;
-      imu.linear_acceleration.z = static_cast<float>(temp_packet.acc[2]) / acc_sens_arr_[acc_sens_] * g_;
+      imu.linear_acceleration.x = temp_packet.acc[0];
+      imu.linear_acceleration.y = temp_packet.acc[1];
+      imu.linear_acceleration.z = temp_packet.acc[2];
 
       // acceleration covariance
       for (int i = 0; i < 9; i++) {
