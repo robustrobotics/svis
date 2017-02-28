@@ -284,7 +284,9 @@ class SVISNodelet : public nodelet::Nodelet {
       timestamp_ros(0.0),
       timestamp_teensy_raw(0),
       timestamp_teensy(0.0),
+      acc_raw{0},
       acc{0},
+      gyro_raw{0},
       gyro{0} {
         // nothing
       }
@@ -293,8 +295,10 @@ class SVISNodelet : public nodelet::Nodelet {
     double timestamp_ros;  // [seconds] timestamp in ros epoch
     uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
     double timestamp_teensy;  // [seconds] timestamp in teensy epoch
-    int16_t acc[3];  // units?
-    int16_t gyro[3];  // units?
+    int16_t acc_raw[3];  // counts
+    float acc[3];  // m/s^2
+    int16_t gyro_raw[3];  // counts
+    float gyro[3];  // rad/sec
   };
 
   class ImageMetadata {
