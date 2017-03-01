@@ -1,0 +1,14 @@
+frame_id: camera
+serial: 0
+video_mode: format7_mode0
+format7_color_coding: raw8
+auto_exposure: false
+auto_sharpness: false
+frame_rate: 60
+auto_gain: false
+gain: 4
+auto_shutter: false
+shutter_speed: 0.005
+enable_strobe1: true
+trigger_mode: Mode1_bulb_trigger
+scale: 0.5

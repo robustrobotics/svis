@@ -17,6 +17,9 @@
 #include <image_transport/image_transport.h>
 #include <image_transport/camera_subscriber.h>
 #include <pluginlib/class_list_macros.h>
+#include <dynamic_reconfigure/StrParameter.h>
+#include <dynamic_reconfigure/Reconfigure.h>
+#include <dynamic_reconfigure/Config.h>
 
 #include <fla_utils/param_utils.h>
 
@@ -108,10 +111,70 @@ class SVISNodelet : public nodelet::Nodelet {
     camera_buffer_.set_capacity(20);
     camera_strobe_buffer_.set_capacity(10);
 
+    // set pointgrey camera trigger
+    ConfigureCamera();
+
     // loop
+    NODELET_INFO("Starting loop");
     Run();
 
     return;
+  }
+
+  void ConfigureCamera() {
+    // toggle pointgrey trigger mode
+    dynamic_reconfigure::ReconfigureRequest srv_req;
+    dynamic_reconfigure::ReconfigureResponse srv_resp;
+    dynamic_reconfigure::StrParameter trigger_mode;
+    // dynamic_reconfigure::Config conf;
+
+    trigger_mode.name = "trigger_mode";
+    trigger_mode.value = "mode1";
+    srv_req.config.strs.push_back(trigger_mode);
+
+    // set param and check for success
+    bool param_set = false;
+    ros::Rate r(10);
+    while (!param_set) {
+      // set trigger mode
+      ros::service::call("/flea3/camera_nodelet/set_parameters", srv_req, srv_resp);
+
+      // check for success
+      for (int i = 0; i < srv_resp.config.strs.size(); i++) {
+        // NODELET_INFO("name: %s", srv_resp.config.strs[i].name.c_str());
+        // NODELET_INFO("value: %s", srv_resp.config.strs[i].value.c_str());
+        if (srv_resp.config.strs[i].name == "trigger_mode" && srv_resp.config.strs[i].value == trigger_mode.value) {
+          param_set = true;
+        }
+      }
+
+      r.sleep();
+    }
+
+    // reset configure params
+    srv_req.config.strs.clear();
+    trigger_mode.name = "trigger_mode";
+    trigger_mode.value = "mode0";
+    srv_req.config.strs.push_back(trigger_mode);
+
+    // set param and check for success
+    param_set = false;
+    while (!param_set) {
+      // set trigger mode
+      ros::service::call("/flea3/camera_nodelet/set_parameters", srv_req, srv_resp);
+
+      // check for success
+      for (int i = 0; i < srv_resp.config.strs.size(); i++) {
+        // NODELET_INFO("name: %s", srv_resp.config.strs[i].name.c_str());
+        // NODELET_INFO("value: %s", srv_resp.config.strs[i].value.c_str());
+        if (srv_resp.config.strs[i].name == "trigger_mode" && srv_resp.config.strs[i].value == trigger_mode.value) {
+          param_set = true;
+        }
+      }
+
+      r.sleep();
+    }
+
   }
 
   void GetParams() {
