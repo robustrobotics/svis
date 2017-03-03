@@ -177,7 +177,6 @@ class SVISNodelet : public nodelet::Nodelet {
 
       r.sleep();
     }
-
   }
 
   void GetParams() {
@@ -424,9 +423,8 @@ class SVISNodelet : public nodelet::Nodelet {
     // accel range
     buf[4] = acc_sens_;  // AFS_SEL
 
-    NODELET_INFO("(svis_ros) Sending configuration packet...");
+    NODELET_INFO("(svis_ros) Sending configuration packet");
     rawhid_send(0, buf.data(), buf.size(), 100);
-    NODELET_INFO("(svis_ros) Complete");
   }
 
   int GetChecksum(std::vector<char> &buf) {
