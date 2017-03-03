@@ -492,10 +492,12 @@ class SVISNodelet : public nodelet::Nodelet {
       NODELET_INFO("(svis_ros) time_offset: %f", time_offset_);
     } else {
       // check strobe_buffer size
-      if (strobe_buffer_.size() > 0) {
+      if (strobe_buffer_.size() == 1 && camera_buffer_.size() == 1) {
         StrobePacket strobe = strobe_buffer_.front();
-        time_offset_vec_.push_back(strobe.timestamp_ros_rx - strobe.timestamp_teensy);
+        CameraPacket camera = camera_buffer_.front();
+        time_offset_vec_.push_back(camera.image.header.stamp.toSec() - strobe.timestamp_teensy);
         strobe_buffer_.pop_front();
+        camera_buffer_.pop_front();
       }
 
       // send pulse if we haven't already
