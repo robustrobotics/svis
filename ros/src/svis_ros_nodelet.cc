@@ -407,6 +407,23 @@ class SVISNodelet : public nodelet::Nodelet {
     StrobePacket strobe;
   };
 
+  void SendPulse() {
+    std::vector<char> buf(64, 0);
+    buf[0] = 0xAB;
+    buf[1] = 2;
+    NODELET_INFO("(svis_ros) Sending pulse packet");
+    rawhid_send(0, buf.data(), buf.size(), 100);
+    sent_pulse_ = true;
+  }
+
+  void SendDisablePulse() {
+    std::vector<char> buf(64, 0);
+    buf[0] = 0xAB;
+    buf[1] = 3;
+    NODELET_INFO("(svis_ros) Sending configuration packet");
+    rawhid_send(0, buf.data(), buf.size(), 100);
+  }
+
   void SendSetup() {
     std::vector<char> buf(64, 0);
 
@@ -454,6 +471,9 @@ class SVISNodelet : public nodelet::Nodelet {
 
   void GetTimeOffset() {
     if (time_offset_vec_.size() >= 1000) {
+      // turn off camera pulse
+      SendDisablePulse();
+
       // filter initial values that are often composed of stale data
       // NODELET_INFO("(svis_ros) time_offset_vec.size(): %lu", time_offset_vec_.size());
       while (fabs(time_offset_vec_.front() - time_offset_vec_.back()) > 0.1) {
@@ -470,18 +490,18 @@ class SVISNodelet : public nodelet::Nodelet {
       // calculate final time offset
       time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
       NODELET_INFO("(svis_ros) time_offset: %f", time_offset_);
-      init_flag_ = false;
     } else {
-      // use third imu packet since it triggers send
-      ImuPacket imu = imu_buffer_[2];
-      time_offset_vec_.push_back(imu.timestamp_ros_rx - imu.timestamp_teensy);
-      // NODELET_INFO("now: %f, rx: %f, teensy: %f, offset: %f, ros: %f",
-      //              ros::Time::now().toSec(),
-      //              imu.timestamp_ros_rx,
-      //              imu.timestamp_teensy,
-      //              imu.timestamp_ros_rx - imu.timestamp_teensy,
-      //              imu.timestamp_ros);
-      imu_buffer_.clear();
+      // check strobe_buffer size
+      if (strobe_buffer_.size() > 0) {
+        StrobePacket strobe = strobe_buffer_.front();
+        time_offset_vec_.push_back(strobe.timestamp_ros_rx - strobe.timestamp_teensy);
+        strobe_buffer_.pop_front();
+      }
+
+      // send pulse if we haven't already
+      if (!sent_pulse_) {
+        SendPulse();
+      }
     }
   }
 
@@ -1201,6 +1221,7 @@ class SVISNodelet : public nodelet::Nodelet {
 
   // camera and strobe timing
   bool init_flag_ = true;
+  bool sent_pulse_ = false;
   std::deque<double> time_offset_vec_;
   double time_offset_ = 0.0;
   int init_count_ = 0;

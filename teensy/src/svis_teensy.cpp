@@ -87,6 +87,8 @@ uint8_t strobe_buffer_count = 0;
 // trigger variables
 IntervalTimer trigger_timer;
 bool trigger_flag = false;
+bool triggered_once = true;
+bool pulse_trigger = true;
 elapsedMicros since_trigger;
 float trigger_rate = 60.0;  // Hz
 uint32_t trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
@@ -253,10 +255,11 @@ void ReadStrobe() {
 }
 
 void SetTrigger() {
-  if ((since_trigger > trigger_period) && !trigger_flag) {
+  if ((since_trigger > trigger_period) && !trigger_flag && ((pulse_trigger && !triggered_once) || !pulse_trigger)) {
     digitalWriteFast(TRIGGER_PIN, HIGH);
     since_trigger = 0;
     trigger_flag = true;
+    triggered_once = true;
 
     // strobe timestamp
     strobe_stamp_buffer[strobe_buffer_head] = micros();
@@ -363,17 +366,27 @@ void InitGPIO() {
   // pinMode(STROBE_PIN, INPUT_PULLUP);  // internal pullup is not strong enough
 }
 
-void InitInterrupts() {
+void InitImuTimer() {
   // setup interrupt timers
   imu_timer.begin(ReadIMU, 1000);  // microseconds
   imu_timer.priority(0);  // [0,255] with 0 as highest
+}
+
+void InitImuInterrupt() {
+  // setup pin interrupt
+  // TODO(jakeware): What is the priority of this?
+  // attachInterrupt(IMU_INT_PIN, ReadIMU, RISING);  // read imu
+}
+
+void InitTriggerTimer() {
   trigger_timer.begin(SetTrigger, 100);  // microseconds
   trigger_timer.priority(1);  // [0,255] with 0 as highest
+}
 
+void InitStrobeInterrupt() {
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
   // attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // read camera strobe
-  // attachInterrupt(IMU_INT_PIN, ReadIMU, RISING);  // read imu
 }
 
 void BlinkInit() {
@@ -453,7 +466,8 @@ void Setup() {
   InitGPIO();
   // InitMPU6050();
   InitICM20689();
-  InitInterrupts();
+  InitImuTimer();
+  InitTriggerTimer();
   setup_flag = true;
 }
 
@@ -752,6 +766,16 @@ void ProcessPacket(int num) {
         BlinkReset();
         ResetParams();
       }
+    }
+
+    // got single trigger packet
+    if (header[0] == 0xAB && header[1] == 2) {
+      triggered_once = false;
+    }
+
+    // got disable pulse packet
+    if (header[0] == 0xAB && header[1] == 3) {
+      pulse_trigger = false;  // this is true on startup
     }
   }
 }
