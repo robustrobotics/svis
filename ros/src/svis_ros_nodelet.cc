@@ -505,7 +505,7 @@ class SVISNodelet : public nodelet::Nodelet {
       // check strobe_buffer size
       if (strobe_buffer_.size() > 0 || camera_buffer_.size() > 0) {
         // we have exactly one of each
-        if (strobe_buffer_.size() == 1 || camera_buffer_.size() == 1) {
+        if (strobe_buffer_.size() == 1 && camera_buffer_.size() == 1) {
           StrobePacket strobe = strobe_buffer_.front();
           CameraPacket camera = camera_buffer_.front();
           time_offset_vec_.push_back(camera.image.header.stamp.toSec() - strobe.timestamp_teensy);
