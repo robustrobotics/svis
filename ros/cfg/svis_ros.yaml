@@ -1,5 +1,5 @@
 # camera
-camera_rate: 60  # [Hz] camera frame rate commanded by teensy
+camera_rate: 30  # [Hz] camera frame rate commanded by teensy
 
 # imu
 gyro_sens: 1  # [0,3] gyro full-scale range and sensitivity
