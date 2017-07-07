@@ -720,7 +720,7 @@ void ResetParams() {
   trigger_flag = false;
   since_trigger = 0;
   trigger_rate = float(recv_buffer[2]);  // Hz
-  // trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
+  trigger_period = uint32_t(1.0/trigger_rate * 1000000.0);  // microseconds
   trigger_duration = 1000;  // microseconds
 
   // debug
