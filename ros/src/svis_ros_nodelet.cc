@@ -122,6 +122,9 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void ConfigureCamera() {
+    NODELET_INFO("Configuring camera.");
+    NODELET_WARN("Make sure camera driver is running.");
+
     // toggle pointgrey trigger mode
     dynamic_reconfigure::ReconfigureRequest srv_req;
     dynamic_reconfigure::ReconfigureResponse srv_resp;
