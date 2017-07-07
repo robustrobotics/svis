@@ -280,10 +280,10 @@ class SVISNodelet : public nodelet::Nodelet {
         PublishImu(imu_packets_filt);
 
         // sync the camera and strobe counts
-        if (sync_flag_) {
-          GetCountOffset();
-          continue;
-        }
+        // if (sync_flag_) {
+        //   GetCountOffset();
+        //   continue;
+        // }
 
         // PrintStrobeBuffer();
         // PrintCameraBuffer();
@@ -414,6 +414,7 @@ class SVISNodelet : public nodelet::Nodelet {
     NODELET_INFO("(svis_ros) Sending pulse packet");
     rawhid_send(0, buf.data(), buf.size(), 100);
     sent_pulse_ = true;
+    t_pulse_ = ros::Time::now();
   }
 
   void SendDisablePulse() {
@@ -470,7 +471,7 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
   void GetTimeOffset() {
-    if (time_offset_vec_.size() >= 1000) {
+    if (time_offset_vec_.size() >= 100) {
       // turn off camera pulse
       SendDisablePulse();
 
@@ -490,20 +491,42 @@ class SVISNodelet : public nodelet::Nodelet {
       // calculate final time offset
       time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
       NODELET_INFO("(svis_ros) time_offset: %f", time_offset_);
-    } else {
-      // check strobe_buffer size
-      if (strobe_buffer_.size() == 1 && camera_buffer_.size() == 1) {
-        StrobePacket strobe = strobe_buffer_.front();
-        CameraPacket camera = camera_buffer_.front();
-        time_offset_vec_.push_back(camera.image.header.stamp.toSec() - strobe.timestamp_teensy);
-        strobe_buffer_.pop_front();
-        camera_buffer_.pop_front();
+
+      init_flag_ = false;
+    }
+
+    // check if we already sent a pulse and we have waiting long enough
+    if (sent_pulse_) {
+      // bail if we haven't waited long enough
+      if ((ros::Time::now() - t_pulse_).toSec() < 0.5) {
+        return;
       }
 
-      // send pulse if we haven't already
-      if (!sent_pulse_) {
-        SendPulse();
+      // check strobe_buffer size
+      if (strobe_buffer_.size() > 0 || camera_buffer_.size() > 0) {
+        // we have exactly one of each
+        if (strobe_buffer_.size() == 1 || camera_buffer_.size() == 1) {
+          StrobePacket strobe = strobe_buffer_.front();
+          CameraPacket camera = camera_buffer_.front();
+          time_offset_vec_.push_back(camera.image.header.stamp.toSec() - strobe.timestamp_teensy);
+          strobe_count_offset_ = camera.metadata.frame_counter - strobe.count_total;
+          NODELET_INFO("strobe_count_offset: %i", strobe_count_offset_);
+
+          strobe_buffer_.pop_front();
+          camera_buffer_.pop_front();
+        } else {
+          NODELET_WARN("Mismatched strobe and camera buffer sizes");
+
+          // clear buffers to reset counts
+          strobe_buffer_.clear();
+          camera_buffer_.clear();
+        }
+
+        sent_pulse_ = false;
       }
+    } else {
+      // send pulse if we haven't already
+      SendPulse();
     }
   }
 
@@ -1256,6 +1279,7 @@ class SVISNodelet : public nodelet::Nodelet {
   ros::Time t_loop_start_;
   ros::Time t_period_;
   ros::Time t_period_last_;
+  ros::Time t_pulse_;
   ros::Time tic_;
   ros::Time toc_;
   svis_ros::SvisTiming timing_;
