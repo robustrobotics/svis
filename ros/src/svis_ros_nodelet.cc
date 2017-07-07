@@ -516,7 +516,8 @@ class SVISNodelet : public nodelet::Nodelet {
           camera_buffer_.pop_front();
         } else {
           NODELET_WARN("Mismatched strobe and camera buffer sizes");
-
+          NODELET_WARN("strobe_buffer size: %lu", strobe_buffer_.size());
+          NODELET_WARN("camera_buffer size: %lu", camera_buffer_.size());
           // clear buffers to reset counts
           strobe_buffer_.clear();
           camera_buffer_.clear();
