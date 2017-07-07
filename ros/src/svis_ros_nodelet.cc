@@ -539,34 +539,34 @@ class SVISNodelet : public nodelet::Nodelet {
       }
 
       // accel
-      memcpy(&imu.acc[0], &buf[ind], sizeof(imu.acc[0]));
-      ind += sizeof(imu.acc[0]);
-      memcpy(&imu.acc[1], &buf[ind], sizeof(imu.acc[1]));
-      ind += sizeof(imu.acc[1]);
-      memcpy(&imu.acc[2], &buf[ind], sizeof(imu.acc[2]));
-      ind += sizeof(imu.acc[2]);
-
-      // NODELET_INFO("(svis_ros) imu.acc: [%i, %i, %i]", imu.acc[0], imu.acc[1], imu.acc[2]);
+      memcpy(&imu.acc_raw[0], &buf[ind], sizeof(imu.acc_raw[0]));
+      ind += sizeof(imu.acc_raw[0]);
+      memcpy(&imu.acc_raw[1], &buf[ind], sizeof(imu.acc_raw[1]));
+      ind += sizeof(imu.acc_raw[1]);
+      memcpy(&imu.acc_raw[2], &buf[ind], sizeof(imu.acc_raw[2]));
+      ind += sizeof(imu.acc_raw[2]);
+      // NODELET_INFO("(svis_ros) imu.acc_raw: [%i, %i, %i]", imu.acc_raw[0], imu.acc_raw[1], imu.acc_raw[2]);
 
       // convert accel
       imu.acc[0] = static_cast<float>(imu.acc_raw[0]) / acc_sens_arr_[acc_sens_] * g_;
       imu.acc[1] = static_cast<float>(imu.acc_raw[1]) / acc_sens_arr_[acc_sens_] * g_;
       imu.acc[2] = static_cast<float>(imu.acc_raw[2]) / acc_sens_arr_[acc_sens_] * g_;
+      // NODELET_INFO("(svis_ros) imu.acc: [%0.2f, %0.2f, %0.2f]", imu.acc[0], imu.acc[1], imu.acc[2]);
 
       // gyro
-      memcpy(&imu.gyro[0], &buf[ind], sizeof(imu.gyro[0]));
-      ind += sizeof(imu.gyro[0]);
-      memcpy(&imu.gyro[1], &buf[ind], sizeof(imu.gyro[1]));
-      ind += sizeof(imu.gyro[1]);
-      memcpy(&imu.gyro[2], &buf[ind], sizeof(imu.gyro[2]));
-      ind += sizeof(imu.gyro[2]);
-
-      // NODELET_INFO("(svis_ros) imu.gyro: [%i, %i, %i]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
+      memcpy(&imu.gyro_raw[0], &buf[ind], sizeof(imu.gyro_raw[0]));
+      ind += sizeof(imu.gyro_raw[0]);
+      memcpy(&imu.gyro_raw[1], &buf[ind], sizeof(imu.gyro_raw[1]));
+      ind += sizeof(imu.gyro_raw[1]);
+      memcpy(&imu.gyro_raw[2], &buf[ind], sizeof(imu.gyro_raw[2]));
+      ind += sizeof(imu.gyro_raw[2]);
+      // NODELET_INFO("(svis_ros) imu.gyro_raw: [%i, %i, %i]", imu.gyro_raw[0], imu.gyro_raw[1], imu.gyro_raw[2]);
 
       // convert gyro
       imu.gyro[0] = static_cast<float>(imu.gyro_raw[0]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
       imu.gyro[1] = static_cast<float>(imu.gyro_raw[1]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
       imu.gyro[2] = static_cast<float>(imu.gyro_raw[2]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
+      // NODELET_INFO("(svis_ros) imu.gyro: [%0.2f, %0.2f, %0.2f]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
       // save packet
       imu_packets.push_back(imu);
