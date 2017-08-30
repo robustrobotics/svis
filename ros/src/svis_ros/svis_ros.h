@@ -15,7 +15,6 @@
 #include <sensor_msgs/Imu.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/camera_subscriber.h>
-#include <pluginlib/class_list_macros.h>
 #include <dynamic_reconfigure/StrParameter.h>
 #include <dynamic_reconfigure/Reconfigure.h>
 #include <dynamic_reconfigure/Config.h>
