@@ -21,11 +21,17 @@
 #include <dynamic_reconfigure/Reconfigure.h>
 #include <dynamic_reconfigure/Config.h>
 
-#include <fla_utils/param_utils.h>
+#include "fla_utils/param_utils.h"
 
-#include <svis_ros/SvisImu.h>
-#include <svis_ros/SvisStrobe.h>
-#include <svis_ros/SvisTiming.h>
+#include "svis_ros/imu_packet.h"
+#include "svis_ros/header_packet.h"
+#include "svis_ros/strobe_packet.h"
+#include "svis_ros/camera_packet.h"
+#include "svis_ros/image_metadata.h"
+#include "svis_ros/camera_strobe_packet.h"
+#include "svis_ros/SvisImu.h"
+#include "svis_ros/SvisStrobe.h"
+#include "svis_ros/SvisTiming.h"
 
 extern "C" {
 #include "hid/hid.h"
@@ -306,107 +312,6 @@ class SVISNodelet : public nodelet::Nodelet {
   }
 
  private:
-  class HeaderPacket {
-   public:
-    HeaderPacket() :
-      timestamp_ros_rx(0.0),
-      send_count(0),
-      imu_count(0),
-      strobe_count(0) {
-      // nothing
-    }
-    ~HeaderPacket() = default;
-    double timestamp_ros_rx;  // time message was received
-    uint16_t send_count;
-    uint8_t imu_count;
-    uint8_t strobe_count;
-  };
-
-  class StrobePacket {
-   public:
-    StrobePacket() :
-      timestamp_ros_rx(0.0),
-      timestamp_ros(0.0),
-      timestamp_teensy_raw(0),
-      timestamp_teensy(0.0),
-      count(0),
-      count_total(0) {
-      // nothing
-    }
-    ~StrobePacket() = default;
-    double timestamp_ros_rx;  // [seconds] time usb message was received in ros epoch
-    double timestamp_ros;  // [seconds] timestamp in ros epoch
-    uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
-    double timestamp_teensy;  // [seconds] timestamp in teensy epoch
-    uint8_t count;  // number of camera images
-    uint32_t count_total;  // total number of camera messages thus far
-  };
-
-  class ImuPacket {
-   public:
-    ImuPacket() :
-      timestamp_ros_rx(0.0),
-      timestamp_ros(0.0),
-      timestamp_teensy_raw(0),
-      timestamp_teensy(0.0),
-      acc_raw{0},
-      acc{0},
-      gyro_raw{0},
-      gyro{0} {
-        // nothing
-      }
-    ~ImuPacket() = default;
-    double timestamp_ros_rx;  // [seconds] time usb message was received in ros epoch
-    double timestamp_ros;  // [seconds] timestamp in ros epoch
-    uint32_t timestamp_teensy_raw;  // [microseconds] timestamp in teensy epoch
-    double timestamp_teensy;  // [seconds] timestamp in teensy epoch
-    int16_t acc_raw[3];  // counts
-    float acc[3];  // m/s^2
-    int16_t gyro_raw[3];  // counts
-    float gyro[3];  // rad/sec
-  };
-
-  class ImageMetadata {
-   public:
-    ImageMetadata() :
-      timestamp(0),
-      gain(0),
-      shutter(0),
-      brightness(0),
-      exposure(0),
-      white_balance(0),
-      frame_counter(0),
-      strobe_pattern(0),
-      gpio_state(0),
-      roi_position(0) {
-      // nothing
-    }
-    ~ImageMetadata() = default;
-    uint32_t timestamp;
-    uint32_t gain;
-    uint32_t shutter;
-    uint32_t brightness;
-    uint32_t exposure;
-    uint32_t white_balance;
-    uint32_t frame_counter;
-    uint32_t strobe_pattern;
-    uint32_t gpio_state;
-    uint32_t roi_position;
-  };
-
-  class CameraPacket {
-   public:
-    ImageMetadata metadata;
-    sensor_msgs::CameraInfo info;
-    sensor_msgs::Image image;
-  };
-
-  class CameraStrobePacket {
-   public:
-    CameraPacket camera;
-    StrobePacket strobe;
-  };
-
   void SendPulse() {
     std::vector<char> buf(64, 0);
     buf[0] = 0xAB;
