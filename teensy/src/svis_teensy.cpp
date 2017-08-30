@@ -721,8 +721,8 @@ void ResetParams() {
   imu_buffer_head = 0;
   imu_buffer_tail = 0;
   imu_buffer_count = 0;
-  // fs_sel = recv_buffer[2];
-  // afs_sel = recv_buffer[3];
+  // fs_sel = recv_buffer[2];  // can't update this on restart
+  // afs_sel = recv_buffer[3];  //  can't update this on restart
 
   // strobe variables
   strobe_count = 0;
