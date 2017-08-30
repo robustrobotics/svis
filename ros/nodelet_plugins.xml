@@ -1,0 +1,8 @@
+<library path="lib/libsvis_ros_nodelet">
+  <class name="svis_ros/SVISRosNodelet"
+         type="svis_ros::SVISRosNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+	    A simple visual inertial synchronization approach.
+    </description>
+  </class>
+</library>

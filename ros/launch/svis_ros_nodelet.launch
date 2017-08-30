@@ -17,7 +17,7 @@
 
     <!-- Nodelet -->
     <node pkg="nodelet" type="nodelet" name="svis_ros"
-          args="load svis_ros/SVISNodelet $(arg manager)" output="screen">
+          args="load svis_ros/SVISRosNodelet $(arg manager)" output="screen">
     </node>
   </group>
 </launch>

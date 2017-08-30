@@ -62,19 +62,39 @@ include_directories(
   ${LibUSB_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME}
+## SVIS_ROS_NODELET #########################
+add_library(svis_ros_nodelet
   src/svis_ros_nodelet.cc
 )
 
-add_dependencies(${PROJECT_NAME}
+add_dependencies(svis_ros_nodelet
+  ${catkin_EXPORTED_TARGETS}
+  svis_ros
+  )
+
+target_link_libraries(svis_ros_nodelet
+  ${catkin_LIBRARIES}
+  svis_ros
+)
+
+install(TARGETS svis_ros_nodelet
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+## SVIS_ROS #########################
+add_library(svis_ros
+  src/svis_ros/svis_ros.cc
+)
+
+add_dependencies(svis_ros
   ${catkin_EXPORTED_TARGETS}
   ${LIBUSB_1_LIBRARIES}
   svis_hid
   )
 
-target_link_libraries(${PROJECT_NAME}  
+target_link_libraries(svis_ros
   ${catkin_LIBRARIES}
-  # ${LIBUSB_1_LIBRARIES}
   ${LibUSB_LIBRARIES}
   svis_hid
 )
@@ -84,6 +104,7 @@ install(TARGETS svis_ros
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
+## SVIS_HID #########################
 add_library(svis_hid
   src/hid/hid.c
   )
