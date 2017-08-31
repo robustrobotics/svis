@@ -29,34 +29,40 @@ class SVIS {
 
   void Update();
   void InitHID();
-  bool ReadHID(std::vector<char>* buf);
-  void ParseHID(const std::vector<char>& buf,
+  void ReadHID(std::vector<char>* buf);
+  void ParseBuffer(const std::vector<char>& buf,
                       std::vector<ImuPacket>* imu_packets,
                       std::vector<StrobePacket>* strobe_packets);
   void SendPulse();
   void SendDisablePulse();
   void SendSetup();
-  int GetChecksum(const std::vector<char>& buf);
+  bool CheckChecksum(const std::vector<char>& buf);
   void GetTimeOffset();
-  void GetHeader(const std::vector<char>& buf, HeaderPacket &header);
-  void GetImu(const std::vector<char>& buf, HeaderPacket &header, std::vector<ImuPacket>& imu_packets);
-  void GetStrobe(const std::vector<char> &buf, HeaderPacket &header,
-                 std::vector<StrobePacket>& strobe_packets);
-  void PushImu(std::vector<ImuPacket>& imu_packets);
-  void PushStrobe(std::vector<StrobePacket>& strobe_packets);
-  void FilterImu(std::vector<ImuPacket>& imu_packets_filt);
+  void GetHeader(const std::vector<char>& buf,
+                 HeaderPacket* header);
+  void GetImu(const std::vector<char>& buf,
+              const HeaderPacket& header,
+              std::vector<ImuPacket>* imu_packets);
+  void GetStrobe(const std::vector<char>& buf,
+                 const HeaderPacket& header,
+                 std::vector<StrobePacket>* strobe_packets);
+  void PushImu(const std::vector<ImuPacket>& imu_packets);
+  void PushStrobe(const std::vector<StrobePacket>& strobe_packets);
+  void FilterImu(std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
-  void PrintImageQuadlet(std::string name, const sensor_msgs::Image::ConstPtr& msg, int i);
+  void PrintImageQuadlet(const std::string& name,
+                         const sensor_msgs::Image::ConstPtr& msg,
+                         const int& i);
   void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
   void GetStrobeTotal(std::vector<StrobePacket>* strobe_packets);
   void GetCountOffset();
-  void AssociateStrobe(std::vector<CameraStrobePacket> &camera_strobe_packets);
+  void AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packets);
   void PrintCameraBuffer();
   void PrintStrobeBuffer();
   void tic();
   double toc();
   void GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
-                                 CameraPacket& camera_packet);
+                        CameraPacket* camera_packet);
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;

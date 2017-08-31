@@ -25,7 +25,7 @@ void SVIS::InitHID() {
   }
 }
 
-bool SVIS::ReadHID(std::vector<char>* buf) {
+void SVIS::ReadHID(std::vector<char>* buf) {
   // check if any Raw HID packet has arrived
   int num = rawhid_recv(0, buf->data(), buf->size(), 220);
 
@@ -41,30 +41,30 @@ bool SVIS::ReadHID(std::vector<char>* buf) {
   } else if (num > 0) {
     // resize vector
     buf->resize(num);
-
-    // debug print
-    if (print_buffer_) {
-      PrintBuffer(*buf);
-    }
   } else {
     printf("(svis_ros) Bad return value from rawhid_recv");
   }
-
-  return GetChecksum(*buf);
 }
 
 void SVIS::Update() {
+  // read hid serial
+  std::vector<char> buf(64, 0);
+  ReadHID(&buf);
 
-  //   // read hid serial
-  //   std::vector<char> buf_(64, 0);
-  //   if (svis.ReadHID(&buf)) {
-  //     continue;  // bail if checksums don't match
-  //   }
+  // debug print
+  if (print_buffer_) {
+    PrintBuffer(buf);
+  }
 
-  //   // parse
-  //   std::vector<ImuPacket> imu_packets;
-  //   std::vector<StrobePacket> strobe_packets;
-  //   svis.ParseHID(buf, &imu_packets, &strobe_packets);
+  // bail if checksums don't match
+  if (CheckChecksum(buf)) {
+    return;
+  }
+
+  // parse
+  std::vector<ImuPacket> imu_packets;
+  std::vector<StrobePacket> strobe_packets;
+  ParseBuffer(buf, &imu_packets, &strobe_packets);
 
   //   // publish raw packets
   //   PublishImuRaw(imu_packets);
@@ -91,10 +91,10 @@ void SVIS::Update() {
   //   PublishCamera(camera_strobe_packets);
 }
 
-void SVIS::ParseHID(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
+void SVIS::ParseBuffer(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
   // parse header
   HeaderPacket header;
-  // GetHeader(buf, header);
+  GetHeader(buf, &header);
 
   // parse, publish, push imu
   // GetImu(buf, header, imu_packets);
@@ -144,7 +144,7 @@ void SVIS::SendSetup() {
   rawhid_send(0, buf.data(), buf.size(), 100);
 }
 
-int SVIS::GetChecksum(const std::vector<char>& buf) {
+bool SVIS::CheckChecksum(const std::vector<char>& buf) {
   // calculate checksum
   uint16_t checksum_calc = 0;
   for (int i = 0; i < send_buffer_size - 2; i++) {
@@ -154,7 +154,7 @@ int SVIS::GetChecksum(const std::vector<char>& buf) {
   // get packet chechsum
   uint16_t checksum_orig = 0;
   memcpy(&checksum_orig, &buf[checksum_index], sizeof(checksum_orig));
-  int ret = (checksum_calc != checksum_orig);
+  bool ret = (checksum_calc != checksum_orig);
 
   // check match and return result
   if (ret) {
@@ -226,29 +226,29 @@ void SVIS::GetTimeOffset() {
   }
 }
 
-void SVIS::GetHeader(const std::vector<char>& buf, HeaderPacket &header) {
+void SVIS::GetHeader(const std::vector<char>& buf, HeaderPacket* header) {
   int ind = 0;
 
   // ros time
-  header.timestamp_ros_rx = ros::Time::now().toSec();
+  header->timestamp_ros_rx = ros::Time::now().toSec();
 
   // send_count
-  memcpy(&header.send_count, &buf[ind], sizeof(header.send_count));
-  // printf("(svis_ros) send_count: [%i, %i]", ind, header.send_count);
-  ind += sizeof(header.send_count);
+  memcpy(&header->send_count, &buf[ind], sizeof(header->send_count));
+  // printf("(svis_ros) send_count: [%i, %i]", ind, header->send_count);
+  ind += sizeof(header->send_count);
 
   // imu_packet_count
-  memcpy(&header.imu_count, &buf[ind], sizeof(header.imu_count));
-  // printf("(svis_ros) imu_packet_count: [%i, %i]", ind, header.imu_count);
-  ind += sizeof(header.imu_count);
+  memcpy(&header->imu_count, &buf[ind], sizeof(header->imu_count));
+  // printf("(svis_ros) imu_packet_count: [%i, %i]", ind, header->imu_count);
+  ind += sizeof(header->imu_count);
 
   // strobe_packet_count
-  memcpy(&header.strobe_count, &buf[ind], sizeof(header.strobe_count));
-  // printf("(svis_ros) strobe_packet_count: [%i, %i]", ind, header.strobe_count);
-  ind += sizeof(header.strobe_count);
+  memcpy(&header->strobe_count, &buf[ind], sizeof(header->strobe_count));
+  // printf("(svis_ros) strobe_packet_count: [%i, %i]", ind, header->strobe_count);
+  ind += sizeof(header->strobe_count);
 }
 
-void SVIS::GetImu(const std::vector<char>& buf, HeaderPacket &header, std::vector<ImuPacket> &imu_packets) {
+void SVIS::GetImu(const std::vector<char>& buf, const HeaderPacket& header, std::vector<ImuPacket>* imu_packets) {
   for (int i = 0; i < header.imu_count; i++) {
     ImuPacket imu;
     int ind = imu_index[i];
@@ -302,12 +302,13 @@ void SVIS::GetImu(const std::vector<char>& buf, HeaderPacket &header, std::vecto
     // printf("(svis_ros) imu.gyro: [%0.2f, %0.2f, %0.2f]", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
     // save packet
-    imu_packets.push_back(imu);
+    imu_packets->push_back(imu);
   }
 }
 
-void SVIS::GetStrobe(const std::vector<char>& buf, HeaderPacket &header,
-                 std::vector<StrobePacket>& strobe_packets) {
+void SVIS::GetStrobe(const std::vector<char>& buf,
+                     const HeaderPacket& header,
+                     std::vector<StrobePacket>* strobe_packets) {
   for (int i = 0; i < header.strobe_count; i++) {
     StrobePacket strobe;
     int ind = strobe_index[i];
@@ -336,11 +337,11 @@ void SVIS::GetStrobe(const std::vector<char>& buf, HeaderPacket &header,
     ind += strobe.count;
 
     // save packet
-    strobe_packets.push_back(strobe);
+    strobe_packets->push_back(strobe);
   }
 }
 
-void SVIS::PushImu(std::vector<ImuPacket>& imu_packets) {
+void SVIS::PushImu(const std::vector<ImuPacket>& imu_packets) {
   ImuPacket imu;
   for (int i = 0; i < imu_packets.size(); i++) {
     imu = imu_packets[i];
@@ -353,7 +354,7 @@ void SVIS::PushImu(std::vector<ImuPacket>& imu_packets) {
   }
 }
 
-void SVIS::PushStrobe(std::vector<StrobePacket> &strobe_packets) {
+void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets) {
   StrobePacket strobe;
   for (int i = 0; i < strobe_packets.size(); i++) {
     strobe = strobe_packets[i];
@@ -366,7 +367,7 @@ void SVIS::PushStrobe(std::vector<StrobePacket> &strobe_packets) {
   }
 }
 
-void SVIS::FilterImu(std::vector<ImuPacket> &imu_packets_filt) {
+void SVIS::FilterImu(std::vector<ImuPacket>* imu_packets_filt) {
   // create filter packets
   while (imu_buffer_.size() >= imu_filter_size_) {
     // sum
@@ -394,11 +395,11 @@ void SVIS::FilterImu(std::vector<ImuPacket> &imu_packets_filt) {
     }
 
     // save packet
-    imu_packets_filt.push_back(temp_packet);
+    imu_packets_filt->push_back(temp_packet);
   }
 }
 
-void SVIS::PrintBuffer(const std::vector<char> &buf) {
+void SVIS::PrintBuffer(const std::vector<char>& buf) {
   printf("(svis_ros) buffer: ");
   for (int i = 0; i < buf.size(); i++) {
     printf("%02X ", buf[i] & 255);
@@ -536,7 +537,7 @@ void SVIS::GetCountOffset() {
   }
 }
 
-void SVIS::AssociateStrobe(std::vector<CameraStrobePacket> &camera_strobe_packets) {
+void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packets) {
   // create camera strobe packets
   CameraStrobePacket camera_strobe;
   int fail_count = 0;
@@ -564,7 +565,7 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket> &camera_strobe_packet
         // camera_strobe.camera.image.header.stamp = ros::Time(camera_strobe.strobe.timestamp_ros);
 
         // push to buffer
-        camera_strobe_packets.push_back(camera_strobe);
+        camera_strobe_packets->push_back(camera_strobe);
 
         // remove matched strobe
         // printf("delete matched camera");
@@ -653,7 +654,7 @@ void SVIS::PrintStrobeBuffer() {
   printf("\n");
 }
 
-void SVIS::PrintImageQuadlet(std::string name, const sensor_msgs::Image::ConstPtr& msg, int i) {
+void SVIS::PrintImageQuadlet(const std::string& name, const sensor_msgs::Image::ConstPtr& msg, const int& i) {
   printf("%s: ", name.c_str());
   printf("%02X ", msg->data[i]);
   printf("%02X ", msg->data[i + 1]);
@@ -680,41 +681,41 @@ void SVIS::PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg) {
 }
 
 void SVIS::GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
-                               CameraPacket &camera_packet) {
+                               CameraPacket* camera_packet) {
   // timestamp
-  memcpy(&camera_packet.metadata.timestamp, &image_msg->data[0],
-         sizeof(camera_packet.metadata.timestamp));
+  memcpy(&camera_packet->metadata.timestamp, &image_msg->data[0],
+         sizeof(camera_packet->metadata.timestamp));
 
   // gain
-  memcpy(&camera_packet.metadata.gain, &image_msg->data[4],
-         sizeof(camera_packet.metadata.gain));
+  memcpy(&camera_packet->metadata.gain, &image_msg->data[4],
+         sizeof(camera_packet->metadata.gain));
 
   // shutter
-  memcpy(&camera_packet.metadata.shutter, &image_msg->data[8],
-         sizeof(camera_packet.metadata.shutter));
+  memcpy(&camera_packet->metadata.shutter, &image_msg->data[8],
+         sizeof(camera_packet->metadata.shutter));
 
   // brightness
-  memcpy(&camera_packet.metadata.brightness, &image_msg->data[12],
-         sizeof(camera_packet.metadata.brightness));
+  memcpy(&camera_packet->metadata.brightness, &image_msg->data[12],
+         sizeof(camera_packet->metadata.brightness));
 
   // exposure
-  memcpy(&camera_packet.metadata.exposure, &image_msg->data[16],
-         sizeof(camera_packet.metadata.exposure));
+  memcpy(&camera_packet->metadata.exposure, &image_msg->data[16],
+         sizeof(camera_packet->metadata.exposure));
 
   // white balance
-  memcpy(&camera_packet.metadata.white_balance, &image_msg->data[20],
-         sizeof(camera_packet.metadata.white_balance));
+  memcpy(&camera_packet->metadata.white_balance, &image_msg->data[20],
+         sizeof(camera_packet->metadata.white_balance));
 
   // frame counter
   uint32_t frame_counter = 0xFF & image_msg->data[27];
   frame_counter |= (0xFF & image_msg->data[26]) << 8;
   frame_counter |= (0xFF & image_msg->data[25]) << 16;
   frame_counter |= (0xFF & image_msg->data[24]) << 24;
-  camera_packet.metadata.frame_counter = frame_counter;
+  camera_packet->metadata.frame_counter = frame_counter;
 
   // region of interest
-  memcpy(&camera_packet.metadata.roi_position, &image_msg->data[28],
-         sizeof(camera_packet.metadata.roi_position));
+  memcpy(&camera_packet->metadata.roi_position, &image_msg->data[28],
+         sizeof(camera_packet->metadata.roi_position));
 }
 
 void SVIS::tic() {
