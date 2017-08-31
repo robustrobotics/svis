@@ -119,9 +119,9 @@ class SVIS {
   bool print_buffer_ = false;
 
   // timing
-  // ros::Time t_loop_start_;
-  // ros::Time t_period_;
-  // ros::Time t_period_last_;
+  ros::Time t_loop_start_;
+  ros::Time t_period_;
+  ros::Time t_period_last_;
   ros::Time t_pulse_;
   ros::Time tic_;
   ros::Time toc_;

@@ -368,6 +368,8 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets) {
 }
 
 void SVIS::FilterImu(std::vector<ImuPacket>* imu_packets_filt) {
+  // tic();
+
   // create filter packets
   while (imu_buffer_.size() >= imu_filter_size_) {
     // sum
@@ -397,6 +399,8 @@ void SVIS::FilterImu(std::vector<ImuPacket>* imu_packets_filt) {
     // save packet
     imu_packets_filt->push_back(temp_packet);
   }
+
+  // timing_.filter_imu = toc();
 }
 
 void SVIS::PrintBuffer(const std::vector<char>& buf) {
