@@ -471,57 +471,57 @@ void SVIS::PrintBuffer(const std::vector<char>& buf) {
 void SVIS::ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets) {
   tic();
 
-  // for (int i = 0; i < strobe_packets->size(); i++) {
-  //   // printf("strobe_count_total: %u", strobe_count_total_);
+  for (auto& str : (*strobe_packets)) {
+    // printf("strobe_count_total: %u", strobe_count_total_);
 
-  //   // initialize variables on first iteration
-  //   if (strobe_count_total_ == 0 && strobe_count_last_ == 0) {
-  //     // printf("init strobe count");
-  //     strobe_count_total_ = 1;
-  //     strobe_count_last_ = strobe_packets[i]->count_total;
-  //     strobe_packets[i]->count_total = strobe_count_total_;
-  //     continue;
-  //   }
+    // initialize variables on first iteration
+    if (strobe_count_total_ == 0 && strobe_count_last_ == 0) {
+      // printf("init strobe count");
+      strobe_count_total_ = 1;
+      strobe_count_last_ = str.count_total;
+      str.count_total = strobe_count_total_;
+      continue;
+    }
 
-  //   // get count difference between two most recent strobe messages
-  //   uint8_t diff = 0;
-  //   if (strobe_packets[i]->count > strobe_count_last_) {
-  //     // no rollover
-  //     diff = strobe_packets[i]->count - strobe_count_last_;
-  //   } else if (strobe_packets[i]->count < strobe_count_last_) {
-  //     // rollover
-  //     diff = (strobe_count_last_ + strobe_packets[i]->count);
+    // get count difference between two most recent strobe messages
+    uint8_t diff = 0;
+    if (str.count > strobe_count_last_) {
+      // no rollover
+      diff = str.count - strobe_count_last_;
+    } else if (str.count < strobe_count_last_) {
+      // rollover
+      diff = (strobe_count_last_ + str.count);
 
-  //     // handle rollover
-  //     if (diff == 255) {
-  //       // printf("(svis_ros) Handle rollover");
-  //       diff = 1;
-  //     }
-  //   } else {
-  //     // no change
-  //     printf("(svis_ros) no change in strobe count");
-  //   }
+      // handle rollover
+      if (diff == 255) {
+        // printf("(svis_ros) Handle rollover");
+        diff = 1;
+      }
+    } else {
+      // no change
+      printf("(svis_ros) no change in strobe count");
+    }
 
-  //   // check diff value
-  //   if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
-  //     printf("(svis_ros) detected jump in strobe count");
-  //     // printf("(svis_ros) diff: %i, last: %i, count: %i",
-  //     //              diff,
-  //     //              strobe_count_last_,
-  //     //              strobe_packets[i].count);
-  //   } else if (diff < 1 && !std::isinf(strobe_count_last_)) {
-  //     printf("(svis_ros) detected lag in strobe count");
-  //   }
+    // check diff value
+    if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
+      printf("(svis_ros) detected jump in strobe count");
+      // printf("(svis_ros) diff: %i, last: %i, count: %i",
+      //              diff,
+      //              strobe_count_last_,
+      //              strobe_packets[i].count);
+    } else if (diff < 1 && !std::isinf(strobe_count_last_)) {
+      printf("(svis_ros) detected lag in strobe count");
+    }
 
-  //   // update count
-  //   strobe_count_total_ += diff;
+    // update count
+    strobe_count_total_ += diff;
 
-  //   // set packet total
-  //   strobe_packets[i]->count_total = strobe_count_total_;
+    // set packet total
+    str.count_total = strobe_count_total_;
 
-  //   // update last value
-  //   strobe_count_last_ = strobe_packets[i]->count;
-  // }
+    // update last value
+    strobe_count_last_ = str.count;
+  }
 
   timing_.compute_strobe_total = toc();
 }
