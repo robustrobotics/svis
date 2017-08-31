@@ -4,13 +4,13 @@
 
 namespace svis {
 
-void SVIS::InitHID() {
   // set circular buffer max lengths
   imu_buffer_.set_capacity(10);
   strobe_buffer_.set_capacity(10);
   camera_buffer_.set_capacity(20);
   camera_strobe_buffer_.set_capacity(10);
 
+void SVIS::OpenHID() {
   // open rawhid port
   int r = rawhid_open(1, 0x16C0, 0x0486, 0xFFAB, 0x0200);
   // C-based example is 16C0:0480:FFAB:0200

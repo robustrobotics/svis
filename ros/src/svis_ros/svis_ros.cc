@@ -20,7 +20,7 @@ void SVISRos::Run() {
   ConfigureCamera();
 
   // setup comms and send init packet
-  svis_.InitHID();
+  svis_.OpenHID();
 
   // send setup packet
   svis_.SendSetup();
