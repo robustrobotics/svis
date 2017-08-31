@@ -26,9 +26,11 @@ void SVIS::OpenHID() {
   }
 }
 
-void SVIS::ReadHID(std::vector<char>* buf) {
+int SVIS::ReadHID(std::vector<char>* buf) {
   // check if any Raw HID packet has arrived
+  tic();
   int num = rawhid_recv(0, buf->data(), buf->size(), 220);
+  timing_.rawhid_recv = toc();
 
   // check byte count
   if (num < 0) {
@@ -45,12 +47,16 @@ void SVIS::ReadHID(std::vector<char>* buf) {
   } else {
     printf("(svis_ros) Bad return value from rawhid_recv");
   }
+
+  return num;
 }
 
 void SVIS::Update() {
   // read and return if empty or bad
   std::vector<char> buf(64, 0);
-  ReadHID(&buf);
+  if (ReadHID(&buf) <= 0) {
+    return;
+  }
 
   // debug print
   if (print_buffer_) {

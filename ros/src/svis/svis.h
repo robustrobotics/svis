@@ -30,7 +30,7 @@ class SVIS {
 
   void Update();
   void OpenHID();
-  void ReadHID(std::vector<char>* buf);
+  int ReadHID(std::vector<char>* buf);
   void ParseBuffer(const std::vector<char>& buf,
                       std::vector<ImuPacket>* imu_packets,
                       std::vector<StrobePacket>* strobe_packets);
