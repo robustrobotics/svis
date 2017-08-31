@@ -121,6 +121,7 @@ void SVIS::Update() {
   // PublishCamera(camera_strobe_packets);
 
   timing_.update = (ros::Time::now() - t_update_start_).toSec();
+  // PublishTiming(timing_);
 }
 
 void SVIS::ParseBuffer(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
