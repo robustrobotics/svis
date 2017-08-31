@@ -89,6 +89,26 @@ add_library(svis_ros
 
 add_dependencies(svis_ros
   ${catkin_EXPORTED_TARGETS}
+  svis
+  )
+
+target_link_libraries(svis_ros
+  ${catkin_LIBRARIES}
+  svis
+)
+
+install(TARGETS svis_ros
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+## SVIS #########################
+add_library(svis
+  src/svis/svis.cc
+)
+
+add_dependencies(svis
+  ${catkin_EXPORTED_TARGETS}
   ${LIBUSB_1_LIBRARIES}
   svis_hid
   )
@@ -99,7 +119,7 @@ target_link_libraries(svis_ros
   svis_hid
 )
 
-install(TARGETS svis_ros
+install(TARGETS svis
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
