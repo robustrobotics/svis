@@ -67,7 +67,6 @@ class SVISRos {
   image_transport::CameraSubscriber camera_sub_;
 
   bool received_camera_ = false;
-  svis_ros::SvisTiming timing_;
   svis::SVIS svis_;
 };
 

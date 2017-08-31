@@ -27,8 +27,15 @@ void SVISRos::Run() {
 
   ros::Rate r(1000);
   while (ros::ok() && !stop_signal_) {
-    svis_.Update();
+    t_period_ = ros::Time::now();
+    timing_.period = (t_period_ - t_period_last_).toSec();
+    t_period_last_ = t_period_;
+
+    tic();
     ros::spinOnce();
+    svis_.timing_.ros_spin_once = toc();
+
+    svis_.Update();
 
     if (svis_.use_camera_ && !received_camera_) {
       ROS_WARN_THROTTLE(0.5, "(svis_ros) Have not received camera message");
@@ -118,7 +125,7 @@ void SVISRos::InitPublishers() {
 }
 
 void SVISRos::PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt) {
-  // tic();
+  svis_.tic();
 
   svis::ImuPacket temp_packet;
   sensor_msgs::Imu imu;
@@ -164,7 +171,7 @@ void SVISRos::PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt) {
     imu_pub_.publish(imu);
   }
 
-  // timing_.publish_imu = toc();
+  svis_.timing_.publish_imu = svis_.toc();
 }
 
 void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
@@ -194,7 +201,7 @@ void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
 }
 
 void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets) {
-  // tic();
+  svis_.tic();
 
   for (int i = 0; i < camera_strobe_packets.size(); i++) {
     camera_pub_.publish(camera_strobe_packets[i].camera.image,
@@ -203,11 +210,11 @@ void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe
 
   camera_strobe_packets.clear();
 
-  // timing_.publish_camera = toc();
+  svis_.timing_.publish_camera = svis_.toc();
 }
 
 void SVISRos::PublishImuRaw(std::vector<svis::ImuPacket>& imu_packets) {
-  // tic();
+  svis_.tic();
 
   svis_ros::SvisImu imu;
 
@@ -235,11 +242,11 @@ void SVISRos::PublishImuRaw(std::vector<svis::ImuPacket>& imu_packets) {
   // publish
   svis_imu_pub_.publish(imu);
 
-  // timing_.publish_imu_raw = toc();
+  svis_.timing_.publish_imu_raw = svis_.toc();
 }
 
 void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket> &strobe_packets) {
-  // tic();
+  svis_.tic();
 
   svis_ros::SvisStrobe strobe;
   for (int i = 0; i < strobe_packets.size(); i++) {
@@ -255,11 +262,11 @@ void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket> &strobe_packets) 
     svis_strobe_pub_.publish(strobe);
   }
 
-  // timing_.publish_strobe_raw = toc();
+  svis_.timing_.publish_strobe_raw = svis_.toc();
 }
 
 void SVISRos::PublishTiming() {
-  svis_timing_pub_.publish(timing_);
+  svis_timing_pub_.publish(svis_.timing_);
 }
 
 }  // namespace svis_ros

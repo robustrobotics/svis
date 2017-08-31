@@ -10,6 +10,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include "svis_ros/SvisTiming.h"
 
 #include "svis/header_packet.h"
 #include "svis/imu_packet.h"
@@ -125,6 +126,7 @@ class SVIS {
   bool print_buffer_ = false;
 
   // timing
+  svis_ros::SvisTiming timing_;
   ros::Time t_loop_start_;
   ros::Time t_period_;
   ros::Time t_period_last_;

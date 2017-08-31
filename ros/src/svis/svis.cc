@@ -13,9 +13,9 @@ SVIS::SVIS() {
 
 void SVIS::OpenHID() {
   // open rawhid port
-  int r = rawhid_open(1, 0x16C0, 0x0486, 0xFFAB, 0x0200);
   // C-based example is 16C0:0480:FFAB:0200
   // Arduino-based example is 16C0:0486:FFAB:0200
+  int r = rawhid_open(1, 0x16C0, 0x0486, 0xFFAB, 0x0200);
 
   // check return
   if (r <= 0) {
@@ -32,7 +32,7 @@ void SVIS::ReadHID(std::vector<char>* buf) {
 
   // check byte count
   if (num < 0) {
-    printf("(svis_ros): Error reading, device went offline");
+    printf("(svis_ros) Error: reading, device went offline");
     rawhid_close(0);
     exit(1);
   } else if (num == 0) {
@@ -48,7 +48,7 @@ void SVIS::ReadHID(std::vector<char>* buf) {
 }
 
 void SVIS::Update() {
-  // read hid serial
+  // read and return if empty or bad
   std::vector<char> buf(64, 0);
   ReadHID(&buf);
 
@@ -57,7 +57,7 @@ void SVIS::Update() {
     PrintBuffer(buf);
   }
 
-  // bail if checksums don't match
+  // check checksums and return if they don't match
   if (CheckChecksum(buf)) {
     return;
   }
@@ -367,7 +367,7 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
 
 void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                      std::vector<ImuPacket>* imu_packets_filt) {
-  // tic();
+  tic();
 
   // create filter packets
   while (imu_buffer->size() >= imu_filter_size_) {
@@ -399,7 +399,7 @@ void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
     imu_packets_filt->push_back(temp_packet);
   }
 
-  // timing_.filter_imu = toc();
+  timing_.filter_imu = toc();
 }
 
 void SVIS::PrintBuffer(const std::vector<char>& buf) {
