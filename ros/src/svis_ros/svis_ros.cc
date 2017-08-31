@@ -20,19 +20,19 @@ void SVISRos::Run() {
   ConfigureCamera();
 
   // setup comms and send init packet
-  // svis_.InitHID();
+  svis_.InitHID();
 
   // send setup packet
-  // svis_.SendSetup();
+  svis_.SendSetup();
 
   ros::Rate r(1000);
   while (ros::ok() && !stop_signal_) {
-    // svis_.Update();
+    svis_.Update();
     ros::spinOnce();
 
-    // if (svis_.use_camera_ && !received_camera_) {
-    //   ROS_WARN_THROTTLE(0.5, "(svis_ros) Have not received camera message");
-    // }
+    if (svis_.use_camera_ && !received_camera_) {
+      ROS_WARN_THROTTLE(0.5, "(svis_ros) Have not received camera message");
+    }
 
     r.sleep();
   }
@@ -99,10 +99,10 @@ void SVISRos::ConfigureCamera() {
 void SVISRos::GetParams() {
   ros::NodeHandle pnh("~");
 
-  // fla_utils::SafeGetParam(pnh, "camera_rate", svis_.camera_rate_);
-  // fla_utils::SafeGetParam(pnh, "gyro_sens", svis_.gyro_sens_);
-  // fla_utils::SafeGetParam(pnh, "acc_sens", svis_.acc_sens_);
-  // fla_utils::SafeGetParam(pnh, "imu_filter_size", svis_.imu_filter_size_);
+  fla_utils::SafeGetParam(pnh, "camera_rate", svis_.camera_rate_);
+  fla_utils::SafeGetParam(pnh, "gyro_sens", svis_.gyro_sens_);
+  fla_utils::SafeGetParam(pnh, "acc_sens", svis_.acc_sens_);
+  fla_utils::SafeGetParam(pnh, "imu_filter_size", svis_.imu_filter_size_);
 }
 
 void SVISRos::InitSubscribers() {
@@ -112,9 +112,9 @@ void SVISRos::InitSubscribers() {
 void SVISRos::InitPublishers() {
   camera_pub_ = it_.advertiseCamera("/svis/image_raw", 1);
   imu_pub_ = nh_.advertise<sensor_msgs::Imu>("/svis/imu", 1);
-  // svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
-  // svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
-  // svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 1);
+  svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
+  svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
+  svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 1);
 }
 
 void SVISRos::PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt) {
@@ -126,7 +126,7 @@ void SVISRos::PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt) {
   for (int i = 0; i < imu_packets_filt.size(); i++) {
     temp_packet = imu_packets_filt[i];
 
-    // imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + svis_.time_offset_);
+    imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + svis_.time_offset_);
     imu.header.frame_id = "body";
 
     // orientation
@@ -177,7 +177,7 @@ void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   svis::CameraPacket camera_packet;
 
   // metadata
-  // svis_.GetImageMetadata(image_msg, camera_packet);
+  svis_.GetImageMetadata(image_msg, &camera_packet);
   // ROS_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
   // set image and info
@@ -185,12 +185,12 @@ void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   camera_packet.info = *info_msg;
 
   // add to buffer
-  // svis_.camera_buffer_.push_back(camera_packet);
+  svis_.camera_buffer_.push_back(camera_packet);
 
   // warn if buffer is at max size
-  // if (svis_.camera_buffer_.size() == svis_.camera_buffer_.max_size() && !svis_.sync_flag_) {
-  //   ROS_WARN("(svis_ros) camera buffer at max size");
-  // }
+  if (svis_.camera_buffer_.size() == svis_.camera_buffer_.max_size() && !svis_.sync_flag_) {
+    ROS_WARN("(svis_ros) camera buffer at max size");
+  }
 }
 
 void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets) {

@@ -16,6 +16,7 @@
 
 #include "fla_utils/param_utils.h"
 
+#include "svis/svis.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
 #include "svis/camera_strobe_packet.h"
@@ -67,7 +68,7 @@ class SVISRos {
 
   bool received_camera_ = false;
   svis_ros::SvisTiming timing_;
-  // svis::SVIS svis_;
+  svis::SVIS svis_;
 };
 
 }  // namespace svis_ros
