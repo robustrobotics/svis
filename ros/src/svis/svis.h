@@ -49,7 +49,7 @@ class SVIS {
 
   // timing
   svis_ros::SvisTiming timing_;
-  ros::Time t_loop_start_;
+  ros::Time t_update_start_;
   ros::Time t_period_;
   ros::Time t_period_last_;
   ros::Time t_pulse_;
@@ -63,7 +63,7 @@ class SVIS {
   void SendPulse();
   void SendDisablePulse();
   bool CheckChecksum(const std::vector<char>& buf);
-  void ComputeTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
+  void ComputeOffsets(boost::circular_buffer<StrobePacket>* strobe_buffer,
                      boost::circular_buffer<CameraPacket>* camera_buffer);
   void ParseHeader(const std::vector<char>& buf,
                  HeaderPacket* header);
@@ -85,8 +85,6 @@ class SVIS {
                          const int& i);
   void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
   void ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets);
-  void ComputeCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
-                            const boost::circular_buffer<CameraPacket>& camera_buffer_);
   void Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
                  boost::circular_buffer<CameraPacket>* camera_buffer,
                  std::vector<CameraStrobePacket>* camera_strobe_packets);
