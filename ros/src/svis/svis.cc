@@ -69,6 +69,8 @@ void SVIS::Update() {
   //   // publish raw packets
   //   PublishImuRaw(imu_packets);
   //   PublishStrobeRaw(strobe_packets);
+  PushImu(imu_packets, &imu_buffer_);
+  PushStrobe(strobe_packets, &strobe_buffer_);
 
   //   // get difference between ros and teensy epochs
   //   if (svis.init_flag_) {
@@ -341,28 +343,30 @@ void SVIS::GetStrobe(const std::vector<char>& buf,
   }
 }
 
-void SVIS::PushImu(const std::vector<ImuPacket>& imu_packets) {
+void SVIS::PushImu(const std::vector<ImuPacket>& imu_packets,
+                   boost::circular_buffer<ImuPacket>* imu_buffer) {
   ImuPacket imu;
   for (int i = 0; i < imu_packets.size(); i++) {
     imu = imu_packets[i];
-    imu_buffer_.push_back(imu);
+    imu_buffer->push_back(imu);
   }
 
   // warn if buffer is at max size
-  if (imu_buffer_.size() == imu_buffer_.max_size()) {
+  if (imu_buffer->size() == imu_buffer->max_size()) {
     printf("(svis_ros) imu buffer at max size");
   }
 }
 
-void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets) {
+void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
+                      boost::circular_buffer<StrobePacket>* strobe_buffer) {
   StrobePacket strobe;
   for (int i = 0; i < strobe_packets.size(); i++) {
     strobe = strobe_packets[i];
-    strobe_buffer_.push_back(strobe);
+    strobe_buffer->push_back(strobe);
   }
 
   // warn if buffer is at max size
-  if (strobe_buffer_.size() == strobe_buffer_.max_size()) {
+  if (strobe_buffer->size() == strobe_buffer->max_size()) {
     printf("(svis_ros) strobe buffer at max size");
   }
 }

@@ -46,8 +46,10 @@ class SVIS {
   void GetStrobe(const std::vector<char>& buf,
                  const HeaderPacket& header,
                  std::vector<StrobePacket>* strobe_packets);
-  void PushImu(const std::vector<ImuPacket>& imu_packets);
-  void PushStrobe(const std::vector<StrobePacket>& strobe_packets);
+  void PushImu(const std::vector<ImuPacket>& imu_packets,
+               boost::circular_buffer<ImuPacket>* imu_buffer);
+  void PushStrobe(const std::vector<StrobePacket>& strobe_packets,
+                  boost::circular_buffer<StrobePacket>* strobe_buffer);
   void FilterImu(std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
   void PrintImageQuadlet(const std::string& name,
