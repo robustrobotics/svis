@@ -61,51 +61,43 @@ void SVIS::Update() {
     return;
   }
 
-  // parse
+  // parse packets
   std::vector<ImuPacket> imu_packets;
   std::vector<StrobePacket> strobe_packets;
   ParseBuffer(buf, &imu_packets, &strobe_packets);
 
-  //   // publish raw packets
-  //   PublishImuRaw(imu_packets);
-  //   PublishStrobeRaw(strobe_packets);
+  // push packets
   PushImu(imu_packets, &imu_buffer_);
   PushStrobe(strobe_packets, &strobe_buffer_);
 
-  //   // get difference between ros and teensy epochs
-  //   if (svis.init_flag_) {
-  //     svis.GetTimeOffset();
-  //     continue;
-  //   }
+  // publish raw packets
+  // PublishImuRaw(imu_packets);
+  // PublishStrobeRaw(strobe_packets);
 
-  //   // filter and publish imu
-  //   std::vector<ImuPacket> imu_packets_filt;
+  // get difference between ros and teensy epochs
+  if (init_flag_) {
+    GetTimeOffset();
+    return;
+  }
 
-  //   tic();
-  //   svis.FilterImu(imu_packets_filt);
-  //   timing_.filter_imu = toc();
+  // filter and publish imu
+  std::vector<ImuPacket> imu_packets_filt;
+  FilterImu(&imu_packets_filt);
     
-  //   PublishImu(imu_packets_filt);
+  // PublishImu(imu_packets_filt);
 
-  //   // associate strobe with camera and publish
-  //   std::vector<CameraStrobePacket> camera_strobe_packets;
-  //   svis.AssociateStrobe(camera_strobe_packets);
-  //   PublishCamera(camera_strobe_packets);
+  // associate strobe with camera and publish
+  std::vector<CameraStrobePacket> camera_strobe_packets;
+  AssociateStrobe(&camera_strobe_packets);
+  // PublishCamera(camera_strobe_packets);
 }
 
 void SVIS::ParseBuffer(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
-  // parse header
   HeaderPacket header;
   GetHeader(buf, &header);
-
-  // parse, publish, push imu
-  // GetImu(buf, header, imu_packets);
-  // PushImu(imu_packets);
-
-  // parse, publish, push strobe
-  // GetStrobe(buf, header, strobe_packets);
-  // GetStrobeTotal(strobe_packets);
-  // PushStrobe(strobe_packets);
+  GetImu(buf, header, imu_packets);
+  GetStrobe(buf, header, strobe_packets);
+  GetStrobeTotal(strobe_packets);
 }
 
 void SVIS::SendPulse() {
