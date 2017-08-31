@@ -77,19 +77,19 @@ void SVIS::Update() {
 
   // get difference between ros and teensy epochs
   if (init_flag_) {
-    GetTimeOffset();
+    GetTimeOffset(&strobe_buffer_, &camera_buffer_);
     return;
   }
 
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
-  FilterImu(&imu_packets_filt);
+  FilterImu(&imu_buffer_, &imu_packets_filt);
     
   // PublishImu(imu_packets_filt);
 
   // associate strobe with camera and publish
   std::vector<CameraStrobePacket> camera_strobe_packets;
-  AssociateStrobe(&camera_strobe_packets);
+  Associate(&strobe_buffer_, &camera_buffer_, &camera_strobe_packets);
   // PublishCamera(camera_strobe_packets);
 }
 
@@ -160,7 +160,8 @@ bool SVIS::CheckChecksum(const std::vector<char>& buf) {
   return ret;
 }
 
-void SVIS::GetTimeOffset() {
+void SVIS::GetTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
+                         boost::circular_buffer<CameraPacket>* camera_buffer) {
   if (time_offset_vec_.size() >= 100) {
     // turn off camera pulse
     SendDisablePulse();
@@ -193,24 +194,24 @@ void SVIS::GetTimeOffset() {
     }
 
     // check strobe_buffer size
-    if (strobe_buffer_.size() > 0 || camera_buffer_.size() > 0) {
+    if (strobe_buffer->size() > 0 || camera_buffer->size() > 0) {
       // we have exactly one of each
-      if (strobe_buffer_.size() == 1 && camera_buffer_.size() == 1) {
-        StrobePacket strobe = strobe_buffer_.front();
-        CameraPacket camera = camera_buffer_.front();
+      if (strobe_buffer->size() == 1 && camera_buffer->size() == 1) {
+        StrobePacket strobe = strobe_buffer->front();
+        CameraPacket camera = camera_buffer->front();
         time_offset_vec_.push_back(camera.image.header.stamp.toSec() - strobe.timestamp_teensy);
         strobe_count_offset_ = camera.metadata.frame_counter - strobe.count_total;
         printf("strobe_count_offset: %i", strobe_count_offset_);
 
-        strobe_buffer_.pop_front();
-        camera_buffer_.pop_front();
+        strobe_buffer->pop_front();
+        camera_buffer->pop_front();
       } else {
         printf("Mismatched strobe and camera buffer sizes");
-        printf("strobe_buffer size: %lu", strobe_buffer_.size());
-        printf("camera_buffer size: %lu", camera_buffer_.size());
+        printf("strobe_buffer size: %lu", strobe_buffer->size());
+        printf("camera_buffer size: %lu", camera_buffer->size());
         // clear buffers to reset counts
-        strobe_buffer_.clear();
-        camera_buffer_.clear();
+        strobe_buffer->clear();
+        camera_buffer->clear();
       }
 
       sent_pulse_ = false;
@@ -364,11 +365,12 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
   }
 }
 
-void SVIS::FilterImu(std::vector<ImuPacket>* imu_packets_filt) {
+void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
+                     std::vector<ImuPacket>* imu_packets_filt) {
   // tic();
 
   // create filter packets
-  while (imu_buffer_.size() >= imu_filter_size_) {
+  while (imu_buffer->size() >= imu_filter_size_) {
     // sum
     float timestamp_total = 0.0;
     float acc_total[3] = {0.0};
@@ -376,7 +378,7 @@ void SVIS::FilterImu(std::vector<ImuPacket>* imu_packets_filt) {
     ImuPacket temp_packet;
     for (int i = 0; i < imu_filter_size_; i++) {
       temp_packet = imu_buffer_[0];
-      imu_buffer_.pop_front();
+      imu_buffer->pop_front();
 
       timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
       for (int j = 0; j < 3; j++) {
@@ -462,20 +464,21 @@ void SVIS::GetStrobeTotal(std::vector<StrobePacket>* strobe_packets) {
   // }
 }
 
-void SVIS::GetCountOffset() {
-  std::vector<int> ind_vec(strobe_buffer_.size());
-  std::vector<double> time_diff_vec(strobe_buffer_.size(),
+void SVIS::GetCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
+                          const boost::circular_buffer<CameraPacket>& camera_buffer) {
+  std::vector<int> ind_vec(strobe_buffer.size());
+  std::vector<double> time_diff_vec(strobe_buffer.size(),
                                     std::numeric_limits<double>::infinity());
   double time_diff = 0.0;
 
-  // printf("camera_buffer_size: %lu", camera_buffer_.size());
-  // printf("strobe_buffer_size: %lu", strobe_buffer_.size());
+  // printf("camera_buffer_size: %lu", camera_buffer.size());
+  // printf("strobe_buffer_size: %lu", strobe_buffer.size());
 
   // calculate time difference between images and strobes with corrected timestamps
-  for (int i = 0; i < strobe_buffer_.size(); i++) {
-    for (int j = 0; j < camera_buffer_.size(); j++) {
-      time_diff = fabs(strobe_buffer_[i].timestamp_ros
-                       - camera_buffer_[j].image.header.stamp.toSec());
+  for (int i = 0; i < strobe_buffer.size(); i++) {
+    for (int j = 0; j < camera_buffer.size(); j++) {
+      time_diff = fabs(strobe_buffer[i].timestamp_ros
+                       - camera_buffer[j].image.header.stamp.toSec());
       if (time_diff < time_diff_vec[i]) {
         time_diff_vec[i] = time_diff;
         ind_vec[i] = j;
@@ -517,42 +520,44 @@ void SVIS::GetCountOffset() {
 
     // print counts
     // fprintf(stderr, "associated counts:\n");
-    // for (int i = 0; i < strobe_buffer_.size(); i++) {
+    // for (int i = 0; i < strobe_buffer.size(); i++) {
     //   fprintf(stderr, "[%i, %i] ",
-    //           camera_buffer_[ind_vec[i]].metadata.frame_counter,
-    //           strobe_buffer_[i].count_total);
+    //           camera_buffer[ind_vec[i]].metadata.frame_counter,
+    //           strobe_buffer[i].count_total);
     // }
     // fprintf(stderr, "\n");
 
     // print times
     // fprintf(stderr, "associated times:\n");
-    // for (int i = 0; i < strobe_buffer_.size(); i++) {
-    //   fprintf(stderr, "%f ", strobe_buffer_[i].timestamp_ros);
+    // for (int i = 0; i < strobe_buffer.size(); i++) {
+    //   fprintf(stderr, "%f ", strobe_buffer[i].timestamp_ros);
     // }
     // fprintf(stderr, "\n");
 
     // calculate offset
-    strobe_count_offset_ = camera_buffer_[ind_vec[ind_best]].metadata.frame_counter
-      - strobe_buffer_[ind_best].count_total;
+    strobe_count_offset_ = camera_buffer[ind_vec[ind_best]].metadata.frame_counter
+      - strobe_buffer[ind_best].count_total;
     printf("(svis_ros) strobe_count_offset: %i", strobe_count_offset_);
   }
 }
 
-void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packets) {
+void SVIS::Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
+                     boost::circular_buffer<CameraPacket>* camera_buffer,
+                     std::vector<CameraStrobePacket>* camera_strobe_packets) {
   // create camera strobe packets
   CameraStrobePacket camera_strobe;
   int fail_count = 0;
   int match_count = 0;
   bool match = false;
 
-  // printf("strobe_buffer size: %lu", strobe_buffer_.size());
-  // printf("camera_buffer size: %lu", camera_buffer_.size());
+  // printf("strobe_buffer size: %lu", strobe_buffer->size());
+  // printf("camera_buffer size: %lu", camera_buffer->size());
 
-  for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ) {
-    // printf("i: %lu", std::distance(strobe_buffer_.begin(), it_strobe));
+  for (auto it_strobe = strobe_buffer->begin(); it_strobe != strobe_buffer->end(); ) {
+    // printf("i: %lu", std::distance(strobe_buffer->begin(), it_strobe));
     match = false;
-    for (auto it_camera = camera_buffer_.begin(); it_camera != camera_buffer_.end(); ) {
-      // printf("j: %lu", std::distance(camera_buffer_.begin(), it_camera));
+    for (auto it_camera = camera_buffer->begin(); it_camera != camera_buffer->end(); ) {
+      // printf("j: %lu", std::distance(camera_buffer->begin(), it_camera));
       // check for strobe/camera match
       if ((*it_strobe).count_total + strobe_count_offset_ ==
           (*it_camera).metadata.frame_counter) {
@@ -570,7 +575,7 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packet
 
         // remove matched strobe
         // printf("delete matched camera");
-        it_camera = camera_buffer_.erase(it_camera);
+        it_camera = camera_buffer->erase(it_camera);
 
         // record match
         match_count++;
@@ -581,7 +586,7 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packet
         // check for stale entry and delete
         if ((ros::Time::now().toSec() - (*it_camera).image.header.stamp.toSec()) > 1.0) {
           // printf("delete stale camera");
-          it_camera = camera_buffer_.erase(it_camera);
+          it_camera = camera_buffer->erase(it_camera);
         } else {
           // printf("increment camera");
           ++it_camera;
@@ -593,7 +598,7 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packet
     if (match) {
       // remove matched strobe
       // printf("delete matched strobe");
-      it_strobe = strobe_buffer_.erase(it_strobe);
+      it_strobe = strobe_buffer->erase(it_strobe);
     } else {
       fail_count++;
       // printf("fail");
@@ -601,7 +606,7 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packet
       // check for stale entry and delete
       if ((ros::Time::now().toSec() - (*it_strobe).timestamp_ros_rx) > 1.0) {
         printf("(svis ros) Delete stale strobe");
-        it_strobe = strobe_buffer_.erase(it_strobe);
+        it_strobe = strobe_buffer->erase(it_strobe);
       } else {
         // printf("increment strobe");
         ++it_strobe;
@@ -611,16 +616,16 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packet
 
   // printf("final fail_count: %i", fail_count);
   // printf("final match_count: %i", match_count);
-  if (fail_count == strobe_buffer_.max_size()) {
+  if (fail_count == strobe_buffer->max_size()) {
     printf("Failure to match.  Resyncing...");
     sync_flag_ = true;
   }
 
   // // erase camera images that are older than all strobes
   // bool stale = true;
-  // for (auto it_camera = camera_buffer_.begin(); it_camera != camera_buffer_.end(); ) {
+  // for (auto it_camera = camera_buffer->begin(); it_camera != camera_buffer->end(); ) {
   //   stale = true;
-  //   for (auto it_strobe = strobe_buffer_.begin(); it_strobe != strobe_buffer_.end(); ++it_strobe) {
+  //   for (auto it_strobe = strobe_buffer->begin(); it_strobe != strobe_buffer->end(); ++it_strobe) {
   //     // check if strobe is older than camera
   //     if ((*it_strobe).count_total + strobe_count_offset_ <=
   //         (*it_camera).metadata.frame_counter) {
@@ -630,32 +635,34 @@ void SVIS::AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packet
 
   //   // remove camera if stale
   //   if (stale) {
-  //     it_camera = camera_buffer_.erase(it_camera);
+  //     it_camera = camera_buffer->erase(it_camera);
   //   } else {
   //     ++it_camera;
   //   }
   // }
 }
 
-void SVIS::PrintCameraBuffer() {
+void SVIS::PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_buffer) {
   double t_now = ros::Time::now().toSec();
-  printf("camera_buffer: %lu\n", camera_buffer_.size());
-  for (int i = 0; i < camera_buffer_.size(); i++) {
-    printf("%i:(%i)%f ", i, camera_buffer_[i].metadata.frame_counter, t_now - camera_buffer_[i].image.header.stamp.toSec());
+  printf("camera_buffer: %lu\n", camera_buffer.size());
+  for (int i = 0; i < camera_buffer.size(); i++) {
+    printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp.toSec());
   }
   printf("\n\n");
 }
 
-void SVIS::PrintStrobeBuffer() {
+void SVIS::PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer) {
   double t_now = ros::Time::now().toSec();
-  printf("strobe_buffer: %lu\n", strobe_buffer_.size());
-  for (int i = 0; i < strobe_buffer_.size(); i++) {
-    printf("%i:(%i, %i)%f ", i, strobe_buffer_[i].count, strobe_buffer_[i].count_total + strobe_count_offset_, t_now - strobe_buffer_[i].timestamp_ros);
+  printf("strobe_buffer: %lu\n", strobe_buffer.size());
+  for (int i = 0; i < strobe_buffer.size(); i++) {
+    printf("%i:(%i, %i)%f ", i, strobe_buffer[i].count, strobe_buffer[i].count_total + strobe_count_offset_, t_now - strobe_buffer[i].timestamp_ros);
   }
   printf("\n");
 }
 
-void SVIS::PrintImageQuadlet(const std::string& name, const sensor_msgs::Image::ConstPtr& msg, const int& i) {
+void SVIS::PrintImageQuadlet(const std::string& name,
+                             const sensor_msgs::Image::ConstPtr& msg,
+                             const int& i) {
   printf("%s: ", name.c_str());
   printf("%02X ", msg->data[i]);
   printf("%02X ", msg->data[i + 1]);
@@ -682,7 +689,7 @@ void SVIS::PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg) {
 }
 
 void SVIS::GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
-                               CameraPacket* camera_packet) {
+                            CameraPacket* camera_packet) {
   // timestamp
   memcpy(&camera_packet->metadata.timestamp, &image_msg->data[0],
          sizeof(camera_packet->metadata.timestamp));

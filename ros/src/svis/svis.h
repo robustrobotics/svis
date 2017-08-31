@@ -37,7 +37,8 @@ class SVIS {
   void SendDisablePulse();
   void SendSetup();
   bool CheckChecksum(const std::vector<char>& buf);
-  void GetTimeOffset();
+  void GetTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
+                     boost::circular_buffer<CameraPacket>* camera_buffer);
   void GetHeader(const std::vector<char>& buf,
                  HeaderPacket* header);
   void GetImu(const std::vector<char>& buf,
@@ -50,17 +51,21 @@ class SVIS {
                boost::circular_buffer<ImuPacket>* imu_buffer);
   void PushStrobe(const std::vector<StrobePacket>& strobe_packets,
                   boost::circular_buffer<StrobePacket>* strobe_buffer);
-  void FilterImu(std::vector<ImuPacket>* imu_packets_filt);
+  void FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
+                 std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
   void PrintImageQuadlet(const std::string& name,
                          const sensor_msgs::Image::ConstPtr& msg,
                          const int& i);
   void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
   void GetStrobeTotal(std::vector<StrobePacket>* strobe_packets);
-  void GetCountOffset();
-  void AssociateStrobe(std::vector<CameraStrobePacket>* camera_strobe_packets);
-  void PrintCameraBuffer();
-  void PrintStrobeBuffer();
+  void GetCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
+                            const boost::circular_buffer<CameraPacket>& camera_buffer_);
+  void Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
+                 boost::circular_buffer<CameraPacket>* camera_buffer,
+                 std::vector<CameraStrobePacket>* camera_strobe_packets);
+  void PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_buffer);
+  void PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer);
   void tic();
   double toc();
   void GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
@@ -70,7 +75,6 @@ class SVIS {
   boost::circular_buffer<ImuPacket> imu_buffer_;
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
-  boost::circular_buffer<CameraStrobePacket> camera_strobe_buffer_;
 
   // configuration
   bool use_camera_ = true;
