@@ -27,17 +27,17 @@ void SVISRos::Run() {
 
   ros::Rate r(1000);
   while (ros::ok() && !stop_signal_) {
-    t_period_ = ros::Time::now();
-    timing_.period = (t_period_ - t_period_last_).toSec();
-    t_period_last_ = t_period_;
+    svis_.t_period_ = ros::Time::now();
+    svis_.timing_.period = (svis_.t_period_ - svis_.t_period_last_).toSec();
+    svis_.t_period_last_ = svis_.t_period_;
 
-    tic();
+    svis_.tic();
     ros::spinOnce();
-    svis_.timing_.ros_spin_once = toc();
+    svis_.timing_.ros_spin_once = svis_.toc();
 
     svis_.Update();
 
-    if (svis_.use_camera_ && !received_camera_) {
+    if (!received_camera_) {
       ROS_WARN_THROTTLE(0.5, "(svis_ros) Have not received camera message");
     }
 
@@ -133,7 +133,7 @@ void SVISRos::PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt) {
   for (int i = 0; i < imu_packets_filt.size(); i++) {
     temp_packet = imu_packets_filt[i];
 
-    imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + svis_.time_offset_);
+    imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + svis_.GetTimeOffset());
     imu.header.frame_id = "body";
 
     // orientation
@@ -184,7 +184,7 @@ void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   svis::CameraPacket camera_packet;
 
   // metadata
-  svis_.GetImageMetadata(image_msg, &camera_packet);
+  svis_.ParseImageMetadata(image_msg, &camera_packet);
   // ROS_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
   // set image and info
@@ -192,10 +192,10 @@ void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   camera_packet.info = *info_msg;
 
   // add to buffer
-  svis_.camera_buffer_.push_back(camera_packet);
+  svis_.PushCameraPacket(camera_packet);
 
   // warn if buffer is at max size
-  if (svis_.camera_buffer_.size() == svis_.camera_buffer_.max_size() && !svis_.sync_flag_) {
+  if (svis_.GetCameraBufferSize() == svis_.GetCameraBufferMaxSize() && !svis_.GetSyncFlag()) {
     ROS_WARN("(svis_ros) camera buffer at max size");
   }
 }

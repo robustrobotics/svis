@@ -27,25 +27,50 @@ namespace svis {
 class SVIS {
  public:
   SVIS();
-
   void Update();
   void OpenHID();
   int ReadHID(std::vector<char>* buf);
+  void SendSetup();
+  void tic();
+  double toc();
+  void ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
+                        CameraPacket* camera_packet);
+  double GetTimeOffset() const;
+  size_t GetCameraBufferSize() const;
+  size_t GetCameraBufferMaxSize() const;
+  bool GetSyncFlag() const;
+  void PushCameraPacket(const svis::CameraPacket& camera_packet);
+
+  // params
+  int camera_rate_ = 0;
+  int gyro_sens_ = 0;  // gyro sensitivity selection [0,3]
+  int acc_sens_ = 0;  // acc sensitivity selection [0,3]
+  int imu_filter_size_ = 0;
+
+  // timing
+  svis_ros::SvisTiming timing_;
+  ros::Time t_loop_start_;
+  ros::Time t_period_;
+  ros::Time t_period_last_;
+  ros::Time t_pulse_;
+  ros::Time tic_;
+  ros::Time toc_;
+
+ private:
   void ParseBuffer(const std::vector<char>& buf,
                       std::vector<ImuPacket>* imu_packets,
                       std::vector<StrobePacket>* strobe_packets);
   void SendPulse();
   void SendDisablePulse();
-  void SendSetup();
   bool CheckChecksum(const std::vector<char>& buf);
-  void GetTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
+  void ComputeTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
                      boost::circular_buffer<CameraPacket>* camera_buffer);
-  void GetHeader(const std::vector<char>& buf,
+  void ParseHeader(const std::vector<char>& buf,
                  HeaderPacket* header);
-  void GetImu(const std::vector<char>& buf,
+  void ParseImu(const std::vector<char>& buf,
               const HeaderPacket& header,
               std::vector<ImuPacket>* imu_packets);
-  void GetStrobe(const std::vector<char>& buf,
+  void ParseStrobe(const std::vector<char>& buf,
                  const HeaderPacket& header,
                  std::vector<StrobePacket>* strobe_packets);
   void PushImu(const std::vector<ImuPacket>& imu_packets,
@@ -59,38 +84,27 @@ class SVIS {
                          const sensor_msgs::Image::ConstPtr& msg,
                          const int& i);
   void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
-  void GetStrobeTotal(std::vector<StrobePacket>* strobe_packets);
-  void GetCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
+  void ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets);
+  void ComputeCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
                             const boost::circular_buffer<CameraPacket>& camera_buffer_);
   void Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
                  boost::circular_buffer<CameraPacket>* camera_buffer,
                  std::vector<CameraStrobePacket>* camera_strobe_packets);
   void PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_buffer);
   void PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer);
-  void tic();
-  double toc();
-  void GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
-                        CameraPacket* camera_packet);
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
   boost::circular_buffer<StrobePacket> strobe_buffer_;
   boost::circular_buffer<CameraPacket> camera_buffer_;
 
-  // configuration
-  bool use_camera_ = true;
-  int camera_rate_ = 0;
-
   // constants
   const double g_ = 9.80665;
   const double rad_per_deg_ = 0.0174533;
 
   // imu
-  int imu_filter_size_ = 0;
   double gyro_sens_arr_[4] = {131, 65.5, 32.8, 16.4};  // LSB/(deg/s)
   double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
-  int gyro_sens_ = 0;  // gyro sensitivity selection [0,3]
-  int acc_sens_ = 0;  // acc sensitivity selection [0,3]
 
   // camera and strobe timing
   bool init_flag_ = true;
@@ -124,15 +138,6 @@ class SVIS {
 
   // debug
   bool print_buffer_ = false;
-
-  // timing
-  svis_ros::SvisTiming timing_;
-  ros::Time t_loop_start_;
-  ros::Time t_period_;
-  ros::Time t_period_last_;
-  ros::Time t_pulse_;
-  ros::Time tic_;
-  ros::Time toc_;
 };
 
 }  // namespace svis_ros

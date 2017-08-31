@@ -11,6 +11,26 @@ SVIS::SVIS() {
   camera_buffer_.set_capacity(20);
 }
 
+double SVIS::GetTimeOffset() const {
+  return time_offset_;
+}
+
+size_t SVIS::GetCameraBufferSize() const {
+  return camera_buffer_.size();
+}
+
+size_t SVIS::GetCameraBufferMaxSize() const {
+  return camera_buffer_.max_size();
+}
+
+bool SVIS::GetSyncFlag() const {
+  return sync_flag_;
+}
+
+void SVIS::PushCameraPacket(const svis::CameraPacket& camera_packet) {
+  camera_buffer_.push_back(camera_packet);
+}
+
 void SVIS::OpenHID() {
   // open rawhid port
   // C-based example is 16C0:0480:FFAB:0200
@@ -83,7 +103,7 @@ void SVIS::Update() {
 
   // get difference between ros and teensy epochs
   if (init_flag_) {
-    GetTimeOffset(&strobe_buffer_, &camera_buffer_);
+    ComputeTimeOffset(&strobe_buffer_, &camera_buffer_);
     return;
   }
 
@@ -101,10 +121,10 @@ void SVIS::Update() {
 
 void SVIS::ParseBuffer(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
   HeaderPacket header;
-  GetHeader(buf, &header);
-  GetImu(buf, header, imu_packets);
-  GetStrobe(buf, header, strobe_packets);
-  GetStrobeTotal(strobe_packets);
+  ParseHeader(buf, &header);
+  ParseImu(buf, header, imu_packets);
+  ParseStrobe(buf, header, strobe_packets);
+  ComputeStrobeTotal(strobe_packets);
 }
 
 void SVIS::SendPulse() {
@@ -166,7 +186,7 @@ bool SVIS::CheckChecksum(const std::vector<char>& buf) {
   return ret;
 }
 
-void SVIS::GetTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
+void SVIS::ComputeTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
                          boost::circular_buffer<CameraPacket>* camera_buffer) {
   if (time_offset_vec_.size() >= 100) {
     // turn off camera pulse
@@ -228,7 +248,7 @@ void SVIS::GetTimeOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
   }
 }
 
-void SVIS::GetHeader(const std::vector<char>& buf, HeaderPacket* header) {
+void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {
   int ind = 0;
 
   // ros time
@@ -250,7 +270,7 @@ void SVIS::GetHeader(const std::vector<char>& buf, HeaderPacket* header) {
   ind += sizeof(header->strobe_count);
 }
 
-void SVIS::GetImu(const std::vector<char>& buf, const HeaderPacket& header, std::vector<ImuPacket>* imu_packets) {
+void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, std::vector<ImuPacket>* imu_packets) {
   for (int i = 0; i < header.imu_count; i++) {
     ImuPacket imu;
     int ind = imu_index[i];
@@ -308,7 +328,7 @@ void SVIS::GetImu(const std::vector<char>& buf, const HeaderPacket& header, std:
   }
 }
 
-void SVIS::GetStrobe(const std::vector<char>& buf,
+void SVIS::ParseStrobe(const std::vector<char>& buf,
                      const HeaderPacket& header,
                      std::vector<StrobePacket>* strobe_packets) {
   for (int i = 0; i < header.strobe_count; i++) {
@@ -416,7 +436,7 @@ void SVIS::PrintBuffer(const std::vector<char>& buf) {
   printf("\n");
 }
 
-void SVIS::GetStrobeTotal(std::vector<StrobePacket>* strobe_packets) {
+void SVIS::ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets) {
   // for (int i = 0; i < strobe_packets->size(); i++) {
   //   // printf("strobe_count_total: %u", strobe_count_total_);
 
@@ -470,7 +490,7 @@ void SVIS::GetStrobeTotal(std::vector<StrobePacket>* strobe_packets) {
   // }
 }
 
-void SVIS::GetCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
+void SVIS::ComputeCountOffset(const boost::circular_buffer<StrobePacket>& strobe_buffer,
                           const boost::circular_buffer<CameraPacket>& camera_buffer) {
   std::vector<int> ind_vec(strobe_buffer.size());
   std::vector<double> time_diff_vec(strobe_buffer.size(),
@@ -694,7 +714,7 @@ void SVIS::PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg) {
   printf("\n\n");
 }
 
-void SVIS::GetImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
+void SVIS::ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
                             CameraPacket* camera_packet) {
   // timestamp
   memcpy(&camera_packet->metadata.timestamp, &image_msg->data[0],
