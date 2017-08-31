@@ -4,11 +4,12 @@
 
 namespace svis {
 
+SVIS::SVIS() {
   // set circular buffer max lengths
   imu_buffer_.set_capacity(10);
   strobe_buffer_.set_capacity(10);
   camera_buffer_.set_capacity(20);
-  camera_strobe_buffer_.set_capacity(10);
+}
 
 void SVIS::OpenHID() {
   // open rawhid port
