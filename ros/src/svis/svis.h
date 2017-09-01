@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -12,6 +14,7 @@
 #include <sensor_msgs/Image.h>
 #include "svis_ros/SvisTiming.h"
 
+#include "svis/timing.h"
 #include "svis/header_packet.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
@@ -40,21 +43,25 @@ class SVIS {
   size_t GetCameraBufferMaxSize() const;
   bool GetSyncFlag() const;
   void PushCameraPacket(const svis::CameraPacket& camera_packet);
+  
+  void SetPublishStrobeRawHandler(std::function<void(std::vector<StrobePacket>&)> handler);
+  void SetPublishImuRawHandler(std::function<void(std::vector<ImuPacket>&)> handler);
+  void SetPublishImuHandler(std::function<void(std::vector<ImuPacket>&)> handler);
+  void SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler);
+  void SetPublishTimingHandler(std::function<void(Timing&)> handler);
 
   // params
   int camera_rate_ = 0;
   int gyro_sens_ = 0;  // gyro sensitivity selection [0,3]
   int acc_sens_ = 0;  // acc sensitivity selection [0,3]
   int imu_filter_size_ = 0;
+  int offset_sample_count_ = 5;
+  float offset_sample_time_ = 0.5;  // [s]
 
   // timing
-  svis_ros::SvisTiming timing_;
-  ros::Time t_update_start_;
-  ros::Time t_period_;
-  ros::Time t_period_last_;
-  ros::Time t_pulse_;
-  ros::Time tic_;
-  ros::Time toc_;
+  Timing timing_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> t_pulse_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> tic_;
 
  private:
   void ParseBuffer(const std::vector<char>& buf,
@@ -90,6 +97,13 @@ class SVIS {
                  std::vector<CameraStrobePacket>* camera_strobe_packets);
   void PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_buffer);
   void PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer);
+
+  // handlers
+  std::function<void(std::vector<svis::StrobePacket>&)> PublishStrobeRaw;
+  std::function<void(std::vector<svis::ImuPacket>&)> PublishImuRaw;
+  std::function<void(std::vector<svis::ImuPacket>&)> PublishImu;
+  std::function<void(std::vector<svis::CameraStrobePacket>&)> PublishCamera;
+  std::function<void(Timing&)> PublishTiming;
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;

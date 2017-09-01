@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <termios.h>
 #include <csignal>
+#include <limits>
+#include <termios.h>
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
@@ -43,11 +44,11 @@ class SVISRos {
                       const sensor_msgs::CameraInfo::ConstPtr& info_msg);
 
   // publishers
-  void PublishImuRaw(std::vector<svis::ImuPacket> &imu_packets);
-  void PublishImu(std::vector<svis::ImuPacket> &imu_packets_filt);
-  void PublishStrobeRaw(std::vector<svis::StrobePacket> &strobe_packets);
-  void PublishTiming();
-  void PublishCamera(std::vector<svis::CameraStrobePacket> &camera_strobe_packets);
+  void PublishImuRaw(std::vector<svis::ImuPacket>& imu_packets);
+  void PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt);
+  void PublishStrobeRaw(std::vector<svis::StrobePacket>& strobe_packets);
+  void PublishTiming(svis::Timing& timing);
+  void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);
   
   void ConfigureCamera();
 

@@ -39,10 +39,10 @@ void SVIS::OpenHID() {
 
   // check return
   if (r <= 0) {
-    printf("(svis_ros) No svis_teensy device found.\n");
+    printf("(svis) No svis_teensy device found.\n");
     return;
   } else {
-    printf("(svis_ros) Found svis_teensy device\n");
+    printf("(svis) Found svis_teensy device\n");
   }
 }
 
@@ -54,25 +54,25 @@ int SVIS::ReadHID(std::vector<char>* buf) {
 
   // check byte count
   if (num < 0) {
-    printf("(svis_ros) Error: reading, device went offline\n");
+    printf("(svis) Error: reading, device went offline\n");
     rawhid_close(0);
     exit(1);
   } else if (num == 0) {
     if (!init_flag_) {
-      printf("(svis_ros) 0 bytes received\n");
+      printf("(svis) 0 bytes received\n");
     }
   } else if (num > 0) {
     // resize vector
     buf->resize(num);
   } else {
-    printf("(svis_ros) Bad return value from rawhid_recv\n");
+    printf("(svis) Bad return value from rawhid_recv\n");
   }
 
   return num;
 }
 
 void SVIS::Update() {
-  t_update_start_ = ros::Time::now();
+  std::chrono::time_point<std::chrono::high_resolution_clock> t_update_start_ = std::chrono::high_resolution_clock::now();
   
   // read and return if empty or bad
   std::vector<char> buf(64, 0);
@@ -100,8 +100,8 @@ void SVIS::Update() {
   PushStrobe(strobe_packets, &strobe_buffer_);
 
   // publish raw packets
-  // PublishImuRaw(imu_packets);
-  // PublishStrobeRaw(strobe_packets);
+  PublishImuRaw(imu_packets);
+  PublishStrobeRaw(strobe_packets);
 
   // get difference between ros and teensy epochs
   if (init_flag_) {
@@ -112,16 +112,16 @@ void SVIS::Update() {
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
   FilterImu(&imu_buffer_, &imu_packets_filt);
-    
-  // PublishImu(imu_packets_filt);
+  PublishImu(imu_packets_filt);
 
   // associate strobe with camera and publish
   std::vector<CameraStrobePacket> camera_strobe_packets;
   Associate(&strobe_buffer_, &camera_buffer_, &camera_strobe_packets);
-  // PublishCamera(camera_strobe_packets);
+  PublishCamera(camera_strobe_packets);
 
-  timing_.update = (ros::Time::now() - t_update_start_).toSec();
-  // PublishTiming(timing_);
+  std::chrono::duration<double> update_duration = std::chrono::high_resolution_clock::now() - t_update_start_;
+  timing_.update = update_duration.count();
+  PublishTiming(timing_);
 }
 
 void SVIS::ParseBuffer(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
@@ -136,17 +136,17 @@ void SVIS::SendPulse() {
   std::vector<char> buf(64, 0);
   buf[0] = 0xAB;
   buf[1] = 2;
-  printf("(svis_ros) Sending pulse packet\n");
+  printf("(svis) Sending pulse packet\n");
   rawhid_send(0, buf.data(), buf.size(), 100);
   sent_pulse_ = true;
-  t_pulse_ = ros::Time::now();
+  t_pulse_ = std::chrono::high_resolution_clock::now();
 }
 
 void SVIS::SendDisablePulse() {
   std::vector<char> buf(64, 0);
   buf[0] = 0xAB;
   buf[1] = 3;
-  printf("(svis_ros) Sending configuration packet\n");
+  printf("(svis) Sending configuration packet\n");
   rawhid_send(0, buf.data(), buf.size(), 100);
 }
 
@@ -166,7 +166,7 @@ void SVIS::SendSetup() {
   // accel range
   buf[4] = acc_sens_;  // AFS_SEL
 
-  printf("(svis_ros) Sending configuration packet\n");
+  printf("(svis) Sending configuration packet\n");
   rawhid_send(0, buf.data(), buf.size(), 100);
 }
 
@@ -186,7 +186,7 @@ bool SVIS::CheckChecksum(const std::vector<char>& buf) {
 
   // check match and return result
   if (ret) {
-    printf("(svis_ros) checksum error [%02X, %02X] [%02X, %02X]\n",
+    printf("(svis) checksum error [%02X, %02X] [%02X, %02X]\n",
                  buf[checksum_index] & 0xFF, buf[checksum_index + 1] & 0xFF, checksum_calc, checksum_orig);
   }
 
@@ -199,16 +199,16 @@ void SVIS::ComputeOffsets(boost::circular_buffer<StrobePacket>* strobe_buffer,
                          boost::circular_buffer<CameraPacket>* camera_buffer) {
   tic();
 
-  if (time_offset_vec_.size() >= 100) {
+  if (time_offset_vec_.size() >= offset_sample_count_) {
     // turn off camera pulse
     SendDisablePulse();
 
     // filter initial values that are often composed of stale data
-    // printf("(svis_ros) time_offset_vec.size(): %lu\n", time_offset_vec_.size());
+    // printf("(svis) time_offset_vec.size(): %lu\n", time_offset_vec_.size());
     while (fabs(time_offset_vec_.front() - time_offset_vec_.back()) > 0.1) {
       time_offset_vec_.pop_front();
     }
-    // printf("(svis_ros) filtered time_offset_vec.size(): %lu\n", time_offset_vec_.size());
+    // printf("(svis) filtered time_offset_vec.size(): %lu\n", time_offset_vec_.size());
 
     // sum time offsets
     double sum = 0.0;
@@ -218,7 +218,7 @@ void SVIS::ComputeOffsets(boost::circular_buffer<StrobePacket>* strobe_buffer,
 
     // calculate final time offset
     time_offset_ = sum / static_cast<double>(time_offset_vec_.size());
-    printf("(svis_ros) time_offset: %f\n", time_offset_);
+    printf("(svis) time_offset: %f\n", time_offset_);
 
     init_flag_ = false;
   }
@@ -226,7 +226,8 @@ void SVIS::ComputeOffsets(boost::circular_buffer<StrobePacket>* strobe_buffer,
   // check if we already sent a pulse and we have waiting long enough
   if (sent_pulse_) {
     // bail if we haven't waited long enough
-    if ((ros::Time::now() - t_pulse_).toSec() < 0.5) {
+    std::chrono::duration<double> pulse_duration = std::chrono::high_resolution_clock::now() - t_pulse_;
+    if (pulse_duration.count() < offset_sample_time_) {
       return;
     }
 
@@ -271,17 +272,17 @@ void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {
 
   // send_count
   memcpy(&header->send_count, &buf[ind], sizeof(header->send_count));
-  // printf("(svis_ros) send_count: [%i, %i]\n", ind, header->send_count);
+  // printf("(svis) send_count: [%i, %i]\n", ind, header->send_count);
   ind += sizeof(header->send_count);
 
   // imu_packet_count
   memcpy(&header->imu_count, &buf[ind], sizeof(header->imu_count));
-  // printf("(svis_ros) imu_packet_count: [%i, %i]\n", ind, header->imu_count);
+  // printf("(svis) imu_packet_count: [%i, %i]\n", ind, header->imu_count);
   ind += sizeof(header->imu_count);
 
   // strobe_packet_count
   memcpy(&header->strobe_count, &buf[ind], sizeof(header->strobe_count));
-  // printf("(svis_ros) strobe_packet_count: [%i, %i]\n", ind, header->strobe_count);
+  // printf("(svis) strobe_packet_count: [%i, %i]\n", ind, header->strobe_count);
   ind += sizeof(header->strobe_count);
 
   timing_.parse_header = toc();
@@ -299,7 +300,7 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
 
     // raw teensy timestamp
     memcpy(&imu.timestamp_teensy_raw, &buf[ind], sizeof(imu.timestamp_teensy_raw));
-    // printf("(svis_ros) imu.timestamp: [%i, %i]\n", ind, imu.timestamp);
+    // printf("(svis) imu.timestamp: [%i, %i]\n", ind, imu.timestamp);
     ind += sizeof(imu.timestamp_teensy_raw);
 
     // convert to seconds
@@ -319,13 +320,13 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     ind += sizeof(imu.acc_raw[1]);
     memcpy(&imu.acc_raw[2], &buf[ind], sizeof(imu.acc_raw[2]));
     ind += sizeof(imu.acc_raw[2]);
-    // printf("(svis_ros) imu.acc_raw: [%i, %i, %i]\n", imu.acc_raw[0], imu.acc_raw[1], imu.acc_raw[2]);
+    // printf("(svis) imu.acc_raw: [%i, %i, %i]\n", imu.acc_raw[0], imu.acc_raw[1], imu.acc_raw[2]);
 
     // convert accel
     imu.acc[0] = static_cast<float>(imu.acc_raw[0]) / acc_sens_arr_[acc_sens_] * g_;
     imu.acc[1] = static_cast<float>(imu.acc_raw[1]) / acc_sens_arr_[acc_sens_] * g_;
     imu.acc[2] = static_cast<float>(imu.acc_raw[2]) / acc_sens_arr_[acc_sens_] * g_;
-    // printf("(svis_ros) imu.acc: [%0.2f, %0.2f, %0.2f]\n", imu.acc[0], imu.acc[1], imu.acc[2]);
+    // printf("(svis) imu.acc: [%0.2f, %0.2f, %0.2f]\n", imu.acc[0], imu.acc[1], imu.acc[2]);
 
     // gyro
     memcpy(&imu.gyro_raw[0], &buf[ind], sizeof(imu.gyro_raw[0]));
@@ -334,13 +335,13 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     ind += sizeof(imu.gyro_raw[1]);
     memcpy(&imu.gyro_raw[2], &buf[ind], sizeof(imu.gyro_raw[2]));
     ind += sizeof(imu.gyro_raw[2]);
-    // printf("(svis_ros) imu.gyro_raw: [%i, %i, %i]\n", imu.gyro_raw[0], imu.gyro_raw[1], imu.gyro_raw[2]);
+    // printf("(svis) imu.gyro_raw: [%i, %i, %i]\n", imu.gyro_raw[0], imu.gyro_raw[1], imu.gyro_raw[2]);
 
     // convert gyro
     imu.gyro[0] = static_cast<float>(imu.gyro_raw[0]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
     imu.gyro[1] = static_cast<float>(imu.gyro_raw[1]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
     imu.gyro[2] = static_cast<float>(imu.gyro_raw[2]) / gyro_sens_arr_[gyro_sens_] * rad_per_deg_;
-    // printf("(svis_ros) imu.gyro: [%0.2f, %0.2f, %0.2f]\n", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
+    // printf("(svis) imu.gyro: [%0.2f, %0.2f, %0.2f]\n", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
     // save packet
     imu_packets->push_back(imu);
@@ -363,7 +364,7 @@ void SVIS::ParseStrobe(const std::vector<char>& buf,
 
     // timestamp
     memcpy(&strobe.timestamp_teensy_raw, &buf[ind], sizeof(strobe.timestamp_teensy_raw));
-    // printf("(svis_ros) strobe.timestamp: [%i, %i]\n", ind, strobe.timestamp);
+    // printf("(svis) strobe.timestamp: [%i, %i]\n", ind, strobe.timestamp);
     ind += sizeof(strobe.timestamp_teensy_raw);
 
     // convert to seconds
@@ -378,7 +379,7 @@ void SVIS::ParseStrobe(const std::vector<char>& buf,
 
     // count
     memcpy(&strobe.count, &buf[ind], sizeof(strobe.count));
-    // printf("(svis_ros) strobe.count: [%i, %i]\n", ind, strobe.count);
+    // printf("(svis) strobe.count: [%i, %i]\n", ind, strobe.count);
     ind += strobe.count;
 
     // save packet
@@ -400,7 +401,7 @@ void SVIS::PushImu(const std::vector<ImuPacket>& imu_packets,
 
   // warn if buffer is at max size
   if (imu_buffer->size() == imu_buffer->max_size()) {
-    printf("(svis_ros) imu buffer at max size\n");
+    printf("(svis) imu buffer at max size\n");
   }
 
   timing_.push_imu = toc();
@@ -418,7 +419,7 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
 
   // warn if buffer is at max size
   if (strobe_buffer->size() == strobe_buffer->max_size()) {
-    printf("(svis_ros) strobe buffer at max size\n");
+    printf("(svis) strobe buffer at max size\n");
   }
 
   timing_.push_strobe = toc();
@@ -462,7 +463,7 @@ void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
 }
 
 void SVIS::PrintBuffer(const std::vector<char>& buf) {
-  printf("(svis_ros) buffer: ");
+  printf("(svis) buffer: ");
   for (int i = 0; i < buf.size(); i++) {
     printf("%02X ", buf[i] & 255);
   }
@@ -495,23 +496,23 @@ void SVIS::ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets) {
 
       // handle rollover
       if (diff == 255) {
-        // printf("(svis_ros) Handle rollover\n");
+        // printf("(svis) Handle rollover\n");
         diff = 1;
       }
     } else {
       // no change
-      printf("(svis_ros) no change in strobe count\n");
+      printf("(svis) no change in strobe count\n");
     }
 
     // check diff value
     if (diff > 1 && !std::isinf(strobe_count_last_) && !init_flag_) {
-      printf("(svis_ros) detected jump in strobe count\n");
-      // printf("(svis_ros) diff: %i, last: %i, count: %i\n",
+      printf("(svis) detected jump in strobe count\n");
+      // printf("(svis) diff: %i, last: %i, count: %i\n",
       //              diff,
       //              strobe_count_last_,
       //              strobe_packets[i].count);
     } else if (diff < 1 && !std::isinf(strobe_count_last_)) {
-      printf("(svis_ros) detected lag in strobe count\n");
+      printf("(svis) detected lag in strobe count\n");
     }
 
     // update count
@@ -717,13 +718,33 @@ void SVIS::ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
 }
 
 void SVIS::tic() {
-  tic_ = ros::Time::now();
+  tic_ = std::chrono::high_resolution_clock::now();
 }
 
 double SVIS::toc() {
-  toc_ = ros::Time::now();
+  std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - tic_;
 
-  return (toc_ - tic_).toSec();
+  return duration.count();
+}
+
+void SVIS::SetPublishStrobeRawHandler(std::function<void(std::vector<StrobePacket>&)> handler) {
+  PublishStrobeRaw = handler;
+}
+
+void SVIS::SetPublishImuRawHandler(std::function<void(std::vector<ImuPacket>&)> handler) {
+  PublishImuRaw = handler;
+}
+
+void SVIS::SetPublishImuHandler(std::function<void(std::vector<ImuPacket>&)> handler) {
+  PublishImu = handler;
+}
+
+void SVIS::SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler) {
+  PublishCamera = handler;
+}
+
+void SVIS::SetPublishTimingHandler(std::function<void(Timing&)> handler) {
+  PublishTiming = handler;
 }
 
 }  // namespace svis

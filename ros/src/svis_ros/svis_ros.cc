@@ -10,7 +10,31 @@ SVISRos::SVISRos()
   : nh_(),
     pnh_("~"),
     it_(nh_) {
-  // nothing
+  // setup PublishStrobeRaw handler
+  auto publish_strobe_raw_handler = std::bind(&SVISRos::PublishStrobeRaw, this,
+                                              std::placeholders::_1);
+  svis_.SetPublishStrobeRawHandler(publish_strobe_raw_handler);
+
+  // setup PublishImuRaw handler
+  auto publish_imu_raw_handler = std::bind(&SVISRos::PublishImuRaw, this,
+                                              std::placeholders::_1);
+  svis_.SetPublishImuRawHandler(publish_imu_raw_handler);
+
+  // setup PublishImu handler
+  auto publish_imu_handler = std::bind(&SVISRos::PublishImu, this,
+                                              std::placeholders::_1);
+  svis_.SetPublishImuHandler(publish_imu_handler);
+
+  // setup PublishCamera handler
+  auto publish_camera_handler = std::bind(&SVISRos::PublishCamera, this,
+                                              std::placeholders::_1);
+  svis_.SetPublishCameraHandler(publish_camera_handler);
+
+  // setup PublishTiming handler
+  auto publish_timing_handler = std::bind(&SVISRos::PublishTiming, this,
+                                              std::placeholders::_1);
+  svis_.SetPublishTimingHandler(publish_timing_handler);
+
 }
 
 void SVISRos::Run() {
@@ -25,11 +49,13 @@ void SVISRos::Run() {
   // send setup packet
   svis_.SendSetup();
 
+  ros::Time t_start = ros::Time::now();
+  ros::Time t_start_last = t_start;
   ros::Rate r(1000);
   while (ros::ok() && !stop_signal_) {
-    svis_.t_period_ = ros::Time::now();
-    svis_.timing_.period = (svis_.t_period_ - svis_.t_period_last_).toSec();
-    svis_.t_period_last_ = svis_.t_period_;
+    t_start = ros::Time::now();
+    svis_.timing_.period = (t_start - t_start_last).toSec();
+    t_start_last = t_start;
 
     svis_.tic();
     ros::spinOnce();
@@ -110,6 +136,8 @@ void SVISRos::GetParams() {
   fla_utils::SafeGetParam(pnh, "gyro_sens", svis_.gyro_sens_);
   fla_utils::SafeGetParam(pnh, "acc_sens", svis_.acc_sens_);
   fla_utils::SafeGetParam(pnh, "imu_filter_size", svis_.imu_filter_size_);
+  fla_utils::SafeGetParam(pnh, "offset_sample_count", svis_.offset_sample_count_);
+  fla_utils::SafeGetParam(pnh, "offset_sample_time", svis_.offset_sample_time_);
 }
 
 void SVISRos::InitSubscribers() {
@@ -245,7 +273,7 @@ void SVISRos::PublishImuRaw(std::vector<svis::ImuPacket>& imu_packets) {
   svis_.timing_.publish_imu_raw = svis_.toc();
 }
 
-void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket> &strobe_packets) {
+void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket>& strobe_packets) {
   svis_.tic();
 
   svis_ros::SvisStrobe strobe;
@@ -265,8 +293,34 @@ void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket> &strobe_packets) 
   svis_.timing_.publish_strobe_raw = svis_.toc();
 }
 
-void SVISRos::PublishTiming() {
-  svis_timing_pub_.publish(svis_.timing_);
+void SVISRos::PublishTiming(svis::Timing& timing) {
+  SvisTiming msg;
+
+  msg.header.stamp = ros::Time::now();
+
+  msg.rawhid_recv = timing.rawhid_recv;
+  msg.ros_spin_once = timing.ros_spin_once;
+  msg.check_checksum = timing.check_checksum;
+  msg.parse_header = timing.parse_header;
+  msg.parse_imu = timing.parse_imu;
+  msg.parse_strobe = timing.parse_strobe;
+  msg.compute_strobe_total = timing.compute_strobe_total;
+  msg.publish_imu_raw = timing.publish_imu_raw;
+  msg.publish_strobe_raw = timing.publish_strobe_raw;
+  msg.push_imu = timing.push_imu;
+  msg.push_strobe = timing.push_strobe;
+  msg.compute_offsets = timing.compute_offsets;
+  msg.filter_imu = timing.filter_imu;
+  msg.publish_imu = timing.publish_imu;
+  msg.associate = timing.associate;
+  msg.publish_camera = timing.publish_camera;
+  msg.update = timing.update;
+  msg.period = timing.period;
+
+  svis_timing_pub_.publish(msg);
+
+  // clear timing
+  svis_.timing_ = svis::Timing();
 }
 
 }  // namespace svis_ros
