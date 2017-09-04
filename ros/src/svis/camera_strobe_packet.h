@@ -8,7 +8,6 @@
 namespace svis {
 
 struct CameraStrobePacket {
- public:
   CameraPacket camera;
   StrobePacket strobe;
 };
