@@ -15,11 +15,11 @@ double SVIS::GetTimeOffset() const {
   return time_offset_;
 }
 
-size_t SVIS::GetCameraBufferSize() const {
+std::size_t SVIS::GetCameraBufferSize() const {
   return camera_buffer_.size();
 }
 
-size_t SVIS::GetCameraBufferMaxSize() const {
+std::size_t SVIS::GetCameraBufferMaxSize() const {
   return camera_buffer_.max_size();
 }
 

@@ -39,8 +39,8 @@ class SVIS {
   void ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
                         CameraPacket* camera_packet);
   double GetTimeOffset() const;
-  size_t GetCameraBufferSize() const;
-  size_t GetCameraBufferMaxSize() const;
+  std::size_t GetCameraBufferSize() const;
+  std::size_t GetCameraBufferMaxSize() const;
   bool GetSyncFlag() const;
   void PushCameraPacket(const svis::CameraPacket& camera_packet);
   
