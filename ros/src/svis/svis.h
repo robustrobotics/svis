@@ -2,18 +2,17 @@
 
 #pragma once
 
-#include <chrono>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
-#include <boost/circular_buffer.hpp>
 
+#include <chrono>
+#include <boost/circular_buffer.hpp>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include "svis_ros/SvisTiming.h"
 
+#include "svis_ros/SvisTiming.h"
 #include "svis/timing.h"
 #include "svis/header_packet.h"
 #include "svis/imu_packet.h"
