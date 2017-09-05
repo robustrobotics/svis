@@ -43,11 +43,11 @@ class SVIS {
   bool GetSyncFlag() const;
   void PushCameraPacket(const svis::CameraPacket& camera_packet);
   
-  void SetPublishStrobeRawHandler(std::function<void(std::vector<StrobePacket>&)> handler);
-  void SetPublishImuRawHandler(std::function<void(std::vector<ImuPacket>&)> handler);
-  void SetPublishImuHandler(std::function<void(std::vector<ImuPacket>&)> handler);
+  void SetPublishStrobeRawHandler(std::function<void(const std::vector<StrobePacket>&)> handler);
+  void SetPublishImuRawHandler(std::function<void(const std::vector<ImuPacket>&)> handler);
+  void SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&)> handler);
   void SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler);
-  void SetPublishTimingHandler(std::function<void(Timing&)> handler);
+  void SetPublishTimingHandler(std::function<void(const Timing&)> handler);
 
   // params
   int camera_rate_ = 0;
@@ -98,11 +98,11 @@ class SVIS {
   void PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer);
 
   // handlers
-  std::function<void(std::vector<svis::StrobePacket>&)> PublishStrobeRaw;
-  std::function<void(std::vector<svis::ImuPacket>&)> PublishImuRaw;
-  std::function<void(std::vector<svis::ImuPacket>&)> PublishImu;
+  std::function<void(const std::vector<svis::StrobePacket>&)> PublishStrobeRaw;
+  std::function<void(const std::vector<svis::ImuPacket>&)> PublishImuRaw;
+  std::function<void(const std::vector<svis::ImuPacket>&)> PublishImu;
   std::function<void(std::vector<svis::CameraStrobePacket>&)> PublishCamera;
-  std::function<void(Timing&)> PublishTiming;
+  std::function<void(const Timing&)> PublishTiming;
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;

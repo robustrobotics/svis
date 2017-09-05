@@ -152,7 +152,7 @@ void SVISRos::InitPublishers() {
   svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 1);
 }
 
-void SVISRos::PublishImu(std::vector<svis::ImuPacket>& imu_packets_filt) {
+void SVISRos::PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt) {
   svis_.tic();
 
   svis::ImuPacket temp_packet;
@@ -236,12 +236,10 @@ void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe
                         camera_strobe_packets[i].camera.info, ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
   }
 
-  camera_strobe_packets.clear();
-
   svis_.timing_.publish_camera = svis_.toc();
 }
 
-void SVISRos::PublishImuRaw(std::vector<svis::ImuPacket>& imu_packets) {
+void SVISRos::PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets) {
   svis_.tic();
 
   svis_ros::SvisImu imu;
@@ -273,7 +271,7 @@ void SVISRos::PublishImuRaw(std::vector<svis::ImuPacket>& imu_packets) {
   svis_.timing_.publish_imu_raw = svis_.toc();
 }
 
-void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket>& strobe_packets) {
+void SVISRos::PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_packets) {
   svis_.tic();
 
   svis_ros::SvisStrobe strobe;
@@ -293,7 +291,7 @@ void SVISRos::PublishStrobeRaw(std::vector<svis::StrobePacket>& strobe_packets) 
   svis_.timing_.publish_strobe_raw = svis_.toc();
 }
 
-void SVISRos::PublishTiming(svis::Timing& timing) {
+void SVISRos::PublishTiming(const svis::Timing& timing) {
   SvisTiming msg;
 
   msg.header.stamp = ros::Time::now();
@@ -318,9 +316,6 @@ void SVISRos::PublishTiming(svis::Timing& timing) {
   msg.period = timing.period;
 
   svis_timing_pub_.publish(msg);
-
-  // clear timing
-  svis_.timing_ = svis::Timing();
 }
 
 }  // namespace svis_ros

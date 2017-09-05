@@ -119,10 +119,12 @@ void SVIS::Update() {
   std::vector<CameraStrobePacket> camera_strobe_packets;
   Associate(&strobe_buffer_, &camera_buffer_, &camera_strobe_packets);
   PublishCamera(camera_strobe_packets);
+  camera_strobe_packets.clear();
 
   std::chrono::duration<double> update_duration = std::chrono::high_resolution_clock::now() - t_update_start_;
   timing_.update = update_duration.count();
   PublishTiming(timing_);
+  timing_ = svis::Timing(); // clear timing
 }
 
 void SVIS::ParseBuffer(const std::vector<char>& buf, std::vector<ImuPacket>* imu_packets, std::vector<StrobePacket>* strobe_packets) {
@@ -728,15 +730,15 @@ double SVIS::toc() {
   return duration.count();
 }
 
-void SVIS::SetPublishStrobeRawHandler(std::function<void(std::vector<StrobePacket>&)> handler) {
+void SVIS::SetPublishStrobeRawHandler(std::function<void(const std::vector<StrobePacket>&)> handler) {
   PublishStrobeRaw = handler;
 }
 
-void SVIS::SetPublishImuRawHandler(std::function<void(std::vector<ImuPacket>&)> handler) {
+void SVIS::SetPublishImuRawHandler(std::function<void(const std::vector<ImuPacket>&)> handler) {
   PublishImuRaw = handler;
 }
 
-void SVIS::SetPublishImuHandler(std::function<void(std::vector<ImuPacket>&)> handler) {
+void SVIS::SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&)> handler) {
   PublishImu = handler;
 }
 
@@ -744,7 +746,7 @@ void SVIS::SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePa
   PublishCamera = handler;
 }
 
-void SVIS::SetPublishTimingHandler(std::function<void(Timing&)> handler) {
+void SVIS::SetPublishTimingHandler(std::function<void(const Timing&)> handler) {
   PublishTiming = handler;
 }
 
