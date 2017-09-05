@@ -72,7 +72,8 @@ int SVIS::ReadHID(std::vector<char>* buf) {
 }
 
 void SVIS::Update() {
-  std::chrono::time_point<std::chrono::high_resolution_clock> t_update_start_ = std::chrono::high_resolution_clock::now();
+  std::chrono::time_point<std::chrono::high_resolution_clock>
+    t_update_start_ = std::chrono::high_resolution_clock::now();
   
   // read and return if empty or bad
   std::vector<char> buf(64, 0);
