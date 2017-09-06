@@ -9,16 +9,14 @@
 
 #include <chrono>
 #include <boost/circular_buffer.hpp>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
 
-#include "svis_ros/SvisTiming.h"
 #include "svis/timing.h"
 #include "svis/header_packet.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
 #include "svis/camera_packet.h"
 #include "svis/camera_strobe_packet.h"
+#include "svis/image.h"
 
 extern "C" {
 #include "hid/hid.h"
@@ -35,7 +33,7 @@ class SVIS {
   void SendSetup();
   void tic();
   double toc();
-  void ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
+  void ParseImageMetadata(const Image& image,
                         CameraPacket* camera_packet);
   double GetTimeOffset() const;
   std::size_t GetCameraBufferSize() const;

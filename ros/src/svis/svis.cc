@@ -636,8 +636,6 @@ void SVIS::PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_
   printf("\n");
 }
 
-
-void SVIS::ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
 // void SVIS::PrintImageQuadlet(const std::string& name,
 //                              const sensor_msgs::Image::ConstPtr& msg,
 //                              const int& i) {
@@ -665,41 +663,43 @@ void SVIS::ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
 //   PrintImageQuadlet("roi", msg, 28);
 //   printf("\n\n");
 // }
+
+void SVIS::ParseImageMetadata(const Image& image,
                             CameraPacket* camera_packet) {
   // timestamp
-  memcpy(&camera_packet->metadata.timestamp, &image_msg->data[0],
-         sizeof(camera_packet->metadata.timestamp));
+  std::memcpy(&camera_packet->metadata.timestamp, &image.data[0],
+              sizeof(camera_packet->metadata.timestamp));
 
   // gain
-  memcpy(&camera_packet->metadata.gain, &image_msg->data[4],
-         sizeof(camera_packet->metadata.gain));
+  std::memcpy(&camera_packet->metadata.gain, &image.data[4],
+              sizeof(camera_packet->metadata.gain));
 
   // shutter
-  memcpy(&camera_packet->metadata.shutter, &image_msg->data[8],
-         sizeof(camera_packet->metadata.shutter));
+  std::memcpy(&camera_packet->metadata.shutter, &image.data[8],
+              sizeof(camera_packet->metadata.shutter));
 
   // brightness
-  memcpy(&camera_packet->metadata.brightness, &image_msg->data[12],
-         sizeof(camera_packet->metadata.brightness));
+  std::memcpy(&camera_packet->metadata.brightness, &image.data[12],
+              sizeof(camera_packet->metadata.brightness));
 
   // exposure
-  memcpy(&camera_packet->metadata.exposure, &image_msg->data[16],
-         sizeof(camera_packet->metadata.exposure));
+  std::memcpy(&camera_packet->metadata.exposure, &image.data[16],
+              sizeof(camera_packet->metadata.exposure));
 
   // white balance
-  memcpy(&camera_packet->metadata.white_balance, &image_msg->data[20],
-         sizeof(camera_packet->metadata.white_balance));
+  std::memcpy(&camera_packet->metadata.white_balance, &image.data[20],
+              sizeof(camera_packet->metadata.white_balance));
 
   // frame counter
-  uint32_t frame_counter = 0xFF & image_msg->data[27];
-  frame_counter |= (0xFF & image_msg->data[26]) << 8;
-  frame_counter |= (0xFF & image_msg->data[25]) << 16;
-  frame_counter |= (0xFF & image_msg->data[24]) << 24;
+  uint32_t frame_counter = 0xFF & image.data[27];
+  frame_counter |= (0xFF & image.data[26]) << 8;
+  frame_counter |= (0xFF & image.data[25]) << 16;
+  frame_counter |= (0xFF & image.data[24]) << 24;
   camera_packet->metadata.frame_counter = frame_counter;
 
   // region of interest
-  memcpy(&camera_packet->metadata.roi_position, &image_msg->data[28],
-         sizeof(camera_packet->metadata.roi_position));
+  std::memcpy(&camera_packet->metadata.roi_position, &image.data[28],
+              sizeof(camera_packet->metadata.roi_position));
 }
 
 void SVIS::tic() {
