@@ -5,7 +5,7 @@
 namespace svis {
 
 struct HeaderPacket {
-  double timestamp_ros_rx = {0};  // time message was received
+  double timestamp_ros_rx = 0.0;  // time message was received
   uint16_t send_count = 0;
   uint8_t imu_count = 0;
   uint8_t strobe_count = 0;
