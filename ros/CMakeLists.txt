@@ -68,10 +68,12 @@ add_library(svis_ros_nodelet
 )
 
 add_dependencies(svis_ros_nodelet
+  svis_ros
   ${catkin_EXPORTED_TARGETS}
   )
 
 target_link_libraries(svis_ros_nodelet
+  svis_ros
   ${catkin_LIBRARIES}
 )
 
