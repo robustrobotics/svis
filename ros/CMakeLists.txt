@@ -106,13 +106,11 @@ add_library(svis
 )
 
 add_dependencies(svis
-  ${catkin_EXPORTED_TARGETS}
   ${LIBUSB_1_LIBRARIES}
   svis_hid
   )
 
 target_link_libraries(svis_ros
-  ${catkin_LIBRARIES}
   ${LibUSB_LIBRARIES}
   svis_hid
 )
