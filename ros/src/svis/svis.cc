@@ -615,26 +615,6 @@ void SVIS::Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
     sync_flag_ = true;
   }
 
-  // // erase camera images that are older than all strobes
-  // bool stale = true;
-  // for (auto it_camera = camera_buffer->begin(); it_camera != camera_buffer->end(); ) {
-  //   stale = true;
-  //   for (auto it_strobe = strobe_buffer->begin(); it_strobe != strobe_buffer->end(); ++it_strobe) {
-  //     // check if strobe is older than camera
-  //     if ((*it_strobe).count_total + strobe_count_offset_ <=
-  //         (*it_camera).metadata.frame_counter) {
-  //       stale = false;
-  //     }
-  //   }
-
-  //   // remove camera if stale
-  //   if (stale) {
-  //     it_camera = camera_buffer->erase(it_camera);
-  //   } else {
-  //     ++it_camera;
-  //   }
-  // }
-
   timing_.associate = toc();
 }
 
