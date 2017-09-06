@@ -35,6 +35,9 @@ SVISRos::SVISRos()
                                               std::placeholders::_1);
   svis_.SetPublishTimingHandler(publish_timing_handler);
 
+  // setup TimeNow handler
+  auto time_now_handler = std::bind(&SVISRos::TimeNow, this);
+  svis_.SetTimeNowHandler(time_now_handler);
 }
 
 void SVISRos::Run() {
@@ -398,6 +401,10 @@ void SVISRos::PublishTiming(const svis::Timing& timing) {
   msg.period = timing.period;
 
   svis_timing_pub_.publish(msg);
+}
+
+double SVISRos::TimeNow() {
+  return ros::Time::now().toSec();
 }
 
 }  // namespace svis_ros

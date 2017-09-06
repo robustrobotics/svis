@@ -273,7 +273,7 @@ void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {
   int ind = 0;
 
   // ros time
-  header->timestamp_ros_rx = ros::Time::now().toSec();
+  header->timestamp_ros_rx = TimeNow();
 
   // send_count
   memcpy(&header->send_count, &buf[ind], sizeof(header->send_count));
@@ -578,7 +578,7 @@ void SVIS::Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
         break;
       } else {
         // check for stale entry and delete
-        if ((ros::Time::now().toSec() - (*it_camera).image.header.stamp.toSec()) > 1.0) {
+        if ((TimeNow() - (*it_camera).image.header.stamp) > 1.0) {
           // printf("delete stale camera\n");
           it_camera = camera_buffer->erase(it_camera);
         } else {
@@ -598,7 +598,7 @@ void SVIS::Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
       // printf("fail\n");
 
       // check for stale entry and delete
-      if ((ros::Time::now().toSec() - (*it_strobe).timestamp_ros_rx) > 1.0) {
+      if ((TimeNow() - (*it_strobe).timestamp_ros_rx) > 1.0) {
         printf("(svis ros) Delete stale strobe\n");
         it_strobe = strobe_buffer->erase(it_strobe);
       } else {
@@ -639,7 +639,7 @@ void SVIS::Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
 }
 
 void SVIS::PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_buffer) {
-  double t_now = ros::Time::now().toSec();
+  double t_now = TimeNow();
   printf("camera_buffer: %lu\n", camera_buffer.size());
   for (int i = 0; i < camera_buffer.size(); i++) {
     printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp.toSec());
@@ -648,7 +648,7 @@ void SVIS::PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_
 }
 
 void SVIS::PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer) {
-  double t_now = ros::Time::now().toSec();
+  double t_now = TimeNow();
   printf("strobe_buffer: %lu\n", strobe_buffer.size());
   for (int i = 0; i < strobe_buffer.size(); i++) {
     printf("%i:(%i, %i)%f ", i, strobe_buffer[i].count, strobe_buffer[i].count_total + strobe_count_offset_, t_now - strobe_buffer[i].timestamp_ros);
@@ -750,6 +750,10 @@ void SVIS::SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePa
 
 void SVIS::SetPublishTimingHandler(std::function<void(const Timing&)> handler) {
   PublishTiming = handler;
+}
+
+void SVIS::SetTimeNowHandler(std::function<double()> handler) {
+  TimeNow = handler;
 }
 
 }  // namespace svis

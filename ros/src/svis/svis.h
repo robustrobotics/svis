@@ -48,6 +48,7 @@ class SVIS {
   void SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&)> handler);
   void SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler);
   void SetPublishTimingHandler(std::function<void(const Timing&)> handler);
+  void SetTimeNowHandler(std::function<double()> handler);
 
   // params
   int camera_rate_ = 0;
@@ -103,6 +104,7 @@ class SVIS {
   std::function<void(const std::vector<svis::ImuPacket>&)> PublishImu;
   std::function<void(std::vector<svis::CameraStrobePacket>&)> PublishCamera;
   std::function<void(const Timing&)> PublishTiming;
+  std::function<double()> TimeNow;
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
