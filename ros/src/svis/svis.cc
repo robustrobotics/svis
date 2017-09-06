@@ -242,7 +242,7 @@ void SVIS::ComputeOffsets(boost::circular_buffer<StrobePacket>* strobe_buffer,
       if (strobe_buffer->size() == 1 && camera_buffer->size() == 1) {
         StrobePacket strobe = strobe_buffer->front();
         CameraPacket camera = camera_buffer->front();
-        time_offset_vec_.push_back(camera.image.header.stamp.toSec() - strobe.timestamp_teensy);
+        time_offset_vec_.push_back(camera.image.header.stamp - strobe.timestamp_teensy);
         strobe_count_offset_ = camera.metadata.frame_counter - strobe.count_total;
         printf("strobe_count_offset: %i\n", strobe_count_offset_);
 
@@ -642,7 +642,7 @@ void SVIS::PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_
   double t_now = TimeNow();
   printf("camera_buffer: %lu\n", camera_buffer.size());
   for (int i = 0; i < camera_buffer.size(); i++) {
-    printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp.toSec());
+    printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp);
   }
   printf("\n\n");
 }

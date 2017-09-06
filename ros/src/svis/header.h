@@ -4,8 +4,6 @@
 
 #include <string>
 
-#include "svis/stamp.h"
-
 namespace svis {
 
 struct Header {
