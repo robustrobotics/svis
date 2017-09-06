@@ -15,4 +15,4 @@ class CameraPacket {
   sensor_msgs::Image image;
 };
 
-}  // namespace svis_ros
+}  // namespace svis
