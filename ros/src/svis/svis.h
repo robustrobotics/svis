@@ -151,4 +151,4 @@ class SVIS {
   bool print_buffer_ = false;
 };
 
-}  // namespace svis_ros
+}  // namespace svis
