@@ -1,5 +1,7 @@
 // Copyright 2017 Massachusetts Institute of Technology
 
+#include <cstring>
+
 #include "svis/svis.h"
 
 namespace svis {
@@ -184,7 +186,7 @@ bool SVIS::CheckChecksum(const std::vector<char>& buf) {
 
   // get packet chechsum
   uint16_t checksum_orig = 0;
-  memcpy(&checksum_orig, &buf[checksum_index], sizeof(checksum_orig));
+  std::memcpy(&checksum_orig, &buf[checksum_index], sizeof(checksum_orig));
   bool ret = (checksum_calc != checksum_orig);
 
   // check match and return result
