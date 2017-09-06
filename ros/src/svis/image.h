@@ -17,6 +17,6 @@ struct Image {
   uint8_t is_bigendian = 0;
   uint32_t step = 0;
   std::vector<uint8_t> data;
-}
+};
 
 }  // namespace svis

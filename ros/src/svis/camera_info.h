@@ -20,6 +20,6 @@ struct CameraInfo {
   uint32_t binning_x = 0;
   uint32_t binning_y = 0;
   // RegionOfInterest roi;  // not included
-}
+};
 
 }  // namespace svis

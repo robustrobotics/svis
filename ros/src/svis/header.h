@@ -12,6 +12,6 @@ struct Header {
   uint32_t seq = 0;
   Stamp stamp;
   std::string frame_id = "";
-}
+};
 
 }  // namespace svis
