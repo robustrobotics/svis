@@ -14,9 +14,9 @@ struct CameraInfo {
   uint32_t width = 0;
   std::string distortion_model = "";
   std::vector<double> D;
-  double K[9] = {0};
-  double R[9] = {0};
-  double P[12] = {0};
+  std::array<double, 9> K;
+  std::array<double, 9> R;
+  std::array<double, 12> P;
   uint32_t binning_x = 0;
   uint32_t binning_y = 0;
   // RegionOfInterest roi;  // not included
