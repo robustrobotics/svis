@@ -656,35 +656,35 @@ void SVIS::PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_
   printf("\n");
 }
 
-void SVIS::PrintImageQuadlet(const std::string& name,
-                             const sensor_msgs::Image::ConstPtr& msg,
-                             const int& i) {
-  printf("%s: ", name.c_str());
-  printf("%02X ", msg->data[i]);
-  printf("%02X ", msg->data[i + 1]);
-  printf("%02X ", msg->data[i + 2]);
-  printf("%02X ", msg->data[i + 3]);
-  printf("\n");
-}
-
-void SVIS::PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg) {
-  ROS_INFO("encoding: %s", msg->encoding.c_str());
-  ROS_INFO("step: %i", msg->step);
-  ROS_INFO("width: %i", msg->width);
-  ROS_INFO("height: %i", msg->height);
-  ROS_INFO("is_bigendian: %i", msg->is_bigendian);
-  PrintImageQuadlet("timestamp", msg, 0);
-  PrintImageQuadlet("gain", msg, 4);
-  PrintImageQuadlet("shutter", msg, 8);
-  PrintImageQuadlet("brightness", msg, 12);
-  PrintImageQuadlet("exposure", msg, 16);
-  PrintImageQuadlet("white balance", msg, 20);
-  PrintImageQuadlet("frame counter", msg, 24);
-  PrintImageQuadlet("roi", msg, 28);
-  printf("\n\n");
-}
 
 void SVIS::ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
+// void SVIS::PrintImageQuadlet(const std::string& name,
+//                              const sensor_msgs::Image::ConstPtr& msg,
+//                              const int& i) {
+//   printf("%s: ", name.c_str());
+//   printf("%02X ", msg->data[i]);
+//   printf("%02X ", msg->data[i + 1]);
+//   printf("%02X ", msg->data[i + 2]);
+//   printf("%02X ", msg->data[i + 3]);
+//   printf("\n");
+// }
+
+// void SVIS::PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg) {
+//   ROS_INFO("encoding: %s", msg->encoding.c_str());
+//   ROS_INFO("step: %i", msg->step);
+//   ROS_INFO("width: %i", msg->width);
+//   ROS_INFO("height: %i", msg->height);
+//   ROS_INFO("is_bigendian: %i", msg->is_bigendian);
+//   PrintImageQuadlet("timestamp", msg, 0);
+//   PrintImageQuadlet("gain", msg, 4);
+//   PrintImageQuadlet("shutter", msg, 8);
+//   PrintImageQuadlet("brightness", msg, 12);
+//   PrintImageQuadlet("exposure", msg, 16);
+//   PrintImageQuadlet("white balance", msg, 20);
+//   PrintImageQuadlet("frame counter", msg, 24);
+//   PrintImageQuadlet("roi", msg, 28);
+//   printf("\n\n");
+// }
                             CameraPacket* camera_packet) {
   // timestamp
   memcpy(&camera_packet->metadata.timestamp, &image_msg->data[0],
