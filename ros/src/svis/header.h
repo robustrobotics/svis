@@ -10,7 +10,7 @@ namespace svis {
 
 struct Header {
   uint32_t seq = 0;
-  Stamp stamp;
+  double stamp = 0.0;
   std::string frame_id = "";
 };
 
