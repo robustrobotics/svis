@@ -19,8 +19,7 @@ option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentati
 option(BUILD_TESTS "Use GTest to build and test libraries" OFF)
 
 # Definitions
-# add_definitions("-std=c++11 -fPIC")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
+# add_definitions("-std=c++11")  # can't do this because of C build
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
@@ -74,12 +73,11 @@ add_library(${PROJECT_NAME}
   )
 
 target_link_libraries(${PROJECT_NAME}
-  ${LIBUSB_1_LIBRARIES}
   svis_hid
   )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-    COMPILE_FLAGS "-std=c++11 -Wall")
+    COMPILE_FLAGS "-std=c++11 -Wall -fPIC")
 
 # Install
 install(TARGETS ${PROJECT_NAME}
@@ -100,6 +98,9 @@ target_link_libraries(svis_hid
   # ${LIBUSB_1_LIBRARIES}
   ${LibUSB_LIBRARIES}
   )
+
+set_target_properties(svis_hid PROPERTIES
+    COMPILE_FLAGS "-Wall -fPIC")
 
 # Install
 install(TARGETS svis_hid
