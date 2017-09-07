@@ -7,17 +7,25 @@ if (CCACHE_FOUND)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif (CCACHE_FOUND)
 
+#-------------------------------------------------------------------------------
+# Project Initialization
+#-------------------------------------------------------------------------------
 project(svis_ros)
 
-set(CMAKE_VERBOSE_MAKEFILE FALSE)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+# Options
+option(BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
+option(BUILD_TESTS "Use GTest to build and test libraries" OFF)
 
+# Definitions
 add_definitions("-std=c++11")
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
-## Find catkin macros and libraries
+#-------------------------------------------------------------------------------
+# Dependencies
+#-------------------------------------------------------------------------------
+# Catkin dependencies
 set(REQ_CATKIN_PKGS   
   roscpp
   nodelet
@@ -26,12 +34,15 @@ set(REQ_CATKIN_PKGS
   sensor_msgs
   message_generation
   fla_utils
-)
+  )
 find_package(catkin REQUIRED COMPONENTS ${REQ_CATKIN_PKGS})
 
-# find_package(libusb-1.0 REQUIRED)
-find_package(libusb REQUIRED)
+# External dependencies
+find_package(svis REQUIRED)
 
+#-------------------------------------------------------------------------------
+# ROS Build
+#-------------------------------------------------------------------------------
 add_message_files (
   FILES
   SvisImu.msg
@@ -47,93 +58,55 @@ generate_messages(
   )
 
 catkin_package(
- INCLUDE_DIRS src
- LIBRARIES #${PROJECT_NAME}
- CATKIN_DEPENDS ${REQ_CATKIN_PKGS}
- DEPENDS
-)
+  INCLUDE_DIRS src
+  LIBRARIES svis_ros
+  CATKIN_DEPENDS ${REQ_CATKIN_PKGS}
+  DEPENDS svis
+  )
 
+#-------------------------------------------------------------------------------
+# Include Directories
+#-------------------------------------------------------------------------------
 include_directories(
   src
-  src/hid
+  ${svis_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
-  ${CMAKE_BINARY_DIR}/include
-  # ${LIBUSB_1_INCLUDE_DIRS}
-  ${LibUSB_INCLUDE_DIRS}
-)
+  )
 
-## SVIS_ROS_NODELET #########################
+#-------------------------------------------------------------------------------
+# Library: svis_ros_nodelet
+#-------------------------------------------------------------------------------
 add_library(svis_ros_nodelet
   src/svis_ros_nodelet.cc
-)
-
-add_dependencies(svis_ros_nodelet
-  svis_ros
-  ${catkin_EXPORTED_TARGETS}
   )
 
 target_link_libraries(svis_ros_nodelet
   svis_ros
   ${catkin_LIBRARIES}
-)
+  )
 
 install(TARGETS svis_ros_nodelet
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-## SVIS_ROS #########################
+#-------------------------------------------------------------------------------
+# Library: svis_ros
+#-------------------------------------------------------------------------------
 add_library(svis_ros
   src/svis_ros/svis_ros.cc
-)
+  )
 
 add_dependencies(svis_ros
-  ${catkin_EXPORTED_TARGETS}
-  svis
+  svis_ros_generate_messages_cpp
   )
 
 target_link_libraries(svis_ros
+  ${svis_LIBRARIES}
   ${catkin_LIBRARIES}
-  svis
-)
+  )
 
 install(TARGETS svis_ros
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-## SVIS #########################
-add_library(svis
-  src/svis/svis.cc
-)
-
-add_dependencies(svis
-  ${LIBUSB_1_LIBRARIES}
-  svis_hid
-  )
-
-target_link_libraries(svis_ros
-  ${LibUSB_LIBRARIES}
-  svis_hid
-)
-
-install(TARGETS svis
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-## SVIS_HID #########################
-add_library(svis_hid
-  src/hid/hid.c
-  )
-
-target_link_libraries(svis_hid
-  # ${LIBUSB_1_LIBRARIES}
-  ${LibUSB_LIBRARIES}
-)
-
-install(TARGETS svis_hid
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
