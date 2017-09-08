@@ -76,7 +76,7 @@ include_directories(
 #-------------------------------------------------------------------------------
 # Library: svis_ros_nodelet
 #-------------------------------------------------------------------------------
-add_library(svis_ros_nodelet
+add_library(svis_ros_nodelet SHARED
   src/svis_ros_nodelet.cc
   )
 
@@ -93,7 +93,7 @@ install(TARGETS svis_ros_nodelet
 #-------------------------------------------------------------------------------
 # Library: svis_ros
 #-------------------------------------------------------------------------------
-add_library(svis_ros
+add_library(svis_ros SHARED
   src/svis_ros/svis_ros.cc
   )
 
@@ -101,10 +101,14 @@ add_dependencies(svis_ros
   svis_ros_generate_messages_cpp
   )
 
+message("svis_LIBRARIES: ${svis_LIBRARIES}")
 target_link_libraries(svis_ros
   ${svis_LIBRARIES}
   ${catkin_LIBRARIES}
   )
+
+set_target_properties(svis_ros PROPERTIES COMPILE_FLAGS "-std=c++11 -Wno-deprecated-register")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
 install(TARGETS svis_ros
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
