@@ -24,24 +24,20 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif (NOT CMAKE_BUILD_TYPE)
 
-#-------------------------------------------------------------------------------
-# Dependencies
-#-------------------------------------------------------------------------------
-find_package(libusb-1.0 REQUIRED)
-find_package(libusb REQUIRED)
-
 # CMake Includes
 include(cmake/setup.cmake)
 include(cmake/install.cmake)
 
 #-------------------------------------------------------------------------------
+# Dependencies
+#-------------------------------------------------------------------------------
+find_package(libusb REQUIRED)
+
+#-------------------------------------------------------------------------------
 # Include Directories
 #-------------------------------------------------------------------------------
-message("LIBUSB_1_INCLUDE_DIRS: ${LIBUSB_1_INCLUDE_DIRS}")
-message("LibUSB_INCLUDE_DIRS: ${LibUSB_INCLUDE_DIRS}")
 include_directories(SYSTEM
   src
-  # ${LIBUSB_1_INCLUDE_DIRS}
   ${LibUSB_INCLUDE_DIRS}
   )
 
@@ -81,8 +77,6 @@ target_link_libraries(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} PROPERTIES 
     COMPILE_FLAGS "-std=c++11 -Wall -fPIC")
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
-  
 # Install
 install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION bin
@@ -98,10 +92,7 @@ add_library(svis_hid SHARED
   src/svis_hid/svis_hid.c
   )
 
-message("LibUSB_LIBRARIES: ${LibUSB_LIBRARIES}")
-message("LIBUSB_1_LIBRARIES: ${LIBUSB_1_LIBRARIES}")
 target_link_libraries(svis_hid
-  # ${LIBUSB_1_LIBRARIES}
   ${LibUSB_LIBRARIES}
   )
 

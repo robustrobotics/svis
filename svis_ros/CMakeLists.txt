@@ -67,6 +67,7 @@ catkin_package(
 #-------------------------------------------------------------------------------
 # Include Directories
 #-------------------------------------------------------------------------------
+message("svis_INCLUDE_DIRS: ${svis_INCLUDE_DIRS}")
 include_directories(
   src
   ${svis_INCLUDE_DIRS}

@@ -6,19 +6,23 @@
 # ${PROJECT_NAME}_LIBRARIES    - ${PROJECT_NAME} library and all dependent libraries
 # ${PROJECT_NAME}_DEFINITIONS  - Compiler definitions as semicolon separated list
 
-find_library(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
+find_library(svis_LIBRARY svis.so
   PATHS @CMAKE_INSTALL_PREFIX@/lib
   NO_DEFAULT_PATH
   )
+message("svis_LIBRARY: ${svis_LIBRARY}")
 
-find_library(svis_hid_LIBRARY svis_hid
+find_library(svis_hid_LIBRARY svis_hid.so
   PATHS @CMAKE_INSTALL_PREFIX@/lib
   NO_DEFAULT_PATH
   )
+message("svis_hid_LIBRARY: ${svis_hid_LIBRARY}")
 
 set(@PROJECT_NAME@_LIBRARIES
-  ${@PROJECT_NAME@_LIBRARY}
-  ${svis_hid_LIBRARY}
+  /home/fla/fla-gtsc/fla_root/fsw/devel/lib/libsvis.so
+  /home/fla/fla-gtsc/fla_root/fsw/devel/lib/libsvis_hid.so
+  # ${svis_LIBRARY}
+  # ${svis_hid_LIBRARY}
   ${LibUSB_LIBRARIES}
   ${LIBUSB_1_LIBRARIES}
   )
