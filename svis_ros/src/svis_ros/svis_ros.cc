@@ -205,8 +205,8 @@ void SVISRos::PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt) {
   svis_.timing_.publish_imu = svis_.toc();
 }
 
-svis::Image* SVISRos::RosImageToSvis(const sensor_msgs::Image& ros_image) {
-  svis::Image* svis_image_ptr = new svis::Image;
+std::shared_ptr<svis::Image> SVISRos::RosImageToSvis(const sensor_msgs::Image& ros_image) {
+  auto svis_image_ptr = std::make_shared<svis::Image>();
 
   // header
   svis_image_ptr->header.seq = ros_image.header.seq;
@@ -224,8 +224,8 @@ svis::Image* SVISRos::RosImageToSvis(const sensor_msgs::Image& ros_image) {
   return svis_image_ptr;
 }
 
-sensor_msgs::Image* SVISRos::SvisToRosImage(const svis::Image& svis_image) {
-  sensor_msgs::Image* ros_image_ptr = new sensor_msgs::Image;
+const std::shared_ptr<sensor_msgs::Image> SVISRos::SvisToRosImage(const svis::Image& svis_image) {
+  auto ros_image_ptr = std::make_shared<sensor_msgs::Image>();
 
   // header
   ros_image_ptr->header.seq = svis_image.header.seq;
@@ -243,8 +243,8 @@ sensor_msgs::Image* SVISRos::SvisToRosImage(const svis::Image& svis_image) {
   return ros_image_ptr;
 }
 
-svis::CameraInfo* SVISRos::RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info) {
-  svis::CameraInfo* svis_info_ptr = new svis::CameraInfo;
+std::shared_ptr<svis::CameraInfo> SVISRos::RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info) {
+  auto svis_info_ptr = std::make_shared<svis::CameraInfo>();
 
   // header
   svis_info_ptr->header.seq = ros_info.header.seq;
@@ -265,8 +265,8 @@ svis::CameraInfo* SVISRos::RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ro
   return svis_info_ptr;
 }
 
-sensor_msgs::CameraInfo* SVISRos::SvisToRosCameraInfo(const svis::CameraInfo& svis_info) {
-  sensor_msgs::CameraInfo* ros_info_ptr = new sensor_msgs::CameraInfo;
+const std::shared_ptr<sensor_msgs::CameraInfo> SVISRos::SvisToRosCameraInfo(const svis::CameraInfo& svis_info) {
+  auto ros_info_ptr = std::make_shared<sensor_msgs::CameraInfo>();
 
   // header
   ros_info_ptr->header.seq = svis_info.header.seq;
@@ -296,8 +296,8 @@ void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   svis::CameraPacket camera_packet;
 
   // convert image and info
-  svis::Image* svis_image_ptr = RosImageToSvis(*image_msg);
-  svis::CameraInfo* svis_info_ptr = RosCameraInfoToSvis(*info_msg);
+  auto svis_image_ptr = RosImageToSvis(*image_msg);
+  auto svis_info_ptr = RosCameraInfoToSvis(*info_msg);
 
   // metadata
   // PrintMetaDataRaw(image_msg);
@@ -322,8 +322,8 @@ void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe
 
   for (int i = 0; i < camera_strobe_packets.size(); i++) {
     // convert
-    sensor_msgs::CameraInfo* ros_info_ptr = SvisToRosCameraInfo(camera_strobe_packets[i].camera.info);
-    sensor_msgs::Image* ros_image_ptr = SvisToRosImage(camera_strobe_packets[i].camera.image);
+    auto ros_info_ptr = SvisToRosCameraInfo(camera_strobe_packets[i].camera.info);
+    auto ros_image_ptr = SvisToRosImage(camera_strobe_packets[i].camera.image);
 
     // publish
     camera_pub_.publish(*ros_image_ptr,
