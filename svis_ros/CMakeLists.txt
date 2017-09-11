@@ -106,9 +106,6 @@ target_link_libraries(svis_ros
   ${catkin_LIBRARIES}
   )
 
-set_target_properties(svis_ros PROPERTIES COMPILE_FLAGS "-std=c++11 -Wno-deprecated-register")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
-
 install(TARGETS svis_ros
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
