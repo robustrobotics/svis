@@ -17,7 +17,7 @@ find_library(svis_hid_LIBRARY libsvis_hid.so
   )
 
 set(@PROJECT_NAME@_LIBRARIES
-  ${svis_LIBRARY}
+  ${@PROJECT_NAME@_LIBRARY}
   ${svis_hid_LIBRARY}
   ${LibUSB_LIBRARIES}
   )
