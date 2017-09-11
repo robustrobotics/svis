@@ -67,7 +67,6 @@ catkin_package(
 #-------------------------------------------------------------------------------
 # Include Directories
 #-------------------------------------------------------------------------------
-message("svis_INCLUDE_DIRS: ${svis_INCLUDE_DIRS}")
 include_directories(
   src
   ${svis_INCLUDE_DIRS}
@@ -102,7 +101,6 @@ add_dependencies(svis_ros
   svis_ros_generate_messages_cpp
   )
 
-message("svis_LIBRARIES: ${svis_LIBRARIES}")
 target_link_libraries(svis_ros
   ${svis_LIBRARIES}
   ${catkin_LIBRARIES}
