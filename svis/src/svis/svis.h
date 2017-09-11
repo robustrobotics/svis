@@ -9,19 +9,17 @@
 
 #include <chrono>
 #include <boost/circular_buffer.hpp>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
 
-#include "svis_ros/SvisTiming.h"
 #include "svis/timing.h"
 #include "svis/header_packet.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
 #include "svis/camera_packet.h"
 #include "svis/camera_strobe_packet.h"
+#include "svis/image.h"
 
 extern "C" {
-#include "hid/hid.h"
+#include "svis_hid/svis_hid.h"
 }
 
 namespace svis {
@@ -35,7 +33,7 @@ class SVIS {
   void SendSetup();
   void tic();
   double toc();
-  void ParseImageMetadata(const sensor_msgs::Image::ConstPtr& image_msg,
+  void ParseImageMetadata(const Image& image,
                         CameraPacket* camera_packet);
   double GetTimeOffset() const;
   std::size_t GetCameraBufferSize() const;
@@ -48,6 +46,7 @@ class SVIS {
   void SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&)> handler);
   void SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler);
   void SetPublishTimingHandler(std::function<void(const Timing&)> handler);
+  void SetTimeNowHandler(std::function<double()> handler);
 
   // params
   int camera_rate_ = 0;
@@ -86,10 +85,10 @@ class SVIS {
   void FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                  std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
-  void PrintImageQuadlet(const std::string& name,
-                         const sensor_msgs::Image::ConstPtr& msg,
-                         const int& i);
-  void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
+  // void PrintImageQuadlet(const std::string& name,
+  //                        const sensor_msgs::Image::ConstPtr& msg,
+  //                        const int& i);
+  // void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
   void ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets);
   void Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
                  boost::circular_buffer<CameraPacket>* camera_buffer,
@@ -103,6 +102,7 @@ class SVIS {
   std::function<void(const std::vector<svis::ImuPacket>&)> PublishImu;
   std::function<void(std::vector<svis::CameraStrobePacket>&)> PublishCamera;
   std::function<void(const Timing&)> PublishTiming;
+  std::function<double()> TimeNow;
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
@@ -151,4 +151,4 @@ class SVIS {
   bool print_buffer_ = false;
 };
 
-}  // namespace svis_ros
+}  // namespace svis

@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include <usb.h>
 
-#include "hid.h"
+#include "svis_hid.h"
 
 
 // On Linux there are several options to access HID devices.

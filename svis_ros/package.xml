@@ -17,6 +17,7 @@
   <depend>message_generation</depend>
   <depend>fla_utils</depend>
   <depend>dynamic_reconfigure</depend>
+  <depend>svis</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

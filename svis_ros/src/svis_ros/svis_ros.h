@@ -21,6 +21,8 @@
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
 #include "svis/camera_strobe_packet.h"
+#include "svis/image.h"
+#include "svis/camera_info.h"
 #include "svis_ros/SvisImu.h"
 #include "svis_ros/SvisStrobe.h"
 #include "svis_ros/SvisTiming.h"
@@ -49,8 +51,15 @@ class SVISRos {
   void PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_packets);
   void PublishTiming(const svis::Timing& timing);
   void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);
+  double TimeNow();
   
   void ConfigureCamera();
+
+  // conversions
+  std::shared_ptr<svis::Image> RosImageToSvis(const sensor_msgs::Image& ros_image);
+  const std::shared_ptr<sensor_msgs::Image> SvisToRosImage(const svis::Image& svis_image);
+  std::shared_ptr<svis::CameraInfo> RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info);
+  const std::shared_ptr<sensor_msgs::CameraInfo> SvisToRosCameraInfo(const svis::CameraInfo& svis_info);
 
   // ros
   ros::NodeHandle nh_;

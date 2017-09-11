@@ -35,6 +35,9 @@ SVISRos::SVISRos()
                                               std::placeholders::_1);
   svis_.SetPublishTimingHandler(publish_timing_handler);
 
+  // setup TimeNow handler
+  auto time_now_handler = std::bind(&SVISRos::TimeNow, this);
+  svis_.SetTimeNowHandler(time_now_handler);
 }
 
 void SVISRos::Run() {
@@ -202,22 +205,108 @@ void SVISRos::PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt) {
   svis_.timing_.publish_imu = svis_.toc();
 }
 
+std::shared_ptr<svis::Image> SVISRos::RosImageToSvis(const sensor_msgs::Image& ros_image) {
+  auto svis_image_ptr = std::make_shared<svis::Image>();
+
+  // header
+  svis_image_ptr->header.seq = ros_image.header.seq;
+  svis_image_ptr->header.stamp = ros_image.header.stamp.toSec();
+  svis_image_ptr->header.frame_id = ros_image.header.frame_id;
+
+  // data
+  svis_image_ptr->height = ros_image.height;
+  svis_image_ptr->width = ros_image.width;
+  svis_image_ptr->encoding = ros_image.encoding;
+  svis_image_ptr->is_bigendian = ros_image.is_bigendian;
+  svis_image_ptr->step = ros_image.step;
+  svis_image_ptr->data = ros_image.data;
+
+  return svis_image_ptr;
+}
+
+const std::shared_ptr<sensor_msgs::Image> SVISRos::SvisToRosImage(const svis::Image& svis_image) {
+  auto ros_image_ptr = std::make_shared<sensor_msgs::Image>();
+
+  // header
+  ros_image_ptr->header.seq = svis_image.header.seq;
+  ros_image_ptr->header.stamp.fromSec(svis_image.header.stamp);
+  ros_image_ptr->header.frame_id = svis_image.header.frame_id;
+
+  // data
+  ros_image_ptr->height = svis_image.height;
+  ros_image_ptr->width = svis_image.width;
+  ros_image_ptr->encoding = svis_image.encoding;
+  ros_image_ptr->is_bigendian = svis_image.is_bigendian;
+  ros_image_ptr->step = svis_image.step;
+  ros_image_ptr->data = svis_image.data;
+
+  return ros_image_ptr;
+}
+
+std::shared_ptr<svis::CameraInfo> SVISRos::RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info) {
+  auto svis_info_ptr = std::make_shared<svis::CameraInfo>();
+
+  // header
+  svis_info_ptr->header.seq = ros_info.header.seq;
+  svis_info_ptr->header.stamp = ros_info.header.stamp.toSec();
+  svis_info_ptr->header.frame_id = ros_info.header.frame_id;
+
+  // data
+  svis_info_ptr->height = ros_info.height;
+  svis_info_ptr->width = ros_info.width;
+  svis_info_ptr->distortion_model = ros_info.distortion_model;
+  svis_info_ptr->D = ros_info.D;
+  std::copy(ros_info.K.begin(), ros_info.K.end(), svis_info_ptr->K.begin());
+  std::copy(ros_info.R.begin(), ros_info.R.end(), svis_info_ptr->R.begin());
+  std::copy(ros_info.P.begin(), ros_info.P.end(), svis_info_ptr->P.begin());
+  svis_info_ptr->binning_x = ros_info.binning_x;
+  svis_info_ptr->binning_y = ros_info.binning_y;
+
+  return svis_info_ptr;
+}
+
+const std::shared_ptr<sensor_msgs::CameraInfo> SVISRos::SvisToRosCameraInfo(const svis::CameraInfo& svis_info) {
+  auto ros_info_ptr = std::make_shared<sensor_msgs::CameraInfo>();
+
+  // header
+  ros_info_ptr->header.seq = svis_info.header.seq;
+  ros_info_ptr->header.stamp.fromSec(svis_info.header.stamp);
+  ros_info_ptr->header.frame_id = svis_info.header.frame_id;
+
+  // data
+  ros_info_ptr->height = svis_info.height;
+  ros_info_ptr->width = svis_info.width;
+  ros_info_ptr->distortion_model = svis_info.distortion_model;
+  ros_info_ptr->D = svis_info.D;
+  std::copy(svis_info.K.begin(), svis_info.K.end(), ros_info_ptr->K.begin());
+  std::copy(svis_info.R.begin(), svis_info.R.end(), ros_info_ptr->R.begin());
+  std::copy(svis_info.P.begin(), svis_info.P.end(), ros_info_ptr->P.begin());
+  ros_info_ptr->binning_x = svis_info.binning_x;
+  ros_info_ptr->binning_y = svis_info.binning_y;
+
+  return ros_info_ptr;
+}
+
 void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                              const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
   if (!received_camera_) {
     received_camera_ = true;
   }
 
-  // PrintMetaDataRaw(image_msg);
   svis::CameraPacket camera_packet;
 
+  // convert image and info
+  auto svis_image_ptr = RosImageToSvis(*image_msg);
+  auto svis_info_ptr = RosCameraInfoToSvis(*info_msg);
+
   // metadata
-  svis_.ParseImageMetadata(image_msg, &camera_packet);
+  // PrintMetaDataRaw(image_msg);
+  svis_.ParseImageMetadata(*svis_image_ptr, &camera_packet);
   // ROS_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
   // set image and info
-  camera_packet.image = *image_msg;
-  camera_packet.info = *info_msg;
+  camera_packet.image = *svis_image_ptr;
+  camera_packet.info = *svis_info_ptr;
 
   // add to buffer
   svis_.PushCameraPacket(camera_packet);
@@ -232,8 +321,14 @@ void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe
   svis_.tic();
 
   for (int i = 0; i < camera_strobe_packets.size(); i++) {
-    camera_pub_.publish(camera_strobe_packets[i].camera.image,
-                        camera_strobe_packets[i].camera.info, ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
+    // convert
+    auto ros_info_ptr = SvisToRosCameraInfo(camera_strobe_packets[i].camera.info);
+    auto ros_image_ptr = SvisToRosImage(camera_strobe_packets[i].camera.image);
+
+    // publish
+    camera_pub_.publish(*ros_image_ptr,
+                        *ros_info_ptr,
+                        ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
   }
 
   svis_.timing_.publish_camera = svis_.toc();
@@ -316,6 +411,10 @@ void SVISRos::PublishTiming(const svis::Timing& timing) {
   msg.period = timing.period;
 
   svis_timing_pub_.publish(msg);
+}
+
+double SVISRos::TimeNow() {
+  return ros::Time::now().toSec();
 }
 
 }  // namespace svis_ros
