@@ -6,12 +6,12 @@
 # ${PROJECT_NAME}_LIBRARIES    - ${PROJECT_NAME} library and all dependent libraries
 # ${PROJECT_NAME}_DEFINITIONS  - Compiler definitions as semicolon separated list
 
-find_library(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
+find_library(svis_LIBRARY libsvis.so
   PATHS @CMAKE_INSTALL_PREFIX@/lib
   NO_DEFAULT_PATH
   )
 
-find_library(svis_hid_LIBRARY svis_hid
+find_library(svis_hid_LIBRARY libsvis_hid.so
   PATHS @CMAKE_INSTALL_PREFIX@/lib
   NO_DEFAULT_PATH
   )

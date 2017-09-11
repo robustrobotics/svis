@@ -76,7 +76,7 @@ include_directories(
 #-------------------------------------------------------------------------------
 # Library: svis_ros_nodelet
 #-------------------------------------------------------------------------------
-add_library(svis_ros_nodelet
+add_library(svis_ros_nodelet SHARED
   src/svis_ros_nodelet.cc
   )
 
@@ -93,7 +93,7 @@ install(TARGETS svis_ros_nodelet
 #-------------------------------------------------------------------------------
 # Library: svis_ros
 #-------------------------------------------------------------------------------
-add_library(svis_ros
+add_library(svis_ros SHARED
   src/svis_ros/svis_ros.cc
   )
 

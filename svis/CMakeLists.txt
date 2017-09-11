@@ -31,7 +31,6 @@ include(cmake/install.cmake)
 #-------------------------------------------------------------------------------
 # Dependencies
 #-------------------------------------------------------------------------------
-# find_package(libusb-1.0 REQUIRED)
 find_package(libusb REQUIRED)
 
 #-------------------------------------------------------------------------------
@@ -39,7 +38,6 @@ find_package(libusb REQUIRED)
 #-------------------------------------------------------------------------------
 include_directories(SYSTEM
   src
-  # ${LIBUSB_1_INCLUDE_DIRS}
   ${LibUSB_INCLUDE_DIRS}
   )
 
@@ -68,7 +66,7 @@ install(FILES
 #-------------------------------------------------------------------------------
 # Library: svis
 #-------------------------------------------------------------------------------
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
   src/svis/svis.cc
   )
 
@@ -90,12 +88,11 @@ install(DIRECTORY src/${PROJECT_NAME} DESTINATION include
 #-------------------------------------------------------------------------------
 # Library: svis_hid
 #-------------------------------------------------------------------------------
-add_library(svis_hid
+add_library(svis_hid SHARED
   src/svis_hid/svis_hid.c
   )
 
 target_link_libraries(svis_hid
-  # ${LIBUSB_1_LIBRARIES}
   ${LibUSB_LIBRARIES}
   )
 
