@@ -694,6 +694,7 @@ void SetParams() {
   strobe_buffer_count = 0;
 
   // trigger variables
+  pulse_trigger = true;
   trigger_flag = false;
   since_trigger = 0;
   trigger_rate = float(recv_buffer[2]);  // Hz
@@ -711,7 +712,7 @@ void SetParams() {
 
 void ResetParams() {
   // hid usb
-  setup_flag = false;
+  // setup_flag = false;
   send_count = 0;
   send_errors = 0;
   strobe_packet_count = 0;
@@ -731,6 +732,7 @@ void ResetParams() {
   strobe_buffer_count = 0;
 
   // trigger variables
+  pulse_trigger = true;
   trigger_flag = false;
   since_trigger = 0;
   trigger_rate = float(recv_buffer[2]);  // Hz
