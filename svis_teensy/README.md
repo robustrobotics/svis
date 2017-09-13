@@ -10,9 +10,10 @@ relevant examples, utlities, documentation, and implementation source code.
 ### Setup:
 This package need the ARM gcc binaries in the system path in order to build.
 
-- Download Arduino version 1.6.13.
-- Copy `arduino-1.6.13/hardware/tools/arm` to `~/gcc-arm-none-eabi-4_8-2014q3`
-- Source this folder
+- Follow the instructions on [the Teensyduino install page](https://www.pjrc.com/teensy/td_download.html) to install both Arduino and the Teensyduino add-on.
+- Make sure to update permissions on the installer gui with `sudo chmod +x TeensyduinoInstall.linux64`.
+- Copy `arduino-X.Y.Z/hardware/tools/arm` to `/path/to/gcc-arm-none-eabi-4_8-2014q3`
+- Source the gcc folder with `export PATH=${PATH}:/path/to/gcc-arm-none-eabi-4_8-2014q3`.
 
 ### Build:
 - `cd /path/to/svis_teensy`
