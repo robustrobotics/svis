@@ -6,27 +6,15 @@ relevant examples, utlities, documentation, and implementation source code.
 ### Requires:
 - cmake
 - gcc-arm-none-eabi-4_8-2014q3
-
-### Setup:
-This package need the ARM gcc binaries in the system path in order to build.
-
-- Follow the instructions on [the Teensyduino install page](https://www.pjrc.com/teensy/td_download.html) to install both Arduino and the Teensyduino add-on.
-- Make sure to update permissions on the installer gui with `sudo chmod +x TeensyduinoInstall.linux64`.
-- Copy `arduino-X.Y.Z/hardware/tools/arm` to `/path/to/gcc-arm-none-eabi-4_8-2014q3`
-- Source the gcc folder with `export PATH=${PATH}:/path/to/gcc-arm-none-eabi-4_8-2014q3`.
+- CMSIS DSP Library
 
 ### Build:
-- `cd /path/to/svis_teensy`
-- `mkdir build`
-- `cd build`
-- `cmake ..`
-- `make`
+Although the teensy driver is a simple cmake project, a script has been 
+provided to install the dependencies, modify the system path, and build the binary hex file.  Note that this script will install the arm gcc compiler binaries into your home directory and the cmake build will look for them in this default location.  If you wish to modify the installation location, you will have to also modify the teensy-arm.toolchain.cmake file in `/path/to/svis/svis_teensy/cmake`.
 
-### Arduino:
-This project does not use teensyduino, the software designed by pjrc.com to work
-with the teensy boards.  Instead, the source and dependencies will be built with
-cmake.  The utilities such as `teensy_loader_cli` and `usb_raw_hid_test` are
-still built using make.
+```
+./path/to/svis/svis_teensy/scripts/build_svis_teensy.sh
+```
 
 #### Install UDev Rules:
 Ubuntu and other modern Linux distibutions use udev to manage device files when
@@ -35,19 +23,22 @@ read-only permission which will not allow to you download code. You must place
 the udev rules file at `/etc/udev/rules.d/49-teensy.rules`.
 
 ```
-sudo cp 49-teensy.rules /etc/udev/rules.d/
+sudo cp /path/to/svis/svis_teensy/utilities/49-teensy.rules /etc/udev/rules.d/
 ```
 
 ### Programming:
-This project uses the `teensy_loader_cli` instead of the Arduino IDE to program
-the teensy microcontroller over USB.  First, build the `teensy_loader_cli` by
-following the README in `svis_teensy/utilities/teensy_loader_cli`.  Then execute
-the following command to upload your binary once you have run the top level
-cmake build to generate the .hex binary file.
+Once the driver has been built, it will need to be uploaded to the teensy
+device.  Before proceeding, make sure the teensy is connected to the computer with a micro USB
+cable.  The first step is to run the upload script to start the process.
 
 ```
-teensy_loader_cli -mmcu=mk20dx256 -wv svis_teensy/build/bin/file_name.elf.hex
+./path/to/svis/svis_teensy/scripts/upload_svis_teensy.sh
 ```
 
-Press the button on the teensy when requested to put the device into HalfKay
-bootloader mode and finish uploading the program.
+Press the button on the teensy when requested to put the device bootloader mode and finish uploading the program.
+
+### Teensyduino Compatibility:
+Note that this project does not use teensyduino, the software designed by pjrc.com to work
+with the teensy boards.  Instead, the source and dependencies will be built with
+cmake.  The utilities such as `teensy_loader_cli` and `usb_raw_hid_test` are
+still built using make.  It is very likely that the code would build in the Teensyduino/Arduino editor, but that capability is not monitored or maintained.

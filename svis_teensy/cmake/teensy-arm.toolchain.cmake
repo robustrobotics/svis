@@ -29,15 +29,7 @@ set(ARDUINO_LIB_ROOT "${CMAKE_SOURCE_DIR}/dependencies/libraries" CACHE PATH "Pa
 
 # configure options
 set(ARDUINO_VERSION "1613" CACHE STRING "Version of the Arduino SDK")
-# file(READ ${ARDUINO_SDK_PATH}/lib/version.txt ARDUINO_VERSION)
-# string(REGEX REPLACE "-.*" "" ARDUINO_VERSION ${ARDUINO_VERSION})
-# string(REPLACE "." "" ARDUINO_VERSION ${ARDUINO_VERSION})
-
-# set(TEENSYDUINO_VERSION "133" CACHE STRING "Version of the Teensyduino SDK")
-file(READ ${CMAKE_SOURCE_DIR}/dependencies/platform.txt TEENSYDUINO_VERSION)
-string(REGEX MATCH "[\n\r]version=([^\n\r]*)" TEENSYDUINO_VERSION ${TEENSYDUINO_VERSION})
-string(REGEX MATCH "[0-9].*" TEENSYDUINO_VERSION ${TEENSYDUINO_VERSION})
-string(REPLACE "." "" TEENSYDUINO_VERSION ${TEENSYDUINO_VERSION})
+set(TEENSYDUINO_VERSION "167" CACHE STRING "Version of the Teensyduino SDK")
 
 set(TEENSY_MODEL "MK20DX256" CACHE STRING "Model of the Teensy MCU")
 set(TEENSY_FREQUENCY "48" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
