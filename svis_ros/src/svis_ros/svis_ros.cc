@@ -135,12 +135,12 @@ void SVISRos::ConfigureCamera() {
 void SVISRos::GetParams() {
   ros::NodeHandle pnh("~");
 
-  fla_utils::SafeGetParam(pnh, "camera_rate", svis_.camera_rate_);
-  fla_utils::SafeGetParam(pnh, "gyro_sens", svis_.gyro_sens_);
-  fla_utils::SafeGetParam(pnh, "acc_sens", svis_.acc_sens_);
-  fla_utils::SafeGetParam(pnh, "imu_filter_size", svis_.imu_filter_size_);
-  fla_utils::SafeGetParam(pnh, "offset_sample_count", svis_.offset_sample_count_);
-  fla_utils::SafeGetParam(pnh, "offset_sample_time", svis_.offset_sample_time_);
+  SafeGetParam(pnh, "camera_rate", svis_.camera_rate_);
+  SafeGetParam(pnh, "gyro_sens", svis_.gyro_sens_);
+  SafeGetParam(pnh, "acc_sens", svis_.acc_sens_);
+  SafeGetParam(pnh, "imu_filter_size", svis_.imu_filter_size_);
+  SafeGetParam(pnh, "offset_sample_count", svis_.offset_sample_count_);
+  SafeGetParam(pnh, "offset_sample_time", svis_.offset_sample_time_);
 }
 
 void SVISRos::InitSubscribers() {

@@ -15,8 +15,6 @@
 #include <dynamic_reconfigure/Reconfigure.h>
 #include <dynamic_reconfigure/Config.h>
 
-#include "fla_utils/param_utils.h"
-
 #include "svis/svis.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
@@ -28,6 +26,17 @@
 #include "svis_ros/SvisTiming.h"
 
 namespace svis_ros {
+
+template <typename T>
+inline bool SafeGetParam(ros::NodeHandle & nh,
+                         std::string const& param_name,
+                         T & param_value) {
+  if (!nh.getParam(param_name, param_value)) {
+    ROS_ERROR("Failed to find parameter: %s", nh.resolveName(param_name, true).c_str());
+    exit(1);
+  }
+  return true;
+}
 
 class SVISRos {
  public:

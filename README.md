@@ -13,7 +13,6 @@ A list of noteable dependencies can be found below.  Unfortunately, this project
 - Ubuntu 16.04
 - ROS Kinetic
 - ros-kinetic-pointgrey-camera-driver
-- fla_utils (Private FLA FSW dependency)
 
 Use the following commands to install the required apt dependencies.
 ```

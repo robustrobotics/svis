@@ -10,7 +10,6 @@ approach that accepts camera strobe messages from the Teensy microcontroller and
 - std_msgs
 - sensor_msgs
 - message_generation
-- fla_utils
 - dynamic_reconfigure
 - svis
 
