@@ -8,7 +8,7 @@ This is a meta-project that contains all of the components that create a Simple 
 - svis_pcb: The Eagle PCB files for the svis circuit board.
 
 ### Dependencies
-A list of noteable dependencies can be found below.  Unfortunately, this project currently depends on a private repository as part of the FLA program.  This will be addressed in future versions.
+A list of noteable dependencies can be found below.
 - catkin_tools
 - Ubuntu 16.04
 - ROS Kinetic
