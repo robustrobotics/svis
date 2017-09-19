@@ -21,7 +21,7 @@ sudo apt install python-catkin-tools
 sudo apt install ros-kinetic-pointgrey-camera-driver
 ```
 ### Quick Start
-The rough outline for running svis is as follows.
+The rough outline for running svis is as follows.  More details can be found in the individual package README files.
 - Build svis and svis_ros code.
 ```
 mkdir -p /path/to/catkin_ws/src
@@ -31,13 +31,17 @@ catkin init
 catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
 catkin build
 ```
-- Build svis_teensy code and upload it to the svis board.
+- Build svis_teensy code.
 ```
-cd /path/to/svis/svis
-mkdir build
-cd build
-cmake ..
-make
+./path/to/svis/svis_teensy/scripts/build_svis_teensy.sh
+```
+- Install the udev rules for the teensy.
+```
+sudo cp /path/to/svis/svis_teensy/utilities/49-teensy.rules /etc/udev/rules.d/
+```
+- Upload teensy driver.  Make sure the teensy's micro USB cable is connected.  When prompted, press the program button on the teensy.
+```
+./path/to/svis/svis_teensy/scripts/upload_svis_teensy.sh
 ```
 - Start the Pointgrey camera driver.
 ```
