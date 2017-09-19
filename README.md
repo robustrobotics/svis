@@ -26,13 +26,15 @@ The rough outline for running svis is as follows.  More details can be found in 
 mkdir -p /path/to/catkin_ws/src
 cd /path/to/catkin_ws/src
 git clone http://github.com/jakeware/svis
+source /opt/ros/kinetic/setup.bash
 catkin init
 catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
 catkin build
 ```
 - Build svis_teensy code.
 ```
-./path/to/svis/svis_teensy/scripts/build_svis_teensy.sh
+cd ./path/to/svis/svis_teensy/scripts
+./build_svis_teensy.sh
 ```
 - Install the udev rules for the teensy.
 ```
@@ -40,13 +42,18 @@ sudo cp /path/to/svis/svis_teensy/utilities/49-teensy.rules /etc/udev/rules.d/
 ```
 - Upload teensy driver.  Make sure the teensy's micro USB cable is connected.  When prompted, press the program button on the teensy.
 ```
-./path/to/svis/svis_teensy/scripts/upload_svis_teensy.sh
+cd ./path/to/svis/svis_teensy/scripts
+./upload_svis_teensy.sh
 ```
 - Start the Pointgrey camera driver.
 ```
+cd /path/to/catkin_ws
+source ./devel/setup.bash
 roslaunch svis_ros flea3.launch
 ```
 - Start the svis_ros nodelet.
 ```
+cd /path/to/catkin_ws
+source ./devel/setup.bash
 roslaunch svis_ros svis_ros_nodelet.launch
 ```
