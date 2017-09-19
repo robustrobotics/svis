@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "Downloading arm-none-eabi compiler binaries."
-#wget https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q3-update/+download/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2 -P ~/
+wget https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q3-update/+download/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2 -P ~/
 
 echo "Extracting arm-none-eabi compiler."
 mkdir -p ~/gcc-arm-none-eabi-4_8-2014q3
