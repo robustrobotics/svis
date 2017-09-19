@@ -27,23 +27,19 @@ mkdir build
 cd build
 cmake ..
 make
-
 ```
 
 - Install the pointgrey camera driver
 ```
 sudo apt-get install ros-kinetic-pointgrey-camera-driver
-
 ```
 
 - Start the Pointgrey camera driver.
 ```
 roslaunch svis_ros flea3.launch
-
 ```
 
 - Start the svis_ros nodelet.
 ```
 roslaunch svis_ros svis_ros_nodelet.launch
-
 ```
