@@ -14,6 +14,7 @@ A list of noteable dependencies can be found below.  Unfortunately, this project
 - ROS Kinetic
 - ros-kinetic-pointgrey-camera-driver
 - fla_utils (Private FLA FSW dependency)
+
 Use the following commands to install the required apt dependencies.
 ```
 sudo apt install python-catkin-tools
