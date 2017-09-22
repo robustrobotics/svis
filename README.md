@@ -13,11 +13,13 @@ A list of noteable dependencies can be found below.
 - Ubuntu 16.04
 - ROS Kinetic
 - ros-kinetic-pointgrey-camera-driver
+- libusb-dev
 
 Use the following commands to install the required apt dependencies.
 ```
 sudo apt install python-catkin-tools
 sudo apt install ros-kinetic-pointgrey-camera-driver
+sudo apt install libusb-dev
 ```
 ### Quick Start
 The rough outline for running svis is as follows.  More details can be found in the individual package README files.
@@ -26,6 +28,7 @@ The rough outline for running svis is as follows.  More details can be found in 
 mkdir -p /path/to/catkin_ws/src
 cd /path/to/catkin_ws/src
 git clone http://github.com/jakeware/svis
+cd ../
 source /opt/ros/kinetic/setup.bash
 catkin init
 catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
