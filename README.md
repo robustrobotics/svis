@@ -13,12 +13,31 @@ A list of noteable dependencies can be found below.
 - Ubuntu 16.04
 - ROS Kinetic
 - ros-kinetic-pointgrey-camera-driver
+- libusb-dev
+- flycapture SDK
 
 Use the following commands to install the required apt dependencies.
 ```
 sudo apt install python-catkin-tools
 sudo apt install ros-kinetic-pointgrey-camera-driver
+sudo apt install libusb-dev
 ```
+
+Use the following commands to install the flycapture SDK.
+```
+cd /path/to/svis/svis_ros/scripts
+./install_flycapture.sh
+```
+Installation Steps:
+- Enter sudo password: ["password", Enter]
+- Confirm apt package installation: [Enter]
+- Install FlyCapture2 SDK: [y, Enter]
+- Add udev entry: [y, Enter]
+- Enter username: ["username", Enter]
+- Confirm username: [y, Enter]
+- Add username to flirimaging group: [y, Enter]
+- Restart udev daemon: [y, Enter] 
+
 ### Quick Start
 The rough outline for running svis is as follows.  More details can be found in the individual package README files.
 - Build svis and svis_ros code.
@@ -26,6 +45,7 @@ The rough outline for running svis is as follows.  More details can be found in 
 mkdir -p /path/to/catkin_ws/src
 cd /path/to/catkin_ws/src
 git clone http://github.com/jakeware/svis
+cd ../
 source /opt/ros/kinetic/setup.bash
 catkin init
 catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
