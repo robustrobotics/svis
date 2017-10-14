@@ -1,0 +1,14 @@
+<!-- Launch file for the ROS camera calibrator  -->
+<!-- 9x6, 0.0252m -->
+
+<launch>
+
+  <arg name="camera" default="camera" />
+  
+  <node pkg="camera_calibration" type="cameracalibrator.py" name="calibrator"
+        args="--size 9x6 --square 0.0252" output="screen">
+	  <remap from="image" to="/$(arg camera)/image_raw" />	
+	  <remap from="camera" to="/$(arg camera)" />	
+  </node>
+
+</launch>
