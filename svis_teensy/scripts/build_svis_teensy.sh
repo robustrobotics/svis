@@ -13,7 +13,7 @@ echo "Adding arm-none-eabi compiler to path."
 export PATH=${HOME}/gcc-arm-none-eabi-4_8-2014q3/bin:$PATH
 
 echo "Building svis_teensy"
-(mkdir -p ../build && cd ../build && cmake .. && make)
+mkdir -p ../build && cd ../build && cmake .. && make
 
 echo "Building teensy_loader_cli."
-(cd ../utilities/teensy_loader_cli &&  make)
+cd ../utilities/teensy_loader_cli &&  make
