@@ -24,6 +24,11 @@ sudo apt install libusb-dev
 sudo apt install libc6-i386
 ```
 
+Add user to dialout group.
+```
+sudo adduser $USER dialout
+```
+
 Use the following commands to install the flycapture SDK.
 ```
 cd /path/to/svis/svis_ros/scripts
