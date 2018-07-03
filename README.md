@@ -21,6 +21,7 @@ Use the following commands to install the required apt dependencies.
 sudo apt install python-catkin-tools
 sudo apt install ros-kinetic-pointgrey-camera-driver
 sudo apt install libusb-dev
+sudo apt install libc6-i386
 ```
 
 Use the following commands to install the flycapture SDK.
