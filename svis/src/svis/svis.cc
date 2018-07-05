@@ -454,7 +454,7 @@ void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
 
     // calculate average (add 0.5 for rounding)
     temp_packet.timestamp_teensy =
-      static_cast<int>(timestamp_total / static_cast<float>(imu_filter_size_) + 0.5);
+      timestamp_total / static_cast<float>(imu_filter_size_);
     for (uint j = 0; j < 3; j++) {
       temp_packet.acc[j] = acc_total[j] / static_cast<float>(imu_filter_size_);
       temp_packet.gyro[j] = gyro_total[j] / static_cast<float>(imu_filter_size_);
