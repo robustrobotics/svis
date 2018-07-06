@@ -164,7 +164,7 @@ void SVISRos::PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt) {
   for (int i = 0; i < imu_packets_filt.size(); i++) {
     temp_packet = imu_packets_filt[i];
 
-    imu.header.stamp = ros::Time(temp_packet.timestamp_teensy + svis_.GetTimeOffset());
+    imu.header.stamp = ros::Time(temp_packet.timestamp_ros);
     imu.header.frame_id = "body";
 
     // orientation

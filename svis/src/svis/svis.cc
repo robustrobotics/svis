@@ -316,7 +316,7 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     if (init_flag_) {
       imu.timestamp_ros = 0.0;
     } else {
-      imu.timestamp_ros = imu.timestamp_teensy + time_offset_;
+      imu.timestamp_ros = imu.timestamp_teensy + GetTimeOffset();
     }
 
     // accel
@@ -380,7 +380,7 @@ void SVIS::ParseStrobe(const std::vector<char>& buf,
     if (init_flag_) {
       strobe.timestamp_ros = 0.0;
     } else {
-      strobe.timestamp_ros = strobe.timestamp_teensy + time_offset_;
+      strobe.timestamp_ros = strobe.timestamp_teensy + GetTimeOffset();
     }
 
     // count
