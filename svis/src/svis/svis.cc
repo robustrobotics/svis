@@ -14,7 +14,7 @@ SVIS::SVIS() {
 }
 
 double SVIS::GetTimeOffset() const {
-  return time_offset_;
+  return time_offset_ + 0.1;
 }
 
 std::size_t SVIS::GetCameraBufferSize() const {
