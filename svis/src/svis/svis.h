@@ -84,6 +84,8 @@ class SVIS {
                   boost::circular_buffer<StrobePacket>* strobe_buffer);
   void FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                  std::vector<ImuPacket>* imu_packets_filt);
+  void DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
+                 std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
   // void PrintImageQuadlet(const std::string& name,
   //                        const sensor_msgs::Image::ConstPtr& msg,

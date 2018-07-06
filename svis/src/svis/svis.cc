@@ -114,7 +114,8 @@ void SVIS::Update() {
 
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
-  FilterImu(&imu_buffer_, &imu_packets_filt);
+  // FilterImu(&imu_buffer_, &imu_packets_filt);
+  DecimateImu(&imu_buffer_, &imu_packets_filt);
   PublishImu(imu_packets_filt);
 
   // associate strobe with camera and publish
@@ -430,6 +431,23 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
   timing_.push_strobe = toc();
 }
 
+void SVIS::DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
+                       std::vector<ImuPacket>* imu_packets_filt) {
+  // create filter packets
+  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
+    ImuPacket temp_packet;
+    for (int i = 0; i < imu_filter_size_; i++) {
+      if (i == 0) {
+        temp_packet = imu_buffer_[0];
+      }
+      imu_buffer->pop_front();
+    }
+
+    // save packet
+    imu_packets_filt->push_back(temp_packet);
+  }
+}
+
 void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                      std::vector<ImuPacket>* imu_packets_filt) {
   tic();
@@ -452,7 +470,6 @@ void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
       }
     }
 
-    // calculate average (add 0.5 for rounding)
     temp_packet.timestamp_teensy =
       timestamp_total / static_cast<float>(imu_filter_size_);
     for (uint j = 0; j < 3; j++) {
