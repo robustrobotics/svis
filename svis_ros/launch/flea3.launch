@@ -24,7 +24,11 @@
       <param name="format7_color_coding" value="raw8" />
 
       <param name="auto_exposure" value="False" />
+      <param name="exposure" value="1.8" />
+
       <param name="auto_sharpness" value="False" />
+      <param name="auto_white_balance" value="False" />
+      <param name="auto_saturation" value="False" />
 
       <param name="frame_rate" value="60" />
 
@@ -33,7 +37,7 @@
       <param name="scale" value="1.0" />
 
       <param name="auto_shutter" value="False" />
-      <param name="shutter_speed" value="0.02" />
+      <param name="shutter_speed" value="0.002" />
 
       <param name="enable_strobe1" value="False" />
       <param name="strobe1_polarity" value="0" />

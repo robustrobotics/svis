@@ -22,7 +22,8 @@ SVISRos::SVISRos()
 
   // setup PublishImu handler
   auto publish_imu_handler = std::bind(&SVISRos::PublishImu, this,
-                                              std::placeholders::_1);
+				       std::placeholders::_1,
+				       std::placeholders::_2);
   svis_.SetPublishImuHandler(publish_imu_handler);
 
   // setup PublishCamera handler
@@ -149,58 +150,59 @@ void SVISRos::InitSubscribers() {
 
 void SVISRos::InitPublishers() {
   camera_pub_ = it_.advertiseCamera("/svis/image_raw", 1);
-  imu_pub_ = nh_.advertise<sensor_msgs::Imu>("/svis/imu", 1);
+  for (int i = 0; i < 3; i++) {
+    imu_pubs_.push_back(nh_.advertise<sensor_msgs::Imu>("/svis/imu" + std::to_string(i), 1));
+  }
   svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
   svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
   svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 1);
 }
 
-void SVISRos::PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt) {
+void SVISRos::PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt, int publisher_index) {
   svis_.tic();
 
   svis::ImuPacket temp_packet;
   sensor_msgs::Imu imu;
 
-  for (int i = 0; i < imu_packets_filt.size(); i++) {
-    temp_packet = imu_packets_filt[i];
+  temp_packet = imu_packets_filt[publisher_index];
 
-    imu.header.stamp = ros::Time(temp_packet.timestamp_ros);
-    imu.header.frame_id = "body";
+  imu.header.stamp = ros::Time(temp_packet.timestamp_ros);
+  imu.header.frame_id = "body";
 
-    // orientation
-    imu.orientation.x = std::numeric_limits<double>::quiet_NaN();
-    imu.orientation.y = std::numeric_limits<double>::quiet_NaN();
-    imu.orientation.z = std::numeric_limits<double>::quiet_NaN();
-    imu.orientation.w = std::numeric_limits<double>::quiet_NaN();
+  // orientation
+  imu.orientation.x = std::numeric_limits<double>::quiet_NaN();
+  imu.orientation.y = std::numeric_limits<double>::quiet_NaN();
+  imu.orientation.z = std::numeric_limits<double>::quiet_NaN();
+  imu.orientation.w = std::numeric_limits<double>::quiet_NaN();
 
-    // orientation covariance
-    for (int i = 0; i < imu.orientation_covariance.size(); i++) {
-      imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
-    }
-
-    // angular velocity [rad/s]
-    imu.angular_velocity.x = temp_packet.gyro[0];
-    imu.angular_velocity.y = temp_packet.gyro[1];
-    imu.angular_velocity.z = temp_packet.gyro[2];
-
-    // angular velocity covariance
-    for (int i = 0; i < imu.angular_velocity_covariance.size(); i++) {
-      imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
-    }
-
-    // linear acceleration [m/s^2]
-    imu.linear_acceleration.x = temp_packet.acc[0];
-    imu.linear_acceleration.y = temp_packet.acc[1];
-    imu.linear_acceleration.z = temp_packet.acc[2];
-
-    // acceleration covariance
-    for (int i = 0; i < imu.linear_acceleration_covariance.size(); i++) {
-      imu.linear_acceleration_covariance[i] = std::numeric_limits<double>::quiet_NaN();
-    }
-
-    // publish
-    imu_pub_.publish(imu);
+  // orientation covariance
+  for (int i = 0; i < imu.orientation_covariance.size(); i++) {
+    imu.orientation_covariance[i] = std::numeric_limits<double>::quiet_NaN();
   }
+
+  // angular velocity [rad/s]
+  imu.angular_velocity.x = temp_packet.gyro[0];
+  imu.angular_velocity.y = temp_packet.gyro[1];
+  imu.angular_velocity.z = temp_packet.gyro[2];
+
+  // angular velocity covariance
+  for (int i = 0; i < imu.angular_velocity_covariance.size(); i++) {
+    imu.angular_velocity_covariance[i] = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  // linear acceleration [m/s^2]
+  imu.linear_acceleration.x = temp_packet.acc[0];
+  imu.linear_acceleration.y = temp_packet.acc[1];
+  imu.linear_acceleration.z = temp_packet.acc[2];
+
+  // acceleration covariance
+  for (int i = 0; i < imu.linear_acceleration_covariance.size(); i++) {
+    imu.linear_acceleration_covariance[i] = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  // publish
+  imu_pubs_[publisher_index].publish(imu);
+  // ROS_INFO("stamp: %f, acc.z: %f", imu.header.stamp.toSec(), imu.linear_acceleration.z);
 
   svis_.timing_.publish_imu = svis_.toc();
 }
