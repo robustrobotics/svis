@@ -8,13 +8,13 @@ namespace svis {
 
 SVIS::SVIS() {
   // set circular buffer max lengths
-  imu_buffer_.set_capacity(10);
-  strobe_buffer_.set_capacity(10);
-  camera_buffer_.set_capacity(20);
+  imu_buffer_.set_capacity(30);
+  strobe_buffer_.set_capacity(30);
+  camera_buffer_.set_capacity(30);
 }
 
 double SVIS::GetTimeOffset() const {
-  return time_offset_ + 0.1;
+  return time_offset_;
 }
 
 std::size_t SVIS::GetCameraBufferSize() const {
@@ -296,7 +296,7 @@ void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {
 
 void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, std::vector<ImuPacket>* imu_packets) {
   tic();
-
+  printf("(svis) parsing %i\n", header.imu_count);
   for (int i = 0; i < header.imu_count; i++) {
     ImuPacket imu;
     int ind = imu_index[i];
@@ -317,7 +317,6 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     } else {
       imu.timestamp_ros = imu.timestamp_teensy + GetTimeOffset();
     }
-    printf("(svis) imu.timestamp_ros: [%i, %f]\n", ind, imu.timestamp_ros);
     
     // accel
     memcpy(&imu.acc_raw[0], &buf[ind], sizeof(imu.acc_raw[0]));
@@ -350,6 +349,7 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     // printf("(svis) imu.gyro: [%0.2f, %0.2f, %0.2f]\n", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
     // save packet
+    printf("(svis) imu.timestamp_ros: [%i, %f, %f]\n", ind, imu.timestamp_ros, imu.acc[2]);
     imu_packets->push_back(imu);
 
     timing_.parse_imu = toc();
@@ -435,11 +435,17 @@ void SVIS::DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                        std::vector<ImuPacket>* imu_packets_filt) {
   // create filter packets
   while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
-    ImuPacket temp_packet;
+    for (auto it = imu_buffer->begin(); it != imu_buffer->end(); it++) {
+      double timestamp = (*it).timestamp_ros;
+      double accel_z = (*it).acc[2];
+
+      printf("(svis) %lu,  timestamp: %f,  acc[2]: %f\n", std::distance(it, imu_buffer->begin()), timestamp, accel_z);
+    }
+    
+    // printf("decimating buffer of size: %lu\n", imu_buffer->size());
+    ImuPacket temp_packet = imu_buffer->back();
+
     for (int i = 0; i < imu_filter_size_; i++) {
-      if (i == 0) {
-        temp_packet = imu_buffer_[0];
-      }
       imu_buffer->pop_front();
     }
 
@@ -460,7 +466,7 @@ void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
     float gyro_total[3] = {0.0};
     ImuPacket temp_packet;
     for (int i = 0; i < imu_filter_size_; i++) {
-      temp_packet = imu_buffer_[0];
+      temp_packet = imu_buffer->front();
       imu_buffer->pop_front();
 
       timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
@@ -639,7 +645,7 @@ void SVIS::PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_
   double t_now = TimeNow();
   printf("camera_buffer: %lu\n", camera_buffer.size());
   for (uint i = 0; i < camera_buffer.size(); i++) {
-    printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp);
+    // printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp);  // NO INDEXING
   }
   printf("\n\n");
 }
@@ -648,7 +654,7 @@ void SVIS::PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_
   double t_now = TimeNow();
   printf("strobe_buffer: %lu\n", strobe_buffer.size());
   for (uint i = 0; i < strobe_buffer.size(); i++) {
-    printf("%i:(%i, %i)%f ", i, strobe_buffer[i].count, strobe_buffer[i].count_total + strobe_count_offset_, t_now - strobe_buffer[i].timestamp_ros);
+    // printf("%i:(%i, %i)%f ", i, strobe_buffer[i].count, strobe_buffer[i].count_total + strobe_count_offset_, t_now - strobe_buffer[i].timestamp_ros);  // NO INDEXING
   }
   printf("\n");
 }
