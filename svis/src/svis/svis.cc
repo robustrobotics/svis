@@ -306,7 +306,6 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
 
     // raw teensy timestamp
     memcpy(&imu.timestamp_teensy_raw, &buf[ind], sizeof(imu.timestamp_teensy_raw));
-    // printf("(svis) imu.timestamp: [%i, %i]\n", ind, imu.timestamp);
     ind += sizeof(imu.timestamp_teensy_raw);
 
     // convert to seconds
@@ -318,7 +317,8 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     } else {
       imu.timestamp_ros = imu.timestamp_teensy + GetTimeOffset();
     }
-
+    printf("(svis) imu.timestamp_ros: [%i, %f]\n", ind, imu.timestamp_ros);
+    
     // accel
     memcpy(&imu.acc_raw[0], &buf[ind], sizeof(imu.acc_raw[0]));
     ind += sizeof(imu.acc_raw[0]);
