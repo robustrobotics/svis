@@ -114,9 +114,9 @@ void SVIS::Update() {
 
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
-  // FilterImu(&imu_buffer_, &imu_packets_filt);
+  FilterImu(&imu_buffer_, &imu_packets_filt);
   // printf("size before decimate: %lu\n", imu_packets_filt.size());
-  DecimateImu(&imu_buffer_, &imu_packets_filt);
+  // DecimateImu(&imu_buffer_, &imu_packets_filt);
   // printf("size after decimate: %lu\n", imu_packets_filt.size());
   for (int i = 0; i < imu_packets_filt.size(); i++) {
     //printf("publishing %lu imu messages index: %i\n", imu_packets_filt.size(), i);
@@ -468,32 +468,34 @@ void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
   tic();
 
   // create filter packets
-  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_)) {
-    // sum
-    float timestamp_total = 0.0;
-    float acc_total[3] = {0.0};
-    float gyro_total[3] = {0.0};
-    ImuPacket temp_packet;
+  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
+    double timestamp_diff_mean = 0.0;
+    double acc_mean[3] = {0.0};
+    double gyro_mean[3] = {0.0};
+
+    // get local time offset for better precision
+    double first_timestamp = imu_buffer->front().timestamp_ros;
+    
     for (int i = 0; i < imu_filter_size_; i++) {
-      temp_packet = imu_buffer->front();
+      ImuPacket temp_packet = imu_buffer->front();
       imu_buffer->pop_front();
 
-      timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
+      timestamp_diff_mean += (temp_packet.timestamp_ros - first_timestamp) / static_cast<double>(imu_filter_size_);
       for (uint j = 0; j < 3; j++) {
-        acc_total[j] += temp_packet.acc[j];
-        gyro_total[j] += temp_packet.gyro[j];
+        acc_mean[j] += temp_packet.acc[j] / static_cast<double>(imu_filter_size_);
+        gyro_mean[j] += temp_packet.gyro[j] / static_cast<double>(imu_filter_size_);
       }
     }
 
-    temp_packet.timestamp_teensy =
-      timestamp_total / static_cast<float>(imu_filter_size_);
+    ImuPacket filter_packet;
+    filter_packet.timestamp_ros = first_timestamp + timestamp_diff_mean;
     for (uint j = 0; j < 3; j++) {
-      temp_packet.acc[j] = acc_total[j] / static_cast<float>(imu_filter_size_);
-      temp_packet.gyro[j] = gyro_total[j] / static_cast<float>(imu_filter_size_);
+      filter_packet.acc[j] = acc_mean[j];
+      filter_packet.gyro[j] = gyro_mean[j];
     }
 
     // save packet
-    imu_packets_filt->push_back(temp_packet);
+    imu_packets_filt->push_back(filter_packet);
   }
 
   timing_.filter_imu = toc();
