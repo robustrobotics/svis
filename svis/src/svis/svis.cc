@@ -119,8 +119,10 @@ void SVIS::Update() {
   DecimateImu(&imu_buffer_, &imu_packets_filt);
   // printf("size after decimate: %lu\n", imu_packets_filt.size());
   for (int i = 0; i < imu_packets_filt.size(); i++) {
-    // printf("publishing %lu imu messages index: %i\n", imu_packets_filt.size(), i);
-    PublishImu(imu_packets_filt, i);
+    //printf("publishing %lu imu messages index: %i\n", imu_packets_filt.size(), i);
+    //printf("%f\n", imu_packets_filt[i].timestamp_ros);
+    usleep(500);
+    PublishImu(imu_packets_filt[i]);
   }
 
   // associate strobe with camera and publish
@@ -750,7 +752,7 @@ void SVIS::SetPublishImuRawHandler(std::function<void(const std::vector<ImuPacke
   PublishImuRaw = handler;
 }
 
-void SVIS::SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&, int)> handler) {
+void SVIS::SetPublishImuHandler(std::function<void(const ImuPacket&)> handler) {
   PublishImu = handler;
 }
 

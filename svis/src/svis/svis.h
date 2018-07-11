@@ -43,7 +43,7 @@ class SVIS {
   
   void SetPublishStrobeRawHandler(std::function<void(const std::vector<StrobePacket>&)> handler);
   void SetPublishImuRawHandler(std::function<void(const std::vector<ImuPacket>&)> handler);
-  void SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&, int)> handler);
+  void SetPublishImuHandler(std::function<void(const ImuPacket&)> handler);
   void SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler);
   void SetPublishTimingHandler(std::function<void(const Timing&)> handler);
   void SetTimeNowHandler(std::function<double()> handler);
@@ -101,7 +101,7 @@ class SVIS {
   // handlers
   std::function<void(const std::vector<svis::StrobePacket>&)> PublishStrobeRaw;
   std::function<void(const std::vector<svis::ImuPacket>&)> PublishImuRaw;
-  std::function<void(const std::vector<svis::ImuPacket>&, int)> PublishImu;
+  std::function<void(const svis::ImuPacket&)> PublishImu;
   std::function<void(std::vector<svis::CameraStrobePacket>&)> PublishCamera;
   std::function<void(const Timing&)> PublishTiming;
   std::function<double()> TimeNow;
