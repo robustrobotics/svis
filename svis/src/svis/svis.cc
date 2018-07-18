@@ -115,12 +115,8 @@ void SVIS::Update() {
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
   FilterImu(&imu_buffer_, &imu_packets_filt);
-  // printf("size before decimate: %lu\n", imu_packets_filt.size());
   // DecimateImu(&imu_buffer_, &imu_packets_filt);
-  // printf("size after decimate: %lu\n", imu_packets_filt.size());
   for (int i = 0; i < imu_packets_filt.size(); i++) {
-    //printf("publishing %lu imu messages index: %i\n", imu_packets_filt.size(), i);
-    //printf("%f\n", imu_packets_filt[i].timestamp_ros);
     usleep(500);
     PublishImu(imu_packets_filt[i]);
   }
@@ -303,7 +299,6 @@ void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {
 
 void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, std::vector<ImuPacket>* imu_packets) {
   tic();
-  // printf("(svis) parsing %i\n", header.imu_count);
   for (int i = 0; i < header.imu_count; i++) {
     ImuPacket imu;
     int ind = imu_index[i];
@@ -440,27 +435,15 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
 
 void SVIS::DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                        std::vector<ImuPacket>* imu_packets_filt) {
-  // printf("STARTING DECIMATE WITH SIZE %lu\n", imu_packets_filt->size());
   // create filter packets
   while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
-    // printf("decimating because imu_buffer->size() : %lu >= imu_filter_size_ %lu\n", imu_buffer->size(), imu_filter_size_);
-    // for (auto it = imu_buffer->begin(); it != imu_buffer->end(); it++) {
-    //   double timestamp = (*it).timestamp_ros;
-    //   double accel_z = (*it).acc[2];
-
-    //   printf("(svis) %lu,  timestamp: %f,  acc[2]: %f\n", std::distance(it, imu_buffer->begin()), timestamp, accel_z);
-    // }
-    
-    // printf("decimating buffer of size: %lu\n", imu_buffer->size());
     for (int i = 0; i < imu_filter_size_; i++) {
-      if ((i % 4) == 0) {
-	imu_packets_filt->push_back(imu_buffer->front());
-	// printf("pushed back index %i with new buffer size: %lu\n", i, imu_packets_filt->size());
+      if (i == 0) {
+        imu_packets_filt->push_back(imu_buffer->front());
       }
       imu_buffer->pop_front();
     }
   }
-  // printf("STOPPING DECIMATE WITH SIZE %lu\n", imu_packets_filt->size());
 }
 
 void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
