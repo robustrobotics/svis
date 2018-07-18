@@ -299,6 +299,7 @@ void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {
 
 void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, std::vector<ImuPacket>* imu_packets) {
   tic();
+
   for (int i = 0; i < header.imu_count; i++) {
     ImuPacket imu;
     int ind = imu_index[i];
@@ -308,6 +309,7 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
 
     // raw teensy timestamp
     memcpy(&imu.timestamp_teensy_raw, &buf[ind], sizeof(imu.timestamp_teensy_raw));
+    // printf("(svis) imu.timestamp: [%i, %i]\n", ind, imu.timestamp);
     ind += sizeof(imu.timestamp_teensy_raw);
 
     // convert to seconds
