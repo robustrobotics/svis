@@ -119,6 +119,10 @@ void SVIS::Update() {
   PushImu(imu_packets, &imu_buffer_);
   PublishImuRaw(imu_packets);
 
+  // handle strobe
+  PushStrobe(strobe_packets, &strobe_buffer_);
+  PublishStrobeRaw(strobe_packets);
+
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
   FilterImu(&imu_buffer_, &imu_packets_filt);
@@ -127,10 +131,6 @@ void SVIS::Update() {
     usleep(500);
     PublishImu(imu_packets_filt[i]);
   }
-
-  // // handle strobe
-  // PushStrobe(strobe_packets, &strobe_buffer_);
-  // PublishStrobeRaw(strobe_packets);
 
   // // get difference between ros and teensy epochs
   // if (frame_init_flag_) {
