@@ -351,7 +351,6 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     // printf("(svis) imu.gyro: [%0.2f, %0.2f, %0.2f]\n", imu.gyro[0], imu.gyro[1], imu.gyro[2]);
 
     // save packet
-    // printf("(svis) imu.timestamp_ros: [%i, %f, %f]\n", ind, imu.timestamp_ros, imu.acc[2]);
     imu_packets->push_back(imu);
 
     timing_.parse_imu = toc();
