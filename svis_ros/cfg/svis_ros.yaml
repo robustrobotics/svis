@@ -2,7 +2,7 @@ offset_sample_count: 5  # number of camera strobe/image pairs to collect for off
 offset_sample_time: 0.5  # [s] time to wait after requesting a camera image
 
 # camera
-camera_rate: 30  # [Hz] camera frame rate commanded by teensy
+camera_rate: 20  # [Hz] camera frame rate commanded by teensy
 
 # imu
 gyro_sens: 1  # [0,3] gyro full-scale range and sensitivity

@@ -56,7 +56,7 @@ class SVISRos {
 
   // publishers
   void PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets);
-  void PublishImu(const std::vector<svis::ImuPacket>& imu_packets_filt);
+  void PublishImu(const svis::ImuPacket& imu_packet);
   void PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_packets);
   void PublishTiming(const svis::Timing& timing);
   void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);

@@ -8,9 +8,9 @@ namespace svis {
 
 SVIS::SVIS() {
   // set circular buffer max lengths
-  imu_buffer_.set_capacity(10);
-  strobe_buffer_.set_capacity(10);
-  camera_buffer_.set_capacity(20);
+  imu_buffer_.set_capacity(30);
+  strobe_buffer_.set_capacity(30);
+  camera_buffer_.set_capacity(30);
 }
 
 double SVIS::GetTimeOffset() const {
@@ -98,12 +98,8 @@ void SVIS::Update() {
   std::vector<StrobePacket> strobe_packets;
   ParseBuffer(buf, &imu_packets, &strobe_packets);
 
-  // push packets
-  PushImu(imu_packets, &imu_buffer_);
+  // handle strobe
   PushStrobe(strobe_packets, &strobe_buffer_);
-
-  // publish raw packets
-  PublishImuRaw(imu_packets);
   PublishStrobeRaw(strobe_packets);
 
   // get difference between ros and teensy epochs
@@ -112,10 +108,18 @@ void SVIS::Update() {
     return;
   }
 
+  // handle imu
+  PushImu(imu_packets, &imu_buffer_);
+  PublishImuRaw(imu_packets);
+
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
   FilterImu(&imu_buffer_, &imu_packets_filt);
-  PublishImu(imu_packets_filt);
+  // DecimateImu(&imu_buffer_, &imu_packets_filt);
+  for (int i = 0; i < imu_packets_filt.size(); i++) {
+    usleep(500);
+    PublishImu(imu_packets_filt[i]);
+  }
 
   // associate strobe with camera and publish
   std::vector<CameraStrobePacket> camera_strobe_packets;
@@ -315,9 +319,9 @@ void SVIS::ParseImu(const std::vector<char>& buf, const HeaderPacket& header, st
     if (init_flag_) {
       imu.timestamp_ros = 0.0;
     } else {
-      imu.timestamp_ros = imu.timestamp_teensy + time_offset_;
+      imu.timestamp_ros = imu.timestamp_teensy + GetTimeOffset();
     }
-
+    
     // accel
     memcpy(&imu.acc_raw[0], &buf[ind], sizeof(imu.acc_raw[0]));
     ind += sizeof(imu.acc_raw[0]);
@@ -379,7 +383,7 @@ void SVIS::ParseStrobe(const std::vector<char>& buf,
     if (init_flag_) {
       strobe.timestamp_ros = 0.0;
     } else {
-      strobe.timestamp_ros = strobe.timestamp_teensy + time_offset_;
+      strobe.timestamp_ros = strobe.timestamp_teensy + GetTimeOffset();
     }
 
     // count
@@ -430,38 +434,52 @@ void SVIS::PushStrobe(const std::vector<StrobePacket>& strobe_packets,
   timing_.push_strobe = toc();
 }
 
+void SVIS::DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
+                       std::vector<ImuPacket>* imu_packets_filt) {
+  // create filter packets
+  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
+    for (int i = 0; i < imu_filter_size_; i++) {
+      if (i == 0) {
+        imu_packets_filt->push_back(imu_buffer->front());
+      }
+      imu_buffer->pop_front();
+    }
+  }
+}
+
 void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                      std::vector<ImuPacket>* imu_packets_filt) {
   tic();
 
   // create filter packets
-  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_)) {
-    // sum
-    float timestamp_total = 0.0;
-    float acc_total[3] = {0.0};
-    float gyro_total[3] = {0.0};
-    ImuPacket temp_packet;
+  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
+    double timestamp_diff_mean = 0.0;
+    double acc_mean[3] = {0.0};
+    double gyro_mean[3] = {0.0};
+
+    // get local time offset for better precision
+    double first_timestamp = imu_buffer->front().timestamp_ros;
+    
     for (int i = 0; i < imu_filter_size_; i++) {
-      temp_packet = imu_buffer_[0];
+      ImuPacket temp_packet = imu_buffer->front();
       imu_buffer->pop_front();
 
-      timestamp_total += static_cast<double>(temp_packet.timestamp_teensy);
+      timestamp_diff_mean += (temp_packet.timestamp_ros - first_timestamp) / static_cast<double>(imu_filter_size_);
       for (uint j = 0; j < 3; j++) {
-        acc_total[j] += temp_packet.acc[j];
-        gyro_total[j] += temp_packet.gyro[j];
+        acc_mean[j] += temp_packet.acc[j] / static_cast<double>(imu_filter_size_);
+        gyro_mean[j] += temp_packet.gyro[j] / static_cast<double>(imu_filter_size_);
       }
     }
 
-    // calculate average (add 0.5 for rounding)
-    temp_packet.timestamp_teensy =
-      timestamp_total / static_cast<float>(imu_filter_size_);
+    ImuPacket filter_packet;
+    filter_packet.timestamp_ros = first_timestamp + timestamp_diff_mean;
     for (uint j = 0; j < 3; j++) {
-      temp_packet.acc[j] = acc_total[j] / static_cast<float>(imu_filter_size_);
-      temp_packet.gyro[j] = gyro_total[j] / static_cast<float>(imu_filter_size_);
+      filter_packet.acc[j] = acc_mean[j];
+      filter_packet.gyro[j] = gyro_mean[j];
     }
 
     // save packet
-    imu_packets_filt->push_back(temp_packet);
+    imu_packets_filt->push_back(filter_packet);
   }
 
   timing_.filter_imu = toc();
@@ -622,7 +640,7 @@ void SVIS::PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_
   double t_now = TimeNow();
   printf("camera_buffer: %lu\n", camera_buffer.size());
   for (uint i = 0; i < camera_buffer.size(); i++) {
-    printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp);
+    // printf("%i:(%i)%f ", i, camera_buffer[i].metadata.frame_counter, t_now - camera_buffer[i].image.header.stamp);  // NO INDEXING
   }
   printf("\n\n");
 }
@@ -631,7 +649,7 @@ void SVIS::PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_
   double t_now = TimeNow();
   printf("strobe_buffer: %lu\n", strobe_buffer.size());
   for (uint i = 0; i < strobe_buffer.size(); i++) {
-    printf("%i:(%i, %i)%f ", i, strobe_buffer[i].count, strobe_buffer[i].count_total + strobe_count_offset_, t_now - strobe_buffer[i].timestamp_ros);
+    // printf("%i:(%i, %i)%f ", i, strobe_buffer[i].count, strobe_buffer[i].count_total + strobe_count_offset_, t_now - strobe_buffer[i].timestamp_ros);  // NO INDEXING
   }
   printf("\n");
 }
@@ -720,7 +738,7 @@ void SVIS::SetPublishImuRawHandler(std::function<void(const std::vector<ImuPacke
   PublishImuRaw = handler;
 }
 
-void SVIS::SetPublishImuHandler(std::function<void(const std::vector<ImuPacket>&)> handler) {
+void SVIS::SetPublishImuHandler(std::function<void(const ImuPacket&)> handler) {
   PublishImu = handler;
 }
 
