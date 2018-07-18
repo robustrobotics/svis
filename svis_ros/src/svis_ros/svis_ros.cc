@@ -44,7 +44,7 @@ void SVISRos::Run() {
   GetParams();
   InitSubscribers();
   InitPublishers();
-  ConfigureCamera();
+  // ConfigureCamera();
 
   // setup comms and send init packet
   svis_.OpenHID();

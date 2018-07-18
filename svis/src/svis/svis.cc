@@ -105,22 +105,14 @@ void SVIS::Update() {
     std::size_t time_offset_sample_count = time_offset_vec_.size();
     if (time_offset_sample_count < max_time_offset_samples_) {
       time_offset_vec_.push_back(packet_timestamp_ros - packet_timestamp_teensy);
+      return;
     } else if (time_offset_sample_count == max_time_offset_samples_) {
       ComputeTimeOffset();
       time_init_flag_ = false;
+      return;
     } else {
       printf("(svis) Unexpected time_offset_vec size\n");
     }
-  }
-
-  // handle strobe
-  PushStrobe(strobe_packets, &strobe_buffer_);
-  PublishStrobeRaw(strobe_packets);
-
-  // get difference between ros and teensy epochs
-  if (frame_init_flag_) {
-    ComputeFrameOffset(&strobe_buffer_, &camera_buffer_);
-    return;
   }
 
   // handle imu
@@ -136,11 +128,21 @@ void SVIS::Update() {
     PublishImu(imu_packets_filt[i]);
   }
 
-  // associate strobe with camera and publish
-  std::vector<CameraStrobePacket> camera_strobe_packets;
-  Associate(&strobe_buffer_, &camera_buffer_, &camera_strobe_packets);
-  PublishCamera(camera_strobe_packets);
-  camera_strobe_packets.clear();
+  // // handle strobe
+  // PushStrobe(strobe_packets, &strobe_buffer_);
+  // PublishStrobeRaw(strobe_packets);
+
+  // // get difference between ros and teensy epochs
+  // if (frame_init_flag_) {
+  //   ComputeFrameOffset(&strobe_buffer_, &camera_buffer_);
+  //   return;
+  // }
+
+  // // associate strobe with camera and publish
+  // std::vector<CameraStrobePacket> camera_strobe_packets;
+  // Associate(&strobe_buffer_, &camera_buffer_, &camera_strobe_packets);
+  // PublishCamera(camera_strobe_packets);
+  // camera_strobe_packets.clear();
 
   std::chrono::duration<double> update_duration = std::chrono::high_resolution_clock::now() - t_update_start_;
   timing_.update = update_duration.count();
@@ -293,9 +295,12 @@ void SVIS::ComputeFrameOffset(boost::circular_buffer<StrobePacket>* strobe_buffe
 
 void SVIS::ComputeTimeOffset() {
   std::size_t offset_size = time_offset_vec_.size();
-  for (std::size_t i = 0; i < offset_size; ++i) {
-    time_offset_ += time_offset_vec_[i] / offset_size;
+  const size_t skip_count = offset_size >> 1;
+  for (std::size_t i = skip_count; i < offset_size; ++i) {
+    // printf("(svis): time_offset[%lu]: %f\n", i, time_offset_vec_[i]);
+    time_offset_ += time_offset_vec_[i] / (offset_size - skip_count);
   }
+  printf("(svis) Time Offset: %f\n", time_offset_);
 }
 
 void SVIS::ParseHeader(const std::vector<char>& buf, HeaderPacket* header) {

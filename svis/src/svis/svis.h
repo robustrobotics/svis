@@ -126,7 +126,7 @@ class SVIS {
   bool sent_pulse_ = false;
   std::deque<double> time_offset_vec_;
   double time_offset_ = 0.0;
-  const std::size_t max_time_offset_samples_ = 100;
+  const std::size_t max_time_offset_samples_ = 1000;
   int init_count_ = 0;
 
   // camera and strobe count
