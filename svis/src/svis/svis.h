@@ -62,16 +62,17 @@ class SVIS {
   std::chrono::time_point<std::chrono::high_resolution_clock> tic_;
 
  private:
-  void ParseBuffer(const std::vector<char>& buf,
+  double ParseBuffer(const std::vector<char>& buf,
                       std::vector<ImuPacket>* imu_packets,
                       std::vector<StrobePacket>* strobe_packets);
   void SendPulse();
   void SendDisablePulse();
   bool CheckChecksum(const std::vector<char>& buf);
-  void ComputeOffsets(boost::circular_buffer<StrobePacket>* strobe_buffer,
+  void ComputeFrameOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
                      boost::circular_buffer<CameraPacket>* camera_buffer);
+  void ComputeTimeOffset();
   void ParseHeader(const std::vector<char>& buf,
-                 HeaderPacket* header);
+                     HeaderPacket* header);
   void ParseImu(const std::vector<char>& buf,
               const HeaderPacket& header,
               std::vector<ImuPacket>* imu_packets);
@@ -120,10 +121,12 @@ class SVIS {
   double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
 
   // camera and strobe timing
-  bool init_flag_ = true;
+  bool frame_init_flag_ = true;
+  bool time_init_flag_ = true;
   bool sent_pulse_ = false;
   std::deque<double> time_offset_vec_;
   double time_offset_ = 0.0;
+  const std::size_t max_time_offset_samples_ = 100;
   int init_count_ = 0;
 
   // camera and strobe count
@@ -146,7 +149,8 @@ class SVIS {
   const int imu_count_index = 2;
   const int strobe_count_index = 3;
   const int imu_index[3] = {4, 20, 36};
-  const int strobe_index[2] = {52, 57};
+  const int strobe_index[1] = {52};
+  const int timestamp_index = 57;
   const int checksum_index = 62;
 
   // debug

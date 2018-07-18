@@ -18,7 +18,7 @@
 [20-35]: imu packet 2
 [36-51]: imu packet 3
 [52-56]: strobe packet 1
-[57-61]: strobe packet 2
+[57-61]: timestamp
 [62-63]: checksum
 */
 
@@ -46,13 +46,16 @@ const int strobe_buffer_size = 10;  // store 10 samples (strobe_stamp, strobe_co
 const int strobe_packet_size = 5;  // (int8_t) [strobe_stamp[0], ... , strobe_stamp[3], strobe_count]
 const int send_buffer_size = 64;  // (int8_t) size of HID USB packets
 const int send_header_size = 4;  // (int8_t) [send_count[0], send_count[1], imu_count, strobe_count];
+const int imu_samples_per_hid_packet = 3;
+const int strobe_samples_per_hid_packet = 1;
 
 // hid usb packet indices
 const int send_count_index = 0;
 const int imu_count_index = 2;
 const int strobe_count_index = 3;
-const int imu_index[3] = {4, 20, 36};
-const int strobe_index[2] = {52, 57};
+const int imu_index[] = {4, 20, 36};
+const int strobe_index[] = {52};
+const int timestamp_index = 57;
 const int checksum_index = 62;
 
 // hid usb
@@ -464,15 +467,7 @@ void PushIMU() {
   noInterrupts();
 
   // calculate number of packets
-  if (imu_buffer_count >= 0 && imu_buffer_count <= 3) {
-    imu_packet_count = imu_buffer_count;
-  } else if (imu_buffer_count > 3) {
-    imu_packet_count = 3;
-  } else {
-    // totally fucked
-    // Serial.println("num_packets < 0");
-    imu_packet_count = 0;
-  }
+  imu_packet_count = min(imu_buffer_count, imu_samples_per_hid_packet);
 
   // copy data
   for (int i = 0; i < imu_packet_count; i++) {
@@ -503,15 +498,7 @@ void PushStrobe() {
   noInterrupts();
 
   // calculate number of packets
-  if (strobe_buffer_count >= 0 && strobe_buffer_count <= 2) {
-    strobe_packet_count = strobe_buffer_count;
-  } else if (strobe_buffer_count > 2) {
-    strobe_packet_count = 2;
-  } else {
-    // totally fucked
-    // Serial.println("num_packets < 0");
-    strobe_packet_count = 0;
-  }
+  strobe_packet_count = min(strobe_buffer_count, strobe_samples_per_hid_packet);
 
   // copy data
   for (int i = 0; i < strobe_packet_count; i++) {
@@ -613,6 +600,10 @@ void Send() {
   send_buffer[imu_count_index] = imu_packet_count;
   send_buffer[strobe_count_index] = strobe_packet_count;
 
+  // timestamp
+  uint32_t timestamp = micros();
+  memcpy(&send_buffer[timestamp_index], &timestamp, sizeof(timestamp));
+  
   // checksum
   uint16_t checksum = 0;
   for (int i = 0; i < send_buffer_size; i++) {
