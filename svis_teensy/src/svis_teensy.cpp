@@ -39,7 +39,7 @@
  **/
 
 // hid usb packet sizes
-const int imu_data_size = 6;  // (int16_t) [ax, ay, az, gx, gy, gz]
+const int imu_data_size = 8;  // (int16_t) [ts1, ts2, ax, ay, az, gx, gy, gz]
 const int imu_buffer_size = 10;  // store 10 samples (imu_stamp, imu_data) in circular buffers
 const int imu_packet_size = 16;  // (int8_t) [imu_stamp[0], ... , imu_stamp[3], imu_data[0], ... , imu_data[11]]
 const int strobe_buffer_size = 10;  // store 10 samples (strobe_stamp, strobe_count) in circular buffers
@@ -68,7 +68,6 @@ uint8_t imu_packet_count = 0;
 IntervalTimer imu_timer;
 MPU6050 mpu6050;
 ICM20689 icm20689;
-uint32_t imu_stamp_buffer[imu_buffer_size];
 int16_t imu_data_buffer[imu_data_size*imu_buffer_size];
 uint8_t imu_buffer_head = 0;
 uint8_t imu_buffer_tail = 0;
@@ -127,29 +126,7 @@ void PrintIMUDataBuffer() {
   }
 }
 
-void PrintIMUStampBuffer() {
-  Serial.println("imu_stamp_buffer:");
-  for (int i = 0; i < imu_buffer_size; i++) {
-    Serial.print(i);
-    Serial.print(":\t");
-    Serial.print(imu_stamp_buffer[i]);
-
-    // mark head location
-    if (i == imu_buffer_head) {
-      Serial.print("\tH");
-    }
-
-    // mark tail location
-    if (i == imu_buffer_tail) {
-      Serial.print("\tT");
-    }
-
-    Serial.println();
-  }
-}
-
 void PrintIMUDebug() {
-  PrintIMUStampBuffer();
   PrintIMUDataBuffer();
   Serial.print("imu_buffer_head: ");
   Serial.println(imu_buffer_head);
@@ -161,7 +138,8 @@ void PrintIMUDebug() {
 
 void ReadIMU() {
   // imu timestamp
-  imu_stamp_buffer[imu_buffer_head] = micros();
+  uint32_t timestamp = micros();
+  memcpy(&imu_data_buffer[imu_buffer_head * imu_data_size], &timestamp, sizeof(uint32_t));
 
   // imu data
   // mpu6050.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
@@ -170,12 +148,12 @@ void ReadIMU() {
   //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
   //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 4],
   //                    &imu_data_buffer[imu_buffer_head*imu_data_size + 5]);
-  icm20689.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size],
-                     &imu_data_buffer[imu_buffer_head*imu_data_size + 1],
-                     &imu_data_buffer[imu_buffer_head*imu_data_size + 2],
-                     &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
-                     &imu_data_buffer[imu_buffer_head*imu_data_size + 4],
-                     &imu_data_buffer[imu_buffer_head*imu_data_size + 5]);
+  icm20689.getMotion6(&imu_data_buffer[imu_buffer_head*imu_data_size + 2],
+                      &imu_data_buffer[imu_buffer_head*imu_data_size + 3],
+                      &imu_data_buffer[imu_buffer_head*imu_data_size + 4],
+                      &imu_data_buffer[imu_buffer_head*imu_data_size + 5],
+                      &imu_data_buffer[imu_buffer_head*imu_data_size + 6],
+                      &imu_data_buffer[imu_buffer_head*imu_data_size + 7]);
 
   // set counts and flags
   imu_buffer_head = (imu_buffer_head + 1)%imu_buffer_size;
@@ -498,15 +476,10 @@ void PushIMU() {
 
   // copy data
   for (int i = 0; i < imu_packet_count; i++) {
-    // copy stamp
-    memcpy(&send_buffer[imu_index[i]],
-                &imu_stamp_buffer[imu_buffer_tail],
-                sizeof(imu_stamp_buffer[imu_buffer_tail]));
-
     // copy data
-    memcpy(&send_buffer[imu_index[i] + 4],
-                &imu_data_buffer[imu_buffer_tail*imu_data_size],
-                imu_data_size*sizeof(imu_data_buffer[imu_buffer_tail*imu_data_size]));
+    memcpy(&send_buffer[imu_index[i]],
+           &imu_data_buffer[imu_buffer_tail*imu_data_size],
+           imu_data_size*sizeof(imu_data_buffer[imu_buffer_tail*imu_data_size]));
 
     imu_buffer_count--;
     // check count
