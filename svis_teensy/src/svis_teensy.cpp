@@ -367,7 +367,7 @@ void InitTriggerTimer() {
 void InitStrobeInterrupt() {
   // setup pin interrupt
   // TODO(jakeware): What is the priority of this?
-  // attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // read camera strobe
+  attachInterrupt(STROBE_PIN, ReadStrobe, FALLING);  // read camera strobe
 }
 
 void BlinkInit() {
@@ -448,7 +448,8 @@ void Setup() {
   // InitMPU6050();
   InitICM20689();
   InitImuTimer();
-  InitTriggerTimer();
+  InitStrobeInterrupt();
+  // InitTriggerTimer();
   setup_flag = true;
 }
 
