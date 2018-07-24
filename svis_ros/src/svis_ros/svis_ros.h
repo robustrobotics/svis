@@ -8,12 +8,9 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
 #include <sensor_msgs/Imu.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/camera_subscriber.h>
-#include <dynamic_reconfigure/StrParameter.h>
-#include <dynamic_reconfigure/Reconfigure.h>
-#include <dynamic_reconfigure/Config.h>
 
 #include "svis/svis.h"
 #include "svis/imu_packet.h"
@@ -62,8 +59,6 @@ class SVISRos {
   void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);
   double TimeNow();
   
-  void ConfigureCamera();
-
   // conversions
   std::shared_ptr<svis::Image> RosImageToSvis(const sensor_msgs::Image& ros_image);
   const std::shared_ptr<sensor_msgs::Image> SvisToRosImage(const svis::Image& svis_image);
@@ -73,17 +68,16 @@ class SVISRos {
   // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  image_transport::ImageTransport it_;
 
   // publishers
-  image_transport::CameraPublisher camera_pub_;
   ros::Publisher imu_pub_;
   ros::Publisher svis_imu_pub_;
   ros::Publisher svis_strobe_pub_;
   ros::Publisher svis_timing_pub_;
 
   // subscribers
-  image_transport::CameraSubscriber camera_sub_;
+  std::vector<std::string> image_topics_;
+  std::vector<std::string> info_topics_;
 
   bool received_camera_ = false;
   svis::SVIS svis_;

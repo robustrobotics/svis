@@ -8,8 +8,7 @@ volatile std::sig_atomic_t SVISRos::stop_signal_ = 0;
   
 SVISRos::SVISRos()
   : nh_(),
-    pnh_("~"),
-    it_(nh_) {
+    pnh_("~") {
   // setup PublishStrobeRaw handler
   auto publish_strobe_raw_handler = std::bind(&SVISRos::PublishStrobeRaw, this,
                                               std::placeholders::_1);
@@ -74,64 +73,6 @@ void SVISRos::Run() {
   }
 }  
 
-void SVISRos::ConfigureCamera() {
-  ROS_INFO("Configuring camera.");
-  ROS_WARN("Make sure camera driver is running.");
-
-  // toggle pointgrey trigger mode
-  dynamic_reconfigure::ReconfigureRequest srv_req;
-  dynamic_reconfigure::ReconfigureResponse srv_resp;
-  dynamic_reconfigure::StrParameter trigger_mode;
-  // dynamic_reconfigure::Config conf;
-
-  trigger_mode.name = "trigger_mode";
-  trigger_mode.value = "mode1";
-  srv_req.config.strs.push_back(trigger_mode);
-
-  // set param and check for success
-  bool param_set = false;
-  ros::Rate r(10);
-  while (!param_set) {
-    // set trigger mode
-    ros::service::call("/flea3/camera_nodelet/set_parameters", srv_req, srv_resp);
-
-    // check for success
-    for (int i = 0; i < srv_resp.config.strs.size(); i++) {
-      // ROS_INFO("name: %s", srv_resp.config.strs[i].name.c_str());
-      // ROS_INFO("value: %s", srv_resp.config.strs[i].value.c_str());
-      if (srv_resp.config.strs[i].name == "trigger_mode" && srv_resp.config.strs[i].value == trigger_mode.value) {
-        param_set = true;
-      }
-    }
-
-    r.sleep();
-  }
-
-  // reset configure params
-  srv_req.config.strs.clear();
-  trigger_mode.name = "trigger_mode";
-  trigger_mode.value = "mode0";
-  srv_req.config.strs.push_back(trigger_mode);
-
-  // set param and check for success
-  param_set = false;
-  while (!param_set) {
-    // set trigger mode
-    ros::service::call("/flea3/camera_nodelet/set_parameters", srv_req, srv_resp);
-
-    // check for success
-    for (int i = 0; i < srv_resp.config.strs.size(); i++) {
-      // ROS_INFO("name: %s", srv_resp.config.strs[i].name.c_str());
-      // ROS_INFO("value: %s", srv_resp.config.strs[i].value.c_str());
-      if (srv_resp.config.strs[i].name == "trigger_mode" && srv_resp.config.strs[i].value == trigger_mode.value) {
-        param_set = true;
-      }
-    }
-
-    r.sleep();
-  }
-}
-
 void SVISRos::GetParams() {
   ros::NodeHandle pnh("~");
 
@@ -141,14 +82,31 @@ void SVISRos::GetParams() {
   SafeGetParam(pnh, "imu_filter_size", svis_.imu_filter_size_);
   SafeGetParam(pnh, "offset_sample_count", svis_.offset_sample_count_);
   SafeGetParam(pnh, "offset_sample_time", svis_.offset_sample_time_);
+
+  SafeGetParam(pnh, "image_topics", image_topics_);
+  SafeGetParam(pnh, "info_topics", info_topics_);
+
+  // check if the number of image and info topics is the same
+  if (image_topics_.size() != info_topics_.size()) {
+    ROS_ERROR("(svis_ros) The number of image topics does not equal the number of info topics. Exiting.");
+    exit(1);
+  }
+
+  // print image/info topics for user to check pairing
+  ROS_WARN("(svis_ros) The following associated image/info pairings must be viable inputs");
+  for (int i = 0; i < image_topics_.size(); i++) {
+    ROS_INFO("(svis_ros) Image/Info Input %i: {%s, %s}", i, image_topics_[i].c_str(), info_topics_[i].c_str());
+  }
 }
 
 void SVISRos::InitSubscribers() {
-  camera_sub_ = it_.subscribeCamera("/flea3/image_raw", 10, &SVISRos::CameraCallback, this);
+  // message_filters::Subscriber<Image> image_sub(nh, "image", 1);
+  // message_filters::Subscriber<CameraInfo> info_sub(nh, "camera_info", 1);
+  // TimeSynchronizer<Image, CameraInfo> sync(image_sub, info_sub, 10);
+  // sync.registerCallback(boost::bind(&callback, _1, _2));
 }
 
 void SVISRos::InitPublishers() {
-  camera_pub_ = it_.advertiseCamera("/svis/image_raw", 1);
   imu_pub_ = nh_.advertise<sensor_msgs::Imu>("/svis/imu", 1);
   svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
   svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
@@ -321,9 +279,9 @@ void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe
     auto ros_image_ptr = SvisToRosImage(camera_strobe_packets[i].camera.image);
 
     // publish
-    camera_pub_.publish(*ros_image_ptr,
-                        *ros_info_ptr,
-                        ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
+    // camera_pub_.publish(*ros_image_ptr,
+    //                     *ros_info_ptr,
+    //                     ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
   }
 
   svis_.timing_.publish_camera = svis_.toc();
