@@ -24,11 +24,6 @@ SVISRos::SVISRos()
 				       std::placeholders::_1);
   svis_.SetPublishImuHandler(publish_imu_handler);
 
-  // setup PublishCamera handler
-  auto publish_camera_handler = std::bind(&SVISRos::PublishCamera, this,
-                                              std::placeholders::_1);
-  svis_.SetPublishCameraHandler(publish_camera_handler);
-
   // setup PublishTiming handler
   auto publish_timing_handler = std::bind(&SVISRos::PublishTiming, this,
                                               std::placeholders::_1);
@@ -180,117 +175,45 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
   svis_.timing_.publish_imu = svis_.toc();
 }
 
-std::shared_ptr<svis::Image> SVISRos::RosImageToSvis(const sensor_msgs::Image& ros_image) {
-  auto svis_image_ptr = std::make_shared<svis::Image>();
-
-  // header
-  svis_image_ptr->header.seq = ros_image.header.seq;
-  svis_image_ptr->header.stamp = ros_image.header.stamp.toSec();
-  svis_image_ptr->header.frame_id = ros_image.header.frame_id;
-
-  // data
-  svis_image_ptr->height = ros_image.height;
-  svis_image_ptr->width = ros_image.width;
-  svis_image_ptr->encoding = ros_image.encoding;
-  svis_image_ptr->is_bigendian = ros_image.is_bigendian;
-  svis_image_ptr->step = ros_image.step;
-  svis_image_ptr->data = ros_image.data;
-
-  return svis_image_ptr;
-}
-
-const std::shared_ptr<sensor_msgs::Image> SVISRos::SvisToRosImage(const svis::Image& svis_image) {
-  auto ros_image_ptr = std::make_shared<sensor_msgs::Image>();
-
-  // header
-  ros_image_ptr->header.seq = svis_image.header.seq;
-  ros_image_ptr->header.stamp.fromSec(svis_image.header.stamp);
-  ros_image_ptr->header.frame_id = svis_image.header.frame_id;
-
-  // data
-  ros_image_ptr->height = svis_image.height;
-  ros_image_ptr->width = svis_image.width;
-  ros_image_ptr->encoding = svis_image.encoding;
-  ros_image_ptr->is_bigendian = svis_image.is_bigendian;
-  ros_image_ptr->step = svis_image.step;
-  ros_image_ptr->data = svis_image.data;
-
-  return ros_image_ptr;
-}
-
-std::shared_ptr<svis::CameraInfo> SVISRos::RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info) {
-  auto svis_info_ptr = std::make_shared<svis::CameraInfo>();
-
-  // header
-  svis_info_ptr->header.seq = ros_info.header.seq;
-  svis_info_ptr->header.stamp = ros_info.header.stamp.toSec();
-  svis_info_ptr->header.frame_id = ros_info.header.frame_id;
-
-  // data
-  svis_info_ptr->height = ros_info.height;
-  svis_info_ptr->width = ros_info.width;
-  svis_info_ptr->distortion_model = ros_info.distortion_model;
-  svis_info_ptr->D = ros_info.D;
-  std::copy(ros_info.K.begin(), ros_info.K.end(), svis_info_ptr->K.begin());
-  std::copy(ros_info.R.begin(), ros_info.R.end(), svis_info_ptr->R.begin());
-  std::copy(ros_info.P.begin(), ros_info.P.end(), svis_info_ptr->P.begin());
-  svis_info_ptr->binning_x = ros_info.binning_x;
-  svis_info_ptr->binning_y = ros_info.binning_y;
-
-  return svis_info_ptr;
-}
-
-const std::shared_ptr<sensor_msgs::CameraInfo> SVISRos::SvisToRosCameraInfo(const svis::CameraInfo& svis_info) {
-  auto ros_info_ptr = std::make_shared<sensor_msgs::CameraInfo>();
-
-  // header
-  ros_info_ptr->header.seq = svis_info.header.seq;
-  ros_info_ptr->header.stamp.fromSec(svis_info.header.stamp);
-  ros_info_ptr->header.frame_id = svis_info.header.frame_id;
-
-  // data
-  ros_info_ptr->height = svis_info.height;
-  ros_info_ptr->width = svis_info.width;
-  ros_info_ptr->distortion_model = svis_info.distortion_model;
-  ros_info_ptr->D = svis_info.D;
-  std::copy(svis_info.K.begin(), svis_info.K.end(), ros_info_ptr->K.begin());
-  std::copy(svis_info.R.begin(), svis_info.R.end(), ros_info_ptr->R.begin());
-  std::copy(svis_info.P.begin(), svis_info.P.end(), ros_info_ptr->P.begin());
-  ros_info_ptr->binning_x = svis_info.binning_x;
-  ros_info_ptr->binning_y = svis_info.binning_y;
-
-  return ros_info_ptr;
-}
-
 void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                                  const sensor_msgs::CameraInfo::ConstPtr& info_msg,
                                  const shared_msgs::ImageMetadata::ConstPtr& metadata_msg) {
-  ROS_INFO_STREAM(metadata_msg->sensor_name);
-  // if (!received_camera_) {
-  //   received_camera_ = true;
+  if (!received_camera_) {
+    received_camera_ = true;
+  }
+
+  // copy metadata
+  svis::ImageMetadata metadata;
+  metadata.sensor_name = metadata_msg->sensor_name.data;
+  metadata.frame_counter = metadata_msg->frame_counter;
+  metadata.frame_timestamp = metadata_msg->frame_timestamp;
+  metadata.sensor_timestamp = metadata_msg->sensor_timestamp;
+  metadata.exposure_time = metadata_msg->exposure_time;
+  
+  // create camera packet
+  svis::CameraPacket camera_packet;
+  camera_packet.timestamp = image_msg->header.stamp.toSec();
+  camera_packet.metadata = metadata;
+
+  // add to buffer
+  svis_.PushCameraPacket(camera_packet);
+
+  // if (!svis_.IsSynchronized()) {
+  // return;
   // }
 
-  // svis::CameraPacket camera_packet;
-
-  // // convert image and info
-  // auto svis_image_ptr = RosImageToSvis(*image_msg);
-  // auto svis_info_ptr = RosCameraInfoToSvis(*info_msg);
-
-  // // metadata
-  // // PrintMetaDataRaw(image_msg);
-  // svis_.ParseImageMetadata(*svis_image_ptr, &camera_packet);
-  // // ROS_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
-
-  // // set image and info
-  // camera_packet.image = *svis_image_ptr;
-  // camera_packet.info = *svis_info_ptr;
-
-  // // add to buffer
-  // svis_.PushCameraPacket(camera_packet);
-
-  // // warn if buffer is at max size
-  // if (svis_.GetCameraBufferSize() == svis_.GetCameraBufferMaxSize() && !svis_.GetSyncFlag()) {
-  //   ROS_WARN("(svis_ros) camera buffer at max size");
+  // if (svis_.IsSynchronized()) {
+  //   double synchronized_timestamp;
+  //   bool success = svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp);
+  //   if(success) {
+  //     sensor_msgs::Image sync_image;
+  //     sync_image = *image_msg;
+  //     sync_image.timestamp = synchronized_timestamp;
+  //     //build sync metadata
+  //     //build sync info
+  //     // publish all
+  //     sync_image_pubs_[metadata.sensor_name].publish(sync_image);
+  //   }
   // }
 }
 
@@ -298,10 +221,6 @@ void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe
   svis_.tic();
 
   for (int i = 0; i < camera_strobe_packets.size(); i++) {
-    // convert
-    auto ros_info_ptr = SvisToRosCameraInfo(camera_strobe_packets[i].camera.info);
-    auto ros_image_ptr = SvisToRosImage(camera_strobe_packets[i].camera.image);
-
     // publish
     // camera_pub_.publish(*ros_image_ptr,
     //                     *ros_info_ptr,

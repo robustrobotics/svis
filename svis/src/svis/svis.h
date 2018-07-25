@@ -16,7 +16,6 @@
 #include "svis/strobe_packet.h"
 #include "svis/camera_packet.h"
 #include "svis/camera_strobe_packet.h"
-#include "svis/image.h"
 
 extern "C" {
 #include "svis_hid/svis_hid.h"
@@ -33,18 +32,13 @@ class SVIS {
   void SendSetup();
   void tic();
   double toc();
-  void ParseImageMetadata(const Image& image,
-                        CameraPacket* camera_packet);
   double GetTimeOffset() const;
-  std::size_t GetCameraBufferSize() const;
-  std::size_t GetCameraBufferMaxSize() const;
-  bool GetSyncFlag() const;
+  // bool IsSynchronized() const;
   void PushCameraPacket(const svis::CameraPacket& camera_packet);
   
   void SetPublishStrobeRawHandler(std::function<void(const std::vector<StrobePacket>&)> handler);
   void SetPublishImuRawHandler(std::function<void(const std::vector<ImuPacket>&)> handler);
   void SetPublishImuHandler(std::function<void(const ImuPacket&)> handler);
-  void SetPublishCameraHandler(std::function<void(std::vector<CameraStrobePacket>&)> handler);
   void SetPublishTimingHandler(std::function<void(const Timing&)> handler);
   void SetTimeNowHandler(std::function<double()> handler);
 
@@ -65,11 +59,7 @@ class SVIS {
   double ParseBuffer(const std::vector<char>& buf,
                       std::vector<ImuPacket>* imu_packets,
                       std::vector<StrobePacket>* strobe_packets);
-  void SendPulse();
-  void SendDisablePulse();
   bool CheckChecksum(const std::vector<char>& buf);
-  void ComputeFrameOffset(boost::circular_buffer<StrobePacket>* strobe_buffer,
-                     boost::circular_buffer<CameraPacket>* camera_buffer);
   void ComputeTimeOffset();
   void ParseHeader(const std::vector<char>& buf,
                      HeaderPacket* header);
@@ -79,38 +69,23 @@ class SVIS {
   void ParseStrobe(const std::vector<char>& buf,
                  const HeaderPacket& header,
                  std::vector<StrobePacket>* strobe_packets);
-  void PushImu(const std::vector<ImuPacket>& imu_packets,
-               boost::circular_buffer<ImuPacket>* imu_buffer);
-  void PushStrobe(const std::vector<StrobePacket>& strobe_packets,
-                  boost::circular_buffer<StrobePacket>* strobe_buffer);
+  void PushImu(const std::vector<ImuPacket>& imu_packets);
   void FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                  std::vector<ImuPacket>* imu_packets_filt);
   void DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
                  std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
-  // void PrintImageQuadlet(const std::string& name,
-  //                        const sensor_msgs::Image::ConstPtr& msg,
-  //                        const int& i);
-  // void PrintMetaDataRaw(const sensor_msgs::Image::ConstPtr& msg);
   void ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets);
-  void Associate(boost::circular_buffer<StrobePacket>* strobe_buffer,
-                 boost::circular_buffer<CameraPacket>* camera_buffer,
-                 std::vector<CameraStrobePacket>* camera_strobe_packets);
-  void PrintCameraBuffer(const boost::circular_buffer<CameraPacket>& camera_buffer);
-  void PrintStrobeBuffer(const boost::circular_buffer<StrobePacket>& strobe_buffer);
 
   // handlers
   std::function<void(const std::vector<svis::StrobePacket>&)> PublishStrobeRaw;
   std::function<void(const std::vector<svis::ImuPacket>&)> PublishImuRaw;
   std::function<void(const svis::ImuPacket&)> PublishImu;
-  std::function<void(std::vector<svis::CameraStrobePacket>&)> PublishCamera;
   std::function<void(const Timing&)> PublishTiming;
   std::function<double()> TimeNow;
 
   // buffers
   boost::circular_buffer<ImuPacket> imu_buffer_;
-  boost::circular_buffer<StrobePacket> strobe_buffer_;
-  boost::circular_buffer<CameraPacket> camera_buffer_;
 
   // constants
   const double g_ = 9.80665;
@@ -121,16 +96,13 @@ class SVIS {
   double acc_sens_arr_[4] = {16384, 8192, 4096, 2048};  // LSB/g
 
   // camera and strobe timing
-  bool frame_init_flag_ = true;
   bool time_init_flag_ = true;
-  bool sent_pulse_ = false;
   std::deque<double> time_offset_vec_;
   double time_offset_ = 0.0;
   const std::size_t max_time_offset_samples_ = 1000;
   int init_count_ = 0;
 
   // camera and strobe count
-  bool sync_flag_ = true;
   uint8_t strobe_count_last_ = 0;
   unsigned int strobe_count_total_ = std::numeric_limits<unsigned int>::infinity();
   unsigned int strobe_count_offset_ = 0;

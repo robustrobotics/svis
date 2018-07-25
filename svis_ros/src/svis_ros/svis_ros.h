@@ -61,12 +61,6 @@ class SVISRos {
   void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);
   double TimeNow();
   
-  // conversions
-  std::shared_ptr<svis::Image> RosImageToSvis(const sensor_msgs::Image& ros_image);
-  const std::shared_ptr<sensor_msgs::Image> SvisToRosImage(const svis::Image& svis_image);
-  std::shared_ptr<svis::CameraInfo> RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info);
-  const std::shared_ptr<sensor_msgs::CameraInfo> SvisToRosCameraInfo(const svis::CameraInfo& svis_info);
-
   // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
