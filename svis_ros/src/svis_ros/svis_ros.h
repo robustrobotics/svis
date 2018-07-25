@@ -80,12 +80,13 @@ class SVISRos {
   // subscribers
   std::vector<std::string> image_topics_;
   std::vector<std::string> info_topics_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::Image>> image_sub_ptr_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>> info_sub_ptr_;
-  std::unique_ptr<message_filters::Subscriber<shared_msgs::ImageMetadata>> metadata_sub_ptr_;
-  std::unique_ptr<message_filters::TimeSynchronizer<sensor_msgs::Image,
-                                                    sensor_msgs::CameraInfo,
-                                                    shared_msgs::ImageMetadata>> camera_sync_ptr_;
+  std::vector<std::string> metadata_topics_;
+  std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>>> image_sub_ptrs_;
+  std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>>> info_sub_ptrs_;
+  std::vector<std::shared_ptr<message_filters::Subscriber<shared_msgs::ImageMetadata>>> metadata_sub_ptrs_;
+  std::vector<std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::Image,
+                                                                sensor_msgs::CameraInfo,
+                                                                shared_msgs::ImageMetadata>>> camera_sync_ptrs_;
 
   bool received_camera_ = false;
   svis::SVIS svis_;

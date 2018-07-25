@@ -85,42 +85,54 @@ void SVISRos::GetParams() {
 
   SafeGetParam(pnh, "image_topics", image_topics_);
   SafeGetParam(pnh, "info_topics", info_topics_);
+  SafeGetParam(pnh, "metadata_topics", metadata_topics_);
 
   // check if the number of image and info topics is the same
-  if (image_topics_.size() != info_topics_.size()) {
-    ROS_ERROR("(svis_ros) The number of image topics does not equal the number of info topics. Exiting.");
+  if (image_topics_.size() != info_topics_.size() ||
+      image_topics_.size() != metadata_topics_.size()) {
+    ROS_ERROR("(svis_ros) The number of inputs topics is not equal. Exiting.");
     exit(1);
   }
 
   // print image/info topics for user to check pairing
   ROS_WARN("(svis_ros) The following associated image/info pairings must be viable inputs");
   for (int i = 0; i < image_topics_.size(); i++) {
-    ROS_INFO("(svis_ros) Image/Info Input %i: {%s, %s}", i, image_topics_[i].c_str(), info_topics_[i].c_str());
+    ROS_INFO("(svis_ros) Image/Info/Metadata Input %i: {%s, %s, %s}",
+             i,
+             image_topics_[i].c_str(),
+             info_topics_[i].c_str(),
+             metadata_topics_[i].c_str());
   }
 }
 
 void SVISRos::InitSubscribers() {
-  image_sub_ptr_ = std::unique_ptr<message_filters::Subscriber<sensor_msgs::Image>>(new message_filters::Subscriber<sensor_msgs::Image>(pnh_, "/camera/depth/image_rect_raw", 1));
-  info_sub_ptr_ = std::unique_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>>(new message_filters::Subscriber<sensor_msgs::CameraInfo>(pnh_, "/camera/depth/camera_info", 1));
-  metadata_sub_ptr_ = std::unique_ptr<message_filters::Subscriber<shared_msgs::ImageMetadata>>(new message_filters::Subscriber<shared_msgs::ImageMetadata>(pnh_, "/camera/depth/metadata", 1));
-  camera_sync_ptr_ = std::unique_ptr<message_filters::TimeSynchronizer<
-                                       sensor_msgs::Image,
-                                       sensor_msgs::CameraInfo,
-                                       shared_msgs::ImageMetadata>>(new message_filters::TimeSynchronizer<
-                                                                 sensor_msgs::Image,
-                                                                 sensor_msgs::CameraInfo,
-                                                                 shared_msgs::ImageMetadata>(*image_sub_ptr_,
-                                                                                             *info_sub_ptr_,
-                                                                                             *metadata_sub_ptr_,
-                                                                                             10));
-  camera_sync_ptr_->registerCallback(boost::bind(&SVISRos::CameraSyncCallback, this, _1, _2, _3));
+  for (int i = 0; i < image_topics_.size(); i++) {
+    auto image_sub_ptr = std::make_shared<message_filters::Subscriber<sensor_msgs::Image>>(pnh_, image_topics_[i], 10);
+    image_sub_ptrs_.push_back(image_sub_ptr);
+
+    auto info_sub_ptr = std::make_shared<message_filters::Subscriber<sensor_msgs::CameraInfo>>(pnh_, info_topics_[i], 10);
+    info_sub_ptrs_.push_back(info_sub_ptr);
+
+    auto metadata_sub_ptr = std::make_shared<message_filters::Subscriber<shared_msgs::ImageMetadata>>(pnh_, metadata_topics_[i], 10);
+    metadata_sub_ptrs_.push_back(metadata_sub_ptr);
+
+    auto camera_sync_ptr = std::make_shared<message_filters::TimeSynchronizer<
+                                              sensor_msgs::Image,
+                                              sensor_msgs::CameraInfo,
+                                              shared_msgs::ImageMetadata>>(*image_sub_ptr,
+                                                                           *info_sub_ptr,
+                                                                           *metadata_sub_ptr,
+                                                                           10);
+    camera_sync_ptr->registerCallback(boost::bind(&SVISRos::CameraSyncCallback, this, _1, _2, _3));
+    camera_sync_ptrs_.push_back(camera_sync_ptr);
+  }
 }
 
 void SVISRos::InitPublishers() {
-  imu_pub_ = nh_.advertise<sensor_msgs::Imu>("/svis/imu", 1);
-  svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 1);
-  svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 1);
-  svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 1);
+  imu_pub_ = nh_.advertise<sensor_msgs::Imu>("/svis/imu", 10);
+  svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 10);
+  svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 10);
+  svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 10);
 }
 
 void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
@@ -253,7 +265,7 @@ const std::shared_ptr<sensor_msgs::CameraInfo> SVISRos::SvisToRosCameraInfo(cons
 void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                                  const sensor_msgs::CameraInfo::ConstPtr& info_msg,
                                  const shared_msgs::ImageMetadata::ConstPtr& metadata_msg) {
-  ROS_INFO("GOT THAT SHIT");
+  ROS_INFO_STREAM(metadata_msg->sensor_name);
   // if (!received_camera_) {
   //   received_camera_ = true;
   // }
