@@ -111,7 +111,7 @@ void SVIS::Update() {
 
   // handle strobe
   // PushStrobe(strobe_packets);
-  // PublishStrobeRaw(strobe_packets);
+  PublishStrobeRaw(strobe_packets);
 
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
