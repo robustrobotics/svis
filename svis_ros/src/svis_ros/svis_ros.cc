@@ -100,10 +100,20 @@ void SVISRos::GetParams() {
 }
 
 void SVISRos::InitSubscribers() {
-  // message_filters::Subscriber<Image> image_sub(nh, "image", 1);
-  // message_filters::Subscriber<CameraInfo> info_sub(nh, "camera_info", 1);
-  // TimeSynchronizer<Image, CameraInfo> sync(image_sub, info_sub, 10);
-  // sync.registerCallback(boost::bind(&callback, _1, _2));
+  image_sub_ptr_ = std::unique_ptr<message_filters::Subscriber<sensor_msgs::Image>>(new message_filters::Subscriber<sensor_msgs::Image>(pnh_, "/camera/depth/image_rect_raw", 1));
+  info_sub_ptr_ = std::unique_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>>(new message_filters::Subscriber<sensor_msgs::CameraInfo>(pnh_, "/camera/depth/camera_info", 1));
+  metadata_sub_ptr_ = std::unique_ptr<message_filters::Subscriber<shared_msgs::ImageMetadata>>(new message_filters::Subscriber<shared_msgs::ImageMetadata>(pnh_, "/camera/depth/metadata", 1));
+  camera_sync_ptr_ = std::unique_ptr<message_filters::TimeSynchronizer<
+                                       sensor_msgs::Image,
+                                       sensor_msgs::CameraInfo,
+                                       shared_msgs::ImageMetadata>>(new message_filters::TimeSynchronizer<
+                                                                 sensor_msgs::Image,
+                                                                 sensor_msgs::CameraInfo,
+                                                                 shared_msgs::ImageMetadata>(*image_sub_ptr_,
+                                                                                             *info_sub_ptr_,
+                                                                                             *metadata_sub_ptr_,
+                                                                                             10));
+  camera_sync_ptr_->registerCallback(boost::bind(&SVISRos::CameraSyncCallback, this, _1, _2, _3));
 }
 
 void SVISRos::InitPublishers() {
@@ -240,34 +250,36 @@ const std::shared_ptr<sensor_msgs::CameraInfo> SVISRos::SvisToRosCameraInfo(cons
   return ros_info_ptr;
 }
 
-void SVISRos::CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
-                             const sensor_msgs::CameraInfo::ConstPtr& info_msg) {
-  if (!received_camera_) {
-    received_camera_ = true;
-  }
+void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
+                                 const sensor_msgs::CameraInfo::ConstPtr& info_msg,
+                                 const shared_msgs::ImageMetadata::ConstPtr& metadata_msg) {
+  ROS_INFO("GOT THAT SHIT");
+  // if (!received_camera_) {
+  //   received_camera_ = true;
+  // }
 
-  svis::CameraPacket camera_packet;
+  // svis::CameraPacket camera_packet;
 
-  // convert image and info
-  auto svis_image_ptr = RosImageToSvis(*image_msg);
-  auto svis_info_ptr = RosCameraInfoToSvis(*info_msg);
+  // // convert image and info
+  // auto svis_image_ptr = RosImageToSvis(*image_msg);
+  // auto svis_info_ptr = RosCameraInfoToSvis(*info_msg);
 
-  // metadata
-  // PrintMetaDataRaw(image_msg);
-  svis_.ParseImageMetadata(*svis_image_ptr, &camera_packet);
-  // ROS_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
+  // // metadata
+  // // PrintMetaDataRaw(image_msg);
+  // svis_.ParseImageMetadata(*svis_image_ptr, &camera_packet);
+  // // ROS_INFO("frame_count: %u", camera_packet.metadata.frame_counter);
 
-  // set image and info
-  camera_packet.image = *svis_image_ptr;
-  camera_packet.info = *svis_info_ptr;
+  // // set image and info
+  // camera_packet.image = *svis_image_ptr;
+  // camera_packet.info = *svis_info_ptr;
 
-  // add to buffer
-  svis_.PushCameraPacket(camera_packet);
+  // // add to buffer
+  // svis_.PushCameraPacket(camera_packet);
 
-  // warn if buffer is at max size
-  if (svis_.GetCameraBufferSize() == svis_.GetCameraBufferMaxSize() && !svis_.GetSyncFlag()) {
-    ROS_WARN("(svis_ros) camera buffer at max size");
-  }
+  // // warn if buffer is at max size
+  // if (svis_.GetCameraBufferSize() == svis_.GetCameraBufferMaxSize() && !svis_.GetSyncFlag()) {
+  //   ROS_WARN("(svis_ros) camera buffer at max size");
+  // }
 }
 
 void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets) {

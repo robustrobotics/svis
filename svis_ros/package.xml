@@ -16,6 +16,7 @@
   <depend>sensor_msgs</depend>
   <depend>message_generation</depend>
   <depend>dynamic_reconfigure</depend>
+  <depend>shared_msgs</depend>
   <depend>svis</depend>
 
   <!-- The export tag contains other, unspecified, tags -->

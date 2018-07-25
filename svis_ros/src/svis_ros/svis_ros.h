@@ -11,6 +11,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <sensor_msgs/Imu.h>
+#include <shared_msgs/ImageMetadata.h>
 
 #include "svis/svis.h"
 #include "svis/imu_packet.h"
@@ -48,8 +49,9 @@ class SVISRos {
   void InitPublishers();
 
   // callbacks
-  void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
-                      const sensor_msgs::CameraInfo::ConstPtr& info_msg);
+  void CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
+                          const sensor_msgs::CameraInfo::ConstPtr& info_msg,
+                          const shared_msgs::ImageMetadata::ConstPtr& metadata_msg);
 
   // publishers
   void PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets);
@@ -78,6 +80,12 @@ class SVISRos {
   // subscribers
   std::vector<std::string> image_topics_;
   std::vector<std::string> info_topics_;
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::Image>> image_sub_ptr_;
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>> info_sub_ptr_;
+  std::unique_ptr<message_filters::Subscriber<shared_msgs::ImageMetadata>> metadata_sub_ptr_;
+  std::unique_ptr<message_filters::TimeSynchronizer<sensor_msgs::Image,
+                                                    sensor_msgs::CameraInfo,
+                                                    shared_msgs::ImageMetadata>> camera_sync_ptr_;
 
   bool received_camera_ = false;
   svis::SVIS svis_;
