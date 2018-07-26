@@ -17,11 +17,9 @@ class CameraSynchronizer {
   CameraSynchronizer();
   void PushStrobePacket(const StrobePacket& strobe_packet);
   void PushCameraPacket(const CameraPacket& camera_packet);
-  int GetFrameOffset(std::string sensor_name);
-  double GetSynchronizedTime(std::string sensor_name, uint64_t frame_count);
-  bool IsSynchronized(std::string sensor_name);
-  bool Synchronize(std::string sensor_name);
-  // void CheckSynchronization();
+  // double GetSynchronizedTime(const std::string& sensor_name, uint64_t frame_count) const;
+  bool Synchronize();
+  bool Synchronized();
   
  private:
   struct SyncState {
@@ -30,9 +28,16 @@ class CameraSynchronizer {
     std::deque<CameraPacket> camera_buffer;
   };
 
-  SyncState& GetSyncState(std::string sensor_name) { return sync_states_[sensor_name]; }
+  bool BuffersFull() const;
+  void ComputeStrobeOffsets(const SyncState& state, std::vector<int> *offsets) const;
+  bool SyncStateExists(const std::string sensor_name) const;
+  SyncState& GetSyncState(const std::string sensor_name);
+  bool GetSyncState(const std::string sensor_name, const SyncState* state) const;
+  bool ComputeBestOffset(const SyncState& state,
+                         const std::vector<int>& offsets,
+                         int* best_offset) const;
 
-  int max_buffer_size_;
+  std::size_t max_buffer_size_;
   std::map<std::string, SyncState> sync_states_;
   std::deque<StrobePacket> strobe_buffer_;
 };

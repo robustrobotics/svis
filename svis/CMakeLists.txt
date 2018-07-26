@@ -67,6 +67,7 @@ install(FILES
 #-------------------------------------------------------------------------------
 add_library(${PROJECT_NAME} SHARED
   src/svis/svis.cc
+  src/svis/camera_synchronizer.cc
   )
 
 target_link_libraries(${PROJECT_NAME}

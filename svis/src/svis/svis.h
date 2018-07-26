@@ -34,7 +34,6 @@ class SVIS {
   void tic();
   double toc();
   double GetTimeOffset() const;
-  // bool IsSynchronized() const;
   void PushCameraPacket(const svis::CameraPacket& camera_packet);
   
   void SetPublishStrobeRawHandler(std::function<void(const std::vector<StrobePacket>&)> handler);
@@ -70,11 +69,9 @@ class SVIS {
   void ParseStrobe(const std::vector<char>& buf,
                  const HeaderPacket& header,
                  std::vector<StrobePacket>* strobe_packets);
-  void PushImu(const std::vector<ImuPacket>& imu_packets);
-  void FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
-                 std::vector<ImuPacket>* imu_packets_filt);
-  void DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
-                 std::vector<ImuPacket>* imu_packets_filt);
+  void PushImu(const ImuPacket& imu_packet);
+  void FilterImu(std::vector<ImuPacket>* imu_packets_filt);
+  void DecimateImu(std::vector<ImuPacket>* imu_packets_filt);
   void PrintBuffer(const std::vector<char>& buf);
   void ComputeStrobeTotal(std::vector<StrobePacket>* strobe_packets);
 
@@ -102,8 +99,9 @@ class SVIS {
   double time_offset_ = 0.0;
   const std::size_t max_time_offset_samples_ = 1000;
   int init_count_ = 0;
+  CameraSynchronizer camera_synchronizer_;
 
-  // camera and strobe count
+  // strobe count
   uint8_t strobe_count_last_ = 0;
   unsigned int strobe_count_total_ = std::numeric_limits<unsigned int>::infinity();
   unsigned int strobe_count_offset_ = 0;

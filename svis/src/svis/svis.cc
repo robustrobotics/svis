@@ -15,12 +15,8 @@ double SVIS::GetTimeOffset() const {
   return time_offset_;
 }
 
-// bool SVIS::IsSynchronized() const {
-//   return sync_flag_;
-// }
-
 void SVIS::PushCameraPacket(const svis::CameraPacket& camera_packet) {
-  // camera_buffer_.push_back(camera_packet);
+  camera_synchronizer_.PushCameraPacket(camera_packet);
 }
 
 void SVIS::OpenHID() {
@@ -106,23 +102,30 @@ void SVIS::Update() {
   }
 
   // handle imu
-  PushImu(imu_packets);
+  for (const auto& imu : imu_packets) {
+    PushImu(imu);
+  }
+
   PublishImuRaw(imu_packets);
 
   // handle strobe
-  // PushStrobe(strobe_packets);
+  for (const auto& strobe : strobe_packets) {
+    camera_synchronizer_.PushStrobePacket(strobe);
+  }
+
   PublishStrobeRaw(strobe_packets);
 
   // filter and publish imu
   std::vector<ImuPacket> imu_packets_filt;
-  FilterImu(&imu_buffer_, &imu_packets_filt);
-  // DecimateImu(&imu_buffer_, &imu_packets_filt);
+  FilterImu(&imu_packets_filt);
+  // DecimateImu(&imu_packets_filt);
   for (std::size_t i = 0; i < imu_packets_filt.size(); i++) {
     usleep(500);
     PublishImu(imu_packets_filt[i]);
   }
 
   // if we have enough samples, sync strobes and camera
+  camera_synchronizer_.Synchronize();
 
   std::chrono::duration<double> update_duration = std::chrono::high_resolution_clock::now() - t_update_start_;
   timing_.update = update_duration.count();
@@ -318,14 +321,10 @@ void SVIS::ParseStrobe(const std::vector<char>& buf,
   timing_.parse_strobe = toc();
 }
 
-void SVIS::PushImu(const std::vector<ImuPacket>& imu_packets) {
+void SVIS::PushImu(const ImuPacket& imu_packet) {
   tic();
 
-  ImuPacket imu;
-  for (uint i = 0; i < imu_packets.size(); i++) {
-    imu = imu_packets[i];
-    imu_buffer_.push_back(imu);
-  }
+  imu_buffer_.push_back(imu_packet);
 
   // warn if buffer is at max size
   if (imu_buffer_.size() == imu_buffer_.max_size()) {
@@ -335,35 +334,33 @@ void SVIS::PushImu(const std::vector<ImuPacket>& imu_packets) {
   timing_.push_imu = toc();
 }
 
-void SVIS::DecimateImu(boost::circular_buffer<ImuPacket>* imu_buffer,
-                       std::vector<ImuPacket>* imu_packets_filt) {
+void SVIS::DecimateImu(std::vector<ImuPacket>* imu_packets_filt) {
   // create filter packets
-  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
+  while (imu_buffer_.size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
     for (int i = 0; i < imu_filter_size_; i++) {
       if (i == 0) {
-        imu_packets_filt->push_back(imu_buffer->front());
+        imu_packets_filt->push_back(imu_buffer_.front());
       }
-      imu_buffer->pop_front();
+      imu_buffer_.pop_front();
     }
   }
 }
 
-void SVIS::FilterImu(boost::circular_buffer<ImuPacket>* imu_buffer,
-                     std::vector<ImuPacket>* imu_packets_filt) {
+void SVIS::FilterImu(std::vector<ImuPacket>* imu_packets_filt) {
   tic();
 
   // create filter packets
-  while (imu_buffer->size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
+  while (imu_buffer_.size() >= static_cast<std::size_t>(imu_filter_size_) && imu_filter_size_ > 0) {
     double timestamp_diff_mean = 0.0;
     double acc_mean[3] = {0.0};
     double gyro_mean[3] = {0.0};
 
     // get local time offset for better precision
-    double first_timestamp = imu_buffer->front().timestamp_ros;
+    double first_timestamp = imu_buffer_.front().timestamp_ros;
     
     for (int i = 0; i < imu_filter_size_; i++) {
-      ImuPacket temp_packet = imu_buffer->front();
-      imu_buffer->pop_front();
+      ImuPacket temp_packet = imu_buffer_.front();
+      imu_buffer_.pop_front();
 
       timestamp_diff_mean += (temp_packet.timestamp_ros - first_timestamp) / static_cast<double>(imu_filter_size_);
       for (uint j = 0; j < 3; j++) {
