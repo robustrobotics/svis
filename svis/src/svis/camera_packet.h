@@ -6,8 +6,7 @@
 
 namespace svis {
 
-class CameraPacket {
- public:
+struct CameraPacket {
   double timestamp;
   ImageMetadata metadata;
 };
