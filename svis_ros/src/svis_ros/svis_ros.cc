@@ -198,23 +198,21 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   // add to buffer
   svis_.PushCameraPacket(camera_packet);
 
-  // if (!svis_.IsSynchronized()) {
-  // return;
-  // }
+  if (!svis_.Synchronized()) {
+    return;
+  }
 
-  // if (svis_.IsSynchronized()) {
-  //   double synchronized_timestamp;
-  //   bool success = svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp);
-  //   if(success) {
-  //     sensor_msgs::Image sync_image;
-  //     sync_image = *image_msg;
-  //     sync_image.timestamp = synchronized_timestamp;
-  //     //build sync metadata
-  //     //build sync info
-  //     // publish all
-  //     sync_image_pubs_[metadata.sensor_name].publish(sync_image);
-  //   }
-  // }
+  double synchronized_timestamp;
+  bool success = svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp);
+  if (success) {
+    sensor_msgs::Image sync_image;
+    sync_image = *image_msg;
+    sync_image.timestamp = synchronized_timestamp;
+    // build sync metadata
+    // build sync info
+    // publish all
+    // sync_image_pubs_[metadata.sensor_name].publish(sync_image);
+  }
 }
 
 void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets) {

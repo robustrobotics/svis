@@ -38,9 +38,34 @@ bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
     return false;
   }
 
-  // TODO(jakeware): Find strobe and compute offset
+  // find matching camera packet
+  const CameraPacket* matched_camera = nullptr;
+  for (const auto& camera : state.camera_buffer_) {
+    if (camera.metadata.frame_counter == frame_count) {
+      matched_camera = &camera;
+    }
+  }
 
-  return true;
+  // bail if we failed to match the camera packet
+  if (!matched_camera) {
+    return false;
+  }
+
+  double sensor_time_offset = static_cast<double>(matched_camera->metadata.sensor_timestamp - matched_camera->metadata.frame_timestamp) / 1000000.0;  // seconds
+
+  // find matching strobe packet
+  for (const auto& strobe : strobe_buffer_) {
+    if (frame_count == (strobe.count_total + state.frame_offset_)) {
+      double temp_timestamp = strobe.timestamp_ros + sensor_time_offset;
+
+      // TODO(jakeware): sanity check timestamp before assignment
+      *timestamp = temp_timestamp;
+
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool CameraSynchronizer::GetSyncState(const std::string& sensor_name, const SyncState* state) const {

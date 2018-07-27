@@ -34,6 +34,10 @@ class SVIS {
   void tic();
   double toc();
   double GetTimeOffset() const;
+  bool Synchronized() { return camera_synchronizer_.Synchronized(); }
+  bool GetSynchronizedTime(const std::string& sensor_name,
+                           const uint64_t& frame_count,
+                           double* timestamp) const;
   void PushCameraPacket(const svis::CameraPacket& camera_packet);
   
   void SetPublishStrobeRawHandler(std::function<void(const std::vector<StrobePacket>&)> handler);
