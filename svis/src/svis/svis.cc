@@ -6,7 +6,8 @@
 
 namespace svis {
 
-SVIS::SVIS() {
+SVIS::SVIS()
+  : camera_synchronizer_(50) {
   // set circular buffer max lengths
   imu_buffer_.set_capacity(30);
 }

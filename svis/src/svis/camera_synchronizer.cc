@@ -8,8 +8,8 @@
 
 namespace svis {
 
-CameraSynchronizer::CameraSynchronizer()
-  : max_buffer_size_(50) {
+CameraSynchronizer::CameraSynchronizer(std::size_t max_buffer_size)
+  : max_buffer_size_(max_buffer_size) {
   // nothing
 }
 

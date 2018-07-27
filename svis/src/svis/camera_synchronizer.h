@@ -15,7 +15,7 @@ namespace svis {
 
 class CameraSynchronizer {
  public:
-  CameraSynchronizer();
+  CameraSynchronizer(std::size_t max_buffer_size);
   void PushStrobePacket(const StrobePacket& strobe_packet);
   void PushCameraPacket(const CameraPacket& camera_packet);
   bool GetSynchronizedTime(const std::string& sensor_name,
