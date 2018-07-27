@@ -23,14 +23,27 @@ void CameraSynchronizer::PushStrobePacket(const StrobePacket& strobe_packet) {
 
 void CameraSynchronizer::PushCameraPacket(const CameraPacket& camera_packet) {
   SyncState& state = GetSyncState(camera_packet.metadata.sensor_name);
-  state.camera_buffer.push_back(camera_packet);
+  state.camera_buffer_.push_back(camera_packet);
 
-  if (state.camera_buffer.size() > max_buffer_size_) {
-    state.camera_buffer.pop_front();
+  if (state.camera_buffer_.size() > max_buffer_size_) {
+    state.camera_buffer_.pop_front();
   }
 }
 
-bool CameraSynchronizer::GetSyncState(const std::string sensor_name, const SyncState* state) const {
+bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
+                                             const uint64_t& frame_count,
+                                             double* timestamp) const {
+  SyncState state;
+  if (!GetSyncState(sensor_name, &state)) {
+    return false;
+  }
+
+  // TODO(jakeware): Find strobe and compute offset
+
+  return true;
+}
+
+bool CameraSynchronizer::GetSyncState(const std::string& sensor_name, const SyncState* state) const {
   auto it = sync_states_.find(sensor_name);
 
   if (it != sync_states_.end()) {
@@ -41,7 +54,7 @@ bool CameraSynchronizer::GetSyncState(const std::string sensor_name, const SyncS
   return false;
 }
 
-CameraSynchronizer::SyncState& CameraSynchronizer::GetSyncState(const std::string sensor_name) {
+SyncState& CameraSynchronizer::GetSyncState(const std::string& sensor_name) {
   auto pair = sync_states_.find(sensor_name);
 
   if (pair != sync_states_.end()) {
@@ -61,7 +74,7 @@ bool CameraSynchronizer::BuffersFull() const {
   for (const auto& pair : sync_states_) {
     const std::string& sensor_name = pair.first;
     const SyncState& state = pair.second;
-    std::size_t num_cameras = state.camera_buffer.size();
+    std::size_t num_cameras = state.camera_buffer_.size();
     if (num_cameras < max_buffer_size_) {
       printf("(svis) %s input has %lu of %lu\n", sensor_name.c_str(), num_cameras, max_buffer_size_);
       return false;
@@ -70,7 +83,6 @@ bool CameraSynchronizer::BuffersFull() const {
 
   return true;
 }
-
 
 // find first camera image that causes the magnitude of the time offset to increase and compute frame offset
 void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vector<int> *offsets) const {
@@ -82,7 +94,7 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
     double time_offset = std::numeric_limits<double>::infinity();
     double time_offset_last = std::numeric_limits<double>::infinity();
     for (std::size_t j = 0; j < max_buffer_size_; ++j) {
-      const CameraPacket& camera = state.camera_buffer[j];
+      const CameraPacket& camera = state.camera_buffer_[j];
 
       // get time offset
       time_offset_last = time_offset;
@@ -147,7 +159,7 @@ bool CameraSynchronizer::ComputeBestOffset(const SyncState& state,
 bool CameraSynchronizer::Synchronized() {
   for (auto& pair : sync_states_) {
     SyncState& state = pair.second;
-    if (!state.synchronized) {
+    if (!state.synchronized_) {
       return false;
     }
   }
@@ -155,11 +167,28 @@ bool CameraSynchronizer::Synchronized() {
   return true;
 }
 
-bool CameraSynchronizer::Synchronize() {
-  if (Synchronized()) {
-    return true;
+bool CameraSynchronizer::FrameOffsetsConsistent() const {
+  int reference_offset = sync_states_.begin()->second.frame_offset_;
+  for (auto& pair : sync_states_) {
+    const SyncState& state = pair.second;
+
+    if (state.frame_offset_ != reference_offset) {
+      printf("(svis) Offsets do not match after synchronization\n");
+      return false;
+    }
   }
 
+  return true;
+}
+
+void CameraSynchronizer::ResetFrameOffsets() {
+  for (auto& pair : sync_states_) {
+    SyncState& state = pair.second;
+    state.ResetFrameOffset();
+  }
+}
+
+bool CameraSynchronizer::Synchronize() {
   // do we have a sufficient number of strobe samples?
   if (!BuffersFull()) {
     return false;
@@ -179,14 +208,30 @@ bool CameraSynchronizer::Synchronize() {
     // find best offset
     int best_offset = 0;
     if (ComputeBestOffset(state, offsets, &best_offset)) {
-      // TODO(jakeware): additional verification step here?
-      state.frame_offset = best_offset;
-      state.synchronized = true;
+      state.SetFrameOffset(best_offset);
     } else {
       return false;
     }
   }
 
+  // check if frame offsets are consistent and reset if necessary
+  if (!FrameOffsetsConsistent()) {
+    ResetFrameOffsets();
+    return false;
+  }
+
+  // check if frame offsets lead to reasonable time associations
+  if (!TimeSynchronized()) {
+    return false;
+  }
+
+  // TODO(jakeware): Compute timeoffsets based on synchronization
+
+  return true;
+}
+
+bool CameraSynchronizer::TimeSynchronized() const {
+  // TODO(jakeware) Fill this in
   return true;
 }
 

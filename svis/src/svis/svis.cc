@@ -125,7 +125,9 @@ void SVIS::Update() {
   }
 
   // if we have enough samples, sync strobes and camera
-  camera_synchronizer_.Synchronize();
+  if (!camera_synchronizer_.Synchronized()) {
+    camera_synchronizer_.Synchronize();
+  }
 
   std::chrono::duration<double> update_duration = std::chrono::high_resolution_clock::now() - t_update_start_;
   timing_.update = update_duration.count();
