@@ -23,7 +23,7 @@ class CameraSynchronizer {
                            double* timestamp) const;
   bool Synchronize();
   bool Synchronized();
-  
+
  private:
   bool BuffersFull() const;
   void ComputeStrobeOffsets(const SyncState& state, std::vector<int> *offsets) const;
