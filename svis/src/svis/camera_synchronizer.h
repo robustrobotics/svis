@@ -8,7 +8,6 @@
 
 #include "svis/strobe_packet.h"
 #include "svis/camera_packet.h"
-#include "svis/camera_strobe_packet.h"
 #include "svis/sync_state.h"
 
 namespace svis {

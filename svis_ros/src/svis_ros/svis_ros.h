@@ -16,7 +16,6 @@
 #include "svis/svis.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
-#include "svis/camera_strobe_packet.h"
 #include "svis/image.h"
 #include "svis/camera_info.h"
 #include "svis_ros/SvisImu.h"
@@ -58,7 +57,6 @@ class SVISRos {
   void PublishImu(const svis::ImuPacket& imu_packet);
   void PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_packets);
   void PublishTiming(const svis::Timing& timing);
-  void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);
   double TimeNow();
   
   // ros

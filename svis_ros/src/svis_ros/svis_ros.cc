@@ -212,20 +212,9 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
     // build sync info
     // publish all
     // sync_image_pubs_[metadata.sensor_name].publish(sync_image);
+
+
   }
-}
-
-void SVISRos::PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets) {
-  svis_.tic();
-
-  for (int i = 0; i < camera_strobe_packets.size(); i++) {
-    // publish
-    // camera_pub_.publish(*ros_image_ptr,
-    //                     *ros_info_ptr,
-    //                     ros::Time(camera_strobe_packets[i].strobe.timestamp_ros));
-  }
-
-  svis_.timing_.publish_camera = svis_.toc();
 }
 
 void SVISRos::PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets) {

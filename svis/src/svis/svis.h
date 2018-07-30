@@ -15,7 +15,6 @@
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
 #include "svis/camera_packet.h"
-#include "svis/camera_strobe_packet.h"
 #include "svis/camera_synchronizer.h"
 
 extern "C" {
