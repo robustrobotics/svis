@@ -203,17 +203,23 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   }
 
   double synchronized_timestamp;
-  bool success = svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp);
-  if (success) {
-    sensor_msgs::Image sync_image;
-    sync_image = *image_msg;
-    sync_image.timestamp = synchronized_timestamp;
-    // build sync metadata
+  if (svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp)) {
+    ros::Time stamp;
+    stamp.fromSec(synchronized_timestamp);
+
+    sensor_msgs::Image sync_image = *image_msg;
+    sync_image.header.stamp = stamp;
+
     // build sync info
+    sensor_msgs::CameraInfo sync_info = *info_msg;
+    sync_info.header.stamp = stamp;
+
+    // build sync metadata
+    shared_msgs::ImageMetadata sync_metadata = *metadata_msg;
+    sync_metadata.header.stamp = stamp;
+
     // publish all
     // sync_image_pubs_[metadata.sensor_name].publish(sync_image);
-
-
   }
 }
 
