@@ -17,8 +17,6 @@
 #include "svis/svis.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
-#include "svis/image.h"
-#include "svis/camera_info.h"
 #include "svis_ros/SvisImu.h"
 #include "svis_ros/SvisStrobe.h"
 #include "svis_ros/SvisTiming.h"
