@@ -67,7 +67,6 @@ install(FILES
 #-------------------------------------------------------------------------------
 add_library(${PROJECT_NAME} SHARED
   src/svis/camera_packet.h
-  src/svis/camera_strobe_packet.h
   src/svis/camera_synchronizer.cc
   src/svis/camera_synchronizer.h
   src/svis/header.h

@@ -27,8 +27,6 @@ class CameraSynchronizer {
   bool BuffersFull() const;
   void ComputeStrobeOffsets(const SyncState& state, std::vector<int> *offsets) const;
   bool SyncStateExists(const std::string& sensor_name) const;
-  SyncState& GetSyncState(const std::string& sensor_name);
-  bool GetSyncState(const std::string& sensor_name, const SyncState* state) const;
   bool ComputeBestOffset(const SyncState& state,
                          const std::vector<int>& offsets,
                          int* best_offset) const;

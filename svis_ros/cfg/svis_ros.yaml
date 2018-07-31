@@ -19,3 +19,8 @@ info_topics: [/camera/depth/camera_info,
 metadata_topics: [/camera/depth/metadata,
                   /camera/infra1/metadata,
                   /camera/infra2/metadata]
+
+# output topics
+sensor_names: [depth,
+               infra1,
+               infra2]

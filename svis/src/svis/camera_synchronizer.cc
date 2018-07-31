@@ -22,8 +22,9 @@ void CameraSynchronizer::PushStrobePacket(const StrobePacket& strobe_packet) {
 }
 
 void CameraSynchronizer::PushCameraPacket(const CameraPacket& camera_packet) {
-  SyncState& state = GetSyncState(camera_packet.metadata.sensor_name);
+  SyncState& state = sync_states_[camera_packet.metadata.sensor_name];
   state.camera_buffer_.push_back(camera_packet);
+  printf("camera_buffer size: %lu\n", state.camera_buffer_.size());
 
   if (state.camera_buffer_.size() > max_buffer_size_) {
     state.camera_buffer_.pop_front();
@@ -33,30 +34,44 @@ void CameraSynchronizer::PushCameraPacket(const CameraPacket& camera_packet) {
 bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
                                              const uint64_t& frame_count,
                                              double* timestamp) const {
-  SyncState state;
-  if (!GetSyncState(sensor_name, &state)) {
+  if (!SyncStateExists(sensor_name)) {
     return false;
   }
+
+  const SyncState& state = sync_states_.at(sensor_name);
+  printf("Searching for frame: %lu\n", frame_count);
+  printf("Camera buffer size: %lu\n", state.camera_buffer_.size());
 
   // find matching camera packet
   const CameraPacket* matched_camera = nullptr;
   for (const auto& camera : state.camera_buffer_) {
+    // printf("Checking %lu\n", camera.metadata.frame_counter);
     if (camera.metadata.frame_counter == frame_count) {
+      printf("Matched frame %lu\n", frame_count);
       matched_camera = &camera;
     }
   }
 
   // bail if we failed to match the camera packet
   if (!matched_camera) {
+    printf("Failed to match camera\n");
     return false;
   }
 
-  double sensor_time_offset = static_cast<double>(matched_camera->metadata.sensor_timestamp - matched_camera->metadata.frame_timestamp) / 1000000.0;  // seconds
-
   // find matching strobe packet
+  printf("Searching for matching strobe\n");
   for (const auto& strobe : strobe_buffer_) {
+    // printf("frame_count: %lu, strobe.count_total: %i, state.frame_offset: %i\n",
+           // frame_count,
+           // strobe.count_total,
+           // state.frame_offset_);
     if (frame_count == (strobe.count_total + state.frame_offset_)) {
-      double temp_timestamp = strobe.timestamp_ros + sensor_time_offset;
+      printf("Found matching strobe: %i\n", strobe.count_total);
+      // double sensor_timestamp = static_cast<double>(matched_camera->metadata.sensor_timestamp);
+      // double frame_timestamp = static_cast<double>(matched_camera->metadata.frame_timestamp);
+      // double sensor_time_offset = (sensor_timestamp - frame_timestamp) / 1000000.0;  // seconds
+      // printf("sensor_time_offset: %f\n", sensor_time_offset);
+      double temp_timestamp = strobe.timestamp_ros;  // + sensor_time_offset;
 
       // TODO(jakeware): sanity check timestamp before assignment
       *timestamp = temp_timestamp;
@@ -68,25 +83,14 @@ bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
   return false;
 }
 
-bool CameraSynchronizer::GetSyncState(const std::string& sensor_name, const SyncState* state) const {
-  auto it = sync_states_.find(sensor_name);
+bool CameraSynchronizer::SyncStateExists(const std::string& sensor_name) const {
+  auto pair = sync_states_.find(sensor_name);
 
-  if (it != sync_states_.end()) {
-    state = &it->second;
+  if (pair != sync_states_.end()) {
     return true;
   } 
 
   return false;
-}
-
-SyncState& CameraSynchronizer::GetSyncState(const std::string& sensor_name) {
-  auto pair = sync_states_.find(sensor_name);
-
-  if (pair != sync_states_.end()) {
-    return pair->second;
-  }
-
-  return sync_states_[sensor_name];
 }
 
 bool CameraSynchronizer::BuffersFull() const {

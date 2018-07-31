@@ -4,8 +4,6 @@
 
 namespace svis_ros {
 
-volatile std::sig_atomic_t SVISRos::stop_signal_ = 0;
-  
 SVISRos::SVISRos()
   : nh_(),
     pnh_("~") {
@@ -49,7 +47,7 @@ void SVISRos::Run() {
   ros::Time t_start = ros::Time::now();
   ros::Time t_start_last = t_start;
   ros::Rate r(1000);
-  while (ros::ok() && !stop_signal_) {
+  while (ros::ok()) {
     t_start = ros::Time::now();
     svis_.timing_.period = (t_start - t_start_last).toSec();
     t_start_last = t_start;
@@ -81,6 +79,8 @@ void SVISRos::GetParams() {
   SafeGetParam(pnh, "image_topics", image_topics_);
   SafeGetParam(pnh, "info_topics", info_topics_);
   SafeGetParam(pnh, "metadata_topics", metadata_topics_);
+
+  SafeGetParam(pnh, "sensor_names", sensor_names_);
 
   // check if the number of image and info topics is the same
   if (image_topics_.size() != info_topics_.size() ||
@@ -128,6 +128,12 @@ void SVISRos::InitPublishers() {
   svis_imu_pub_ = nh_.advertise<svis_ros::SvisImu>("/svis/imu_packet", 10);
   svis_strobe_pub_ = nh_.advertise<svis_ros::SvisStrobe>("/svis/strobe_packet", 10);
   svis_timing_pub_ = nh_.advertise<svis_ros::SvisTiming>("/svis/timing", 10);
+
+  for (int i = 0; i < image_topics_.size(); i++) {
+    image_pubs_[sensor_names_[i]] = nh_.advertise<sensor_msgs::Image>("/svis/" + sensor_names_[i] + "/image_raw", 10);
+    info_pubs_[sensor_names_[i]] = nh_.advertise<sensor_msgs::CameraInfo>("/svis/" + sensor_names_[i] + "/camera_info", 10);
+    metadata_pubs_[sensor_names_[i]] = nh_.advertise<shared_msgs::ImageMetadata>("/svis/" + sensor_names_[i] + "/metadata", 10);
+  }
 }
 
 void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
@@ -203,9 +209,11 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   }
 
   double synchronized_timestamp;
+  ROS_INFO("Getting timestamp for frame %lu of sensor %s", metadata.frame_counter, metadata.sensor_name.c_str());
   if (svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp)) {
-    ros::Time stamp;
-    stamp.fromSec(synchronized_timestamp);
+    ROS_INFO("Got Synchronzied Timestamp: %f, time now: %f", synchronized_timestamp, ros::Time::now().toSec());
+    ros::Time stamp(synchronized_timestamp);
+    ROS_INFO("Computed Timestamp");
 
     sensor_msgs::Image sync_image = *image_msg;
     sync_image.header.stamp = stamp;
@@ -219,8 +227,12 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
     sync_metadata.header.stamp = stamp;
 
     // publish all
-    // sync_image_pubs_[metadata.sensor_name].publish(sync_image);
+    image_pubs_[metadata.sensor_name].publish(sync_image);
+    info_pubs_[metadata.sensor_name].publish(sync_info);
+    metadata_pubs_[metadata.sensor_name].publish(sync_metadata);
   }
+
+  ROS_INFO("Exiting CameraSyncCallback");
 }
 
 void SVISRos::PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets) {

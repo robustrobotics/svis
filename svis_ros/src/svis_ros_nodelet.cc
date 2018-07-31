@@ -10,21 +10,7 @@ namespace svis_ros {
 
 class SVISRosNodelet : public nodelet::Nodelet {
  public:
-  static void signal_handler(int signal) {
-    printf("(svis_ros) SIGINT received\n");
-
-    // Tell other threads to stop.
-    SVISRos::stop_signal_ = 1;
-
-    // Tell ROS to shutdown nodes.
-    ros::shutdown();
-
-    return;
-  }
-
   virtual void onInit() {
-    std::signal(SIGINT, signal_handler);
-
     SVISRos svis_ros;
     svis_ros.Run();
 

@@ -8,6 +8,7 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <image_transport/image_transport.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <sensor_msgs/Imu.h>
@@ -40,8 +41,6 @@ class SVISRos {
   SVISRos();
   void Run();
 
-  static volatile std::sig_atomic_t stop_signal_;
-
  private:
   void GetParams();
   void InitSubscribers();
@@ -58,7 +57,7 @@ class SVISRos {
   void PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_packets);
   void PublishTiming(const svis::Timing& timing);
   double TimeNow();
-  
+
   // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
@@ -68,6 +67,10 @@ class SVISRos {
   ros::Publisher svis_imu_pub_;
   ros::Publisher svis_strobe_pub_;
   ros::Publisher svis_timing_pub_;
+  std::map<std::string, ros::Publisher> image_pubs_;
+  std::map<std::string, ros::Publisher> info_pubs_;
+  std::map<std::string, ros::Publisher> metadata_pubs_;
+  std::vector<std::string> sensor_names_;
 
   // subscribers
   std::vector<std::string> image_topics_;

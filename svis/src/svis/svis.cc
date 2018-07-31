@@ -16,6 +16,13 @@ double SVIS::GetTimeOffset() const {
   return time_offset_;
 }
 
+bool SVIS::GetSynchronizedTime(const std::string& sensor_name,
+                         const uint64_t& frame_count,
+                         double* timestamp) const {
+  return camera_synchronizer_.GetSynchronizedTime(sensor_name, frame_count, timestamp);
+}
+
+
 void SVIS::PushCameraPacket(const svis::CameraPacket& camera_packet) {
   camera_synchronizer_.PushCameraPacket(camera_packet);
 }
