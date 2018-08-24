@@ -24,7 +24,7 @@ void CameraSynchronizer::PushStrobePacket(const StrobePacket& strobe_packet) {
 void CameraSynchronizer::PushCameraPacket(const CameraPacket& camera_packet) {
   SyncState& state = sync_states_[camera_packet.metadata.sensor_name];
   state.camera_buffer_.push_back(camera_packet);
-  printf("camera_buffer size: %lu\n", state.camera_buffer_.size());
+  printf("[CameraSynchronizer::PushCameraPacket] camera_buffer size: %lu\n", state.camera_buffer_.size());
 
   if (state.camera_buffer_.size() > max_buffer_size_) {
     state.camera_buffer_.pop_front();
@@ -39,34 +39,34 @@ bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
   }
 
   const SyncState& state = sync_states_.at(sensor_name);
-  printf("Searching for frame: %lu\n", frame_count);
-  printf("Camera buffer size: %lu\n", state.camera_buffer_.size());
+  printf("[CameraSynchronizer::GetSynchronizedTime] Searching for frame: %lu\n", frame_count);
+  printf("[CameraSynchronizer::GetSynchronizedTime] Camera buffer size: %lu\n", state.camera_buffer_.size());
 
   // find matching camera packet
   const CameraPacket* matched_camera = nullptr;
   for (const auto& camera : state.camera_buffer_) {
     // printf("Checking %lu\n", camera.metadata.frame_counter);
     if (camera.metadata.frame_counter == frame_count) {
-      printf("Matched frame %lu\n", frame_count);
+      printf("[CameraSynchronizer::GetSynchronizedTime] Matched frame %lu\n", frame_count);
       matched_camera = &camera;
     }
   }
 
   // bail if we failed to match the camera packet
   if (!matched_camera) {
-    printf("Failed to match camera\n");
+    printf("[CameraSynchronizer::GetSynchronizedTime] Failed to match camera\n");
     return false;
   }
 
   // find matching strobe packet
-  printf("Searching for matching strobe\n");
+  printf("[CameraSynchronizer::GetSynchronizedTime] Searching for matching strobe\n");
   for (const auto& strobe : strobe_buffer_) {
     // printf("frame_count: %lu, strobe.count_total: %i, state.frame_offset: %i\n",
            // frame_count,
            // strobe.count_total,
            // state.frame_offset_);
     if (frame_count == (strobe.count_total + state.frame_offset_)) {
-      printf("Found matching strobe: %i\n", strobe.count_total);
+      printf("[CameraSynchronizer::GetSynchronizedTime] Found matching strobe: %i\n", strobe.count_total);
       // double sensor_timestamp = static_cast<double>(matched_camera->metadata.sensor_timestamp);
       // double frame_timestamp = static_cast<double>(matched_camera->metadata.frame_timestamp);
       // double sensor_time_offset = (sensor_timestamp - frame_timestamp) / 1000000.0;  // seconds
@@ -138,6 +138,8 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
         printf("frame_count: %lu, strobe_count: %i, time_offset: %f\n", camera.metadata.frame_counter, strobe.count_total, time_offset_last);
         offsets->at(i) = frame_offset_last;
         break;
+      } else {
+        printf("time_offset: %f\n", time_offset);
       }
 
       // handle last sample
@@ -147,7 +149,7 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
     }
   }
 
-  printf("offsets:\n");
+  printf("[CameraSynchronizer::ComputeStrobeOffsets] offsets:\n");
   for (std::size_t i = 0; i < max_buffer_size_; ++i) {
     printf("%lu, %i\n", i, offsets->at(i));
   }
@@ -161,7 +163,7 @@ bool CameraSynchronizer::ComputeBestOffset(const SyncState& state,
   for (const auto& offset : offsets) {
     binned_offsets[offset]++;
   }
-  printf("bin count: %lu\n", binned_offsets.size());
+  printf("[CameraSynchronizer::ComputeBestOffset] bin count: %lu\n", binned_offsets.size());
 
   // find most frequent bin
   int temp_best_offset = 0;
@@ -178,7 +180,7 @@ bool CameraSynchronizer::ComputeBestOffset(const SyncState& state,
   // make sure most frequent bin is clost to buffer size
   if (temp_best_offset_count > (max_buffer_size_ - 2)) {
     *best_offset = temp_best_offset;
-    printf("best_offset: %i\n", *best_offset);
+    printf("[CameraSynchronizer::ComputeBestOffset] best_offset: %i\n", *best_offset);
     return true;
   }
   
@@ -189,6 +191,7 @@ bool CameraSynchronizer::Synchronized() {
   for (auto& pair : sync_states_) {
     SyncState& state = pair.second;
     if (!state.synchronized_) {
+      printf("[CameraSynchronizer::Synchronized] %s not synchronized\n", pair.first.c_str());
       return false;
     }
   }
@@ -202,7 +205,7 @@ bool CameraSynchronizer::FrameOffsetsConsistent() const {
     const SyncState& state = pair.second;
 
     if (state.frame_offset_ != reference_offset) {
-      printf("(svis) Offsets do not match after synchronization\n");
+      printf("[CameraSynchronizer::FrameOffsetsConsistent] Offsets do not match after synchronization\n");
       return false;
     }
   }
@@ -211,6 +214,7 @@ bool CameraSynchronizer::FrameOffsetsConsistent() const {
 }
 
 void CameraSynchronizer::ResetFrameOffsets() {
+  printf("[CameraSynchronizer::ResetFrameOffsets]\n");
   for (auto& pair : sync_states_) {
     SyncState& state = pair.second;
     state.ResetFrameOffset();
@@ -222,13 +226,13 @@ bool CameraSynchronizer::Synchronize() {
   if (!BuffersFull()) {
     return false;
   }
-  printf("(svis) Have enough samples for synchronization\n");
+  printf("[CameraSynchronizer::Synchronize] Have enough samples for synchronization\n");
 
   // compute offsets for strobe samples for all inputs
   for (auto& pair : sync_states_) {
     const std::string& sensor_name = pair.first;
     SyncState& state = pair.second;
-    printf("synchronizing %s input\n", sensor_name.c_str());
+    printf("[CameraSynchronizer::Synchronize] synchronizing %s input\n", sensor_name.c_str());
     
     // get offsets
     std::vector<int> offsets(max_buffer_size_, 0);
@@ -239,6 +243,7 @@ bool CameraSynchronizer::Synchronize() {
     if (ComputeBestOffset(state, offsets, &best_offset)) {
       state.SetFrameOffset(best_offset);
     } else {
+      exit(1);
       return false;
     }
   }
@@ -246,13 +251,14 @@ bool CameraSynchronizer::Synchronize() {
   // check if frame offsets are consistent and reset if necessary
   if (!FrameOffsetsConsistent()) {
     ResetFrameOffsets();
+    exit(1);
     return false;
   }
 
   // check if frame offsets lead to reasonable time associations
-  if (!TimeSynchronized()) {
-    return false;
-  }
+  // if (!TimeSynchronized()) {
+  //   return false;
+  // }
 
   // TODO(jakeware): Compute timeoffsets based on synchronization
 

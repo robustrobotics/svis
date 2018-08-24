@@ -211,15 +211,13 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   }
 
   double synchronized_timestamp;
-  ROS_INFO("Getting timestamp for frame %lu of sensor %s", metadata.frame_counter, metadata.sensor_name.c_str());
+  // ROS_INFO("[SVISRos::CameraSyncCallback] Getting timestamp for frame %lu of sensor %s", metadata.frame_counter, metadata.sensor_name.c_str());
   if (svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp)) {
-    ROS_INFO("Got Synchronzied Timestamp: %f, camera timestamp: %f, diff: %f",
+    ROS_INFO("[SVISRos::CameraSyncCallback] Got synchronzied timestamp: %f, camera timestamp: %f, diff: %f",
 	     synchronized_timestamp,
 	     camera_packet.timestamp,
 	     synchronized_timestamp - camera_packet.timestamp);
-    synchronized_timestamp = metadata.sensor_timestamp;  //+ time_offset;
     ros::Time stamp(synchronized_timestamp);
-    ROS_INFO("Computed Timestamp");
 
     sensor_msgs::Image sync_image = *image_msg;
     sync_image.header.stamp = stamp;
@@ -238,7 +236,7 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
     metadata_pubs_[metadata.sensor_name].publish(sync_metadata);
   }
 
-  ROS_INFO("Exiting CameraSyncCallback");
+  // ROS_INFO("[SVISRos::CameraSyncCallback] Exiting");
 }
 
 void SVISRos::PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets) {
@@ -278,7 +276,7 @@ void SVISRos::PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_pac
 
   svis_ros::SvisStrobe strobe;
   for (int i = 0; i < strobe_packets.size(); i++) {
-    strobe.header.stamp = ros::Time::now();
+    strobe.header.stamp = ros::Time(strobe_packets[i].timestamp_ros);
 
     strobe.timestamp_ros_rx = strobe_packets[i].timestamp_ros_rx;
     strobe.timestamp_ros = strobe_packets[i].timestamp_ros;
