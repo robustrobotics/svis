@@ -138,8 +138,6 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
         printf("frame_count: %lu, strobe_count: %i, time_offset: %f\n", camera.metadata.frame_counter, strobe.count_total, time_offset_last);
         offsets->at(i) = frame_offset_last;
         break;
-      } else {
-        printf("time_offset: %f\n", time_offset);
       }
 
       // handle last sample
