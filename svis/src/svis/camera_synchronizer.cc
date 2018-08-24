@@ -135,7 +135,7 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
 
       // assign last offset if the magnitude of our time offset increased?
       if (time_offset > time_offset_last) {
-        // printf("frame_count: %lu, strobe_count: %i", camera.metadata.frame_counter, strobe.count_total);
+        printf("frame_count: %lu, strobe_count: %i, time_offset: %f\n", camera.metadata.frame_counter, strobe.count_total, time_offset_last);
         offsets->at(i) = frame_offset_last;
         break;
       }

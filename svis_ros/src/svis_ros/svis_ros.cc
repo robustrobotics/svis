@@ -184,6 +184,8 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
 void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
                                  const sensor_msgs::CameraInfo::ConstPtr& info_msg,
                                  const shared_msgs::ImageMetadata::ConstPtr& metadata_msg) {
+  // static double time_offset = metadata_msg->header.stamp.toSec() - static_cast<double>(metadata_msg->sensor_timestamp) * 1e-6;
+  
   if (!received_camera_) {
     received_camera_ = true;
   }
@@ -211,7 +213,11 @@ void SVISRos::CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
   double synchronized_timestamp;
   ROS_INFO("Getting timestamp for frame %lu of sensor %s", metadata.frame_counter, metadata.sensor_name.c_str());
   if (svis_.GetSynchronizedTime(metadata.sensor_name, metadata.frame_counter, &synchronized_timestamp)) {
-    ROS_INFO("Got Synchronzied Timestamp: %f, time now: %f", synchronized_timestamp, ros::Time::now().toSec());
+    ROS_INFO("Got Synchronzied Timestamp: %f, camera timestamp: %f, diff: %f",
+	     synchronized_timestamp,
+	     camera_packet.timestamp,
+	     synchronized_timestamp - camera_packet.timestamp);
+    synchronized_timestamp = metadata.sensor_timestamp;  //+ time_offset;
     ros::Time stamp(synchronized_timestamp);
     ROS_INFO("Computed Timestamp");
 
@@ -279,6 +285,7 @@ void SVISRos::PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_pac
     strobe.timestamp_teensy_raw = strobe_packets[i].timestamp_teensy_raw;
     strobe.timestamp_teensy = strobe_packets[i].timestamp_teensy;
     strobe.count = strobe_packets[i].count;
+    strobe.count_total = strobe_packets[i].count_total;
 
     // publish
     svis_strobe_pub_.publish(strobe);
