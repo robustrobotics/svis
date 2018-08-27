@@ -65,7 +65,7 @@ bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
            // frame_count,
            // strobe.count_total,
            // state.frame_offset_);
-    if (frame_count == (strobe.count_total + state.frame_offset_)) {
+    if (frame_count == (strobe.count_total + state.frame_offset_ + 1)) {  // we add one because the realsense is about a frame behind
       printf("[CameraSynchronizer::GetSynchronizedTime] Found matching strobe: %i\n", strobe.count_total);
       // double sensor_timestamp = static_cast<double>(matched_camera->metadata.sensor_timestamp);
       // double frame_timestamp = static_cast<double>(matched_camera->metadata.frame_timestamp);
