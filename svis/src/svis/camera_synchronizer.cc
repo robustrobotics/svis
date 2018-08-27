@@ -115,7 +115,10 @@ bool CameraSynchronizer::BuffersFull() const {
 
 // find first camera image that causes the magnitude of the time offset to increase and compute frame offset
 void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vector<int> *offsets) const {
-  for (std::size_t i = 0; i < max_buffer_size_; ++i) {
+  std::size_t num_offsets = offsets->size();
+  std::vector<double> time_offsets(num_offsets, 0.0);
+  std::vector<std::size_t> camera_index(num_offsets, 0);
+  for (std::size_t i = 0; i < num_offsets; ++i) {
     const StrobePacket& strobe = strobe_buffer_[i];
     // look for min time offset
     int frame_offset = 0;
@@ -137,15 +140,16 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
       if (time_offset > time_offset_last) {
         printf("frame_count: %lu, strobe_count: %i, time_offset: %f\n", camera.metadata.frame_counter, strobe.count_total, time_offset_last);
         offsets->at(i) = frame_offset_last;
+	time_offsets[i] = time_offset_last;
+	camera_index[i] = j - 1;
         break;
       }
     }
   }
 
-  std::size_t num_offsets = offsets->size();
   printf("[CameraSynchronizer::ComputeStrobeOffsets] offsets:\n");
   for (std::size_t i = 0; i < num_offsets; ++i) {
-    printf("%lu, %i\n", i, offsets->at(i));
+    printf("%lu, %i, %f, %lu\n", i, offsets->at(i), time_offsets[i], camera_index[i]);
   }
 }
 
@@ -172,7 +176,7 @@ bool CameraSynchronizer::ComputeBestOffset(const SyncState& state,
   }
 
   // make sure most frequent bin is close to buffer size
-  if (temp_best_offset_count > (max_buffer_size_ - 2)) {
+  if (temp_best_offset_count > (offsets.size() - 2)) {
     *best_offset = temp_best_offset;
     printf("[CameraSynchronizer::ComputeBestOffset] best_offset: %i\n", *best_offset);
     return true;
@@ -229,7 +233,7 @@ bool CameraSynchronizer::Synchronize() {
     printf("[CameraSynchronizer::Synchronize] synchronizing %s input\n", sensor_name.c_str());
     
     // get offsets
-    std::vector<int> offsets(max_buffer_size_ - 1, 0);
+    std::vector<int> offsets(max_buffer_size_ - 2, 0);
     ComputeStrobeOffsets(state, &offsets);
 
     // find best offset
