@@ -115,8 +115,7 @@ bool CameraSynchronizer::BuffersFull() const {
 
 // find first camera image that causes the magnitude of the time offset to increase and compute frame offset
 void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vector<int> *offsets) const {
-  std::size_t num_offsets = offsets->size();
-  for (std::size_t i = 0; i < num_offsets; ++i) {
+  for (std::size_t i = 0; i < max_buffer_size_; ++i) {
     const StrobePacket& strobe = strobe_buffer_[i];
     // look for min time offset
     int frame_offset = 0;
@@ -143,6 +142,7 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
     }
   }
 
+  std::size_t num_offsets = offsets->size();
   printf("[CameraSynchronizer::ComputeStrobeOffsets] offsets:\n");
   for (std::size_t i = 0; i < num_offsets; ++i) {
     printf("%lu, %i\n", i, offsets->at(i));
