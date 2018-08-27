@@ -139,11 +139,11 @@ void CameraSynchronizer::ComputeStrobeOffsets(const SyncState& state, std::vecto
         offsets->at(i) = frame_offset_last;
         break;
       }
+    }
 
-      // handle last sample
-      if ((j == max_buffer_size_ - 1)) {
-        offsets->at(i) = frame_offset;
-      }
+    // handle last sample
+    if ((i == max_buffer_size_ - 1)) {
+      offsets->at(i) = frame_offset;
     }
   }
 
@@ -175,7 +175,7 @@ bool CameraSynchronizer::ComputeBestOffset(const SyncState& state,
     }
   }
 
-  // make sure most frequent bin is clost to buffer size
+  // make sure most frequent bin is close to buffer size
   if (temp_best_offset_count > (max_buffer_size_ - 2)) {
     *best_offset = temp_best_offset;
     printf("[CameraSynchronizer::ComputeBestOffset] best_offset: %i\n", *best_offset);
