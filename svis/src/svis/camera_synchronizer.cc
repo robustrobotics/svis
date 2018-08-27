@@ -67,11 +67,8 @@ bool CameraSynchronizer::GetSynchronizedTime(const std::string& sensor_name,
            // state.frame_offset_);
     if (frame_count == (strobe.count_total + state.frame_offset_ + 1)) {  // we add one because the realsense is about a frame behind
       printf("[CameraSynchronizer::GetSynchronizedTime] Found matching strobe: %i\n", strobe.count_total);
-      // double sensor_timestamp = static_cast<double>(matched_camera->metadata.sensor_timestamp);
-      // double frame_timestamp = static_cast<double>(matched_camera->metadata.frame_timestamp);
-      // double sensor_time_offset = (sensor_timestamp - frame_timestamp) / 1000000.0;  // seconds
-      // printf("sensor_time_offset: %f\n", sensor_time_offset);
-      double temp_timestamp = strobe.timestamp_ros;  // + sensor_time_offset;
+      double exposure_time = static_cast<double>(matched_camera->metadata.exposure_time) / 1e6;
+      double temp_timestamp = strobe.timestamp_ros - exposure_time * 0.5;
 
       // TODO(jakeware): sanity check timestamp before assignment
       *timestamp = temp_timestamp;
