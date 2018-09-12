@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE eagle SYSTEM "eagle.dtd">
+<eagle version="6.6.0">
+<drawing>
+<settings>
+<setting alwaysvectorfont="no"/>
+<setting verticaltext="up"/>
+</settings>
+<grid distance="0.1" unitdist="mm" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.05" altunitdist="mm" altunit="mm"/>
+<layers>
+<layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
+<layer number="20" name="Dimension" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="yes" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
+<layer number="32" name="bCream" color="7" fill="5" visible="yes" active="yes"/>
+<layer number="33" name="tFinish" color="6" fill="3" visible="yes" active="yes"/>
+<layer number="34" name="bFinish" color="6" fill="6" visible="yes" active="yes"/>
+<layer number="35" name="tGlue" color="7" fill="4" visible="yes" active="yes"/>
+<layer number="36" name="bGlue" color="7" fill="5" visible="yes" active="yes"/>
+<layer number="37" name="tTest" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="38" name="bTest" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="39" name="tKeepout" color="4" fill="11" visible="yes" active="yes"/>
+<layer number="40" name="bKeepout" color="1" fill="11" visible="yes" active="yes"/>
+<layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
+<layer number="44" name="Drills" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="yes" active="yes"/>
+<layer number="47" name="Measures" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="91" name="Nets" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="92" name="Busses" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="93" name="Pins" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="94" name="Symbols" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="95" name="Names" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="96" name="Values" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="97" name="Info" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="98" name="Guide" color="6" fill="1" visible="yes" active="yes"/>
+</layers>
+<library>
+<packages>
+<package name="QFN-24">
+<smd name="P$1" x="-0.22" y="1.85" dx="0.25" dy="0.4" layer="1"/>
+<smd name="P$25" x="0" y="0" dx="2.7" dy="2.6" layer="1" rot="R270"/>
+</package>
+</packages>
+<symbols>
+<symbol name="INVENSENSE_ICM20689">
+<wire x1="-12.7" y1="-30.48" x2="-12.7" y2="30.48" width="0.254" layer="94"/>
+<wire x1="-12.7" y1="30.48" x2="12.7" y2="30.48" width="0.254" layer="94"/>
+<wire x1="12.7" y1="30.48" x2="12.7" y2="-30.48" width="0.254" layer="94"/>
+<wire x1="12.7" y1="-30.48" x2="-12.7" y2="-30.48" width="0.254" layer="94"/>
+<pin name="NC1" x="-17.78" y="27.94" length="middle" direction="nc"/>
+<pin name="NC2" x="-17.78" y="22.86" length="middle" direction="nc"/>
+<pin name="NC3" x="-17.78" y="17.78" length="middle" direction="nc"/>
+<pin name="NC4" x="-17.78" y="12.7" length="middle" direction="nc"/>
+<pin name="NC5" x="-17.78" y="7.62" length="middle" direction="nc"/>
+<pin name="NC6" x="-17.78" y="2.54" length="middle" direction="nc"/>
+<pin name="NC7" x="-17.78" y="-2.54" length="middle" direction="nc"/>
+<pin name="VDDIO" x="-17.78" y="-7.62" length="middle" direction="pwr"/>
+<pin name="AD0/SDO" x="-17.78" y="-12.7" length="middle"/>
+<pin name="REGOUT" x="-17.78" y="-17.78" length="middle"/>
+<pin name="FSYNC" x="-17.78" y="-22.86" length="middle"/>
+<pin name="INT" x="-17.78" y="-27.94" length="middle"/>
+<pin name="VDD" x="17.78" y="-27.94" length="middle" direction="pwr" rot="R180"/>
+<pin name="NC14" x="17.78" y="-22.86" length="middle" direction="nc" rot="R180"/>
+<pin name="NC15" x="17.78" y="-17.78" length="middle" direction="nc" rot="R180"/>
+<pin name="NC16" x="17.78" y="-12.7" length="middle" direction="nc" rot="R180"/>
+<pin name="NC17" x="17.78" y="-7.62" length="middle" direction="nc" rot="R180"/>
+<pin name="GND" x="17.78" y="-2.54" length="middle" direction="pwr" rot="R180"/>
+<pin name="NC19" x="17.78" y="2.54" length="middle" direction="nc" rot="R180"/>
+<pin name="NC20" x="17.78" y="7.62" length="middle" direction="nc" rot="R180"/>
+<pin name="NC21" x="17.78" y="12.7" length="middle" direction="nc" rot="R180"/>
+<pin name="NCS" x="17.78" y="17.78" length="middle" rot="R180"/>
+<pin name="SCL/SCLK" x="17.78" y="22.86" length="middle" rot="R180"/>
+<pin name="SDA/SDI" x="17.78" y="27.94" length="middle" rot="R180"/>
+<text x="-12.7" y="30.48" size="1.778" layer="94">&gt;NAME</text>
+<text x="-12.7" y="-33.02" size="1.778" layer="94">&gt;VALUE</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="INVENSENSE_20689">
+<gates>
+</gates>
+<devices>
+<device name="">
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
+</drawing>
+</eagle>
