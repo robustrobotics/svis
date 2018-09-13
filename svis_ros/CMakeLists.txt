@@ -33,6 +33,7 @@ set(REQ_CATKIN_PKGS
   std_msgs
   sensor_msgs
   message_generation
+  shared_msgs
   )
 find_package(catkin REQUIRED COMPONENTS ${REQ_CATKIN_PKGS})
 
@@ -98,6 +99,7 @@ add_library(svis_ros SHARED
 
 add_dependencies(svis_ros
   svis_ros_generate_messages_cpp
+  shared_msgs_generate_messages_cpp
   )
 
 target_link_libraries(svis_ros

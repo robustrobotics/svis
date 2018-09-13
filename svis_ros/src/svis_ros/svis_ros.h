@@ -8,19 +8,15 @@
 
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/Imu.h>
 #include <image_transport/image_transport.h>
-#include <image_transport/camera_subscriber.h>
-#include <dynamic_reconfigure/StrParameter.h>
-#include <dynamic_reconfigure/Reconfigure.h>
-#include <dynamic_reconfigure/Config.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <sensor_msgs/Imu.h>
+#include <shared_msgs/ImageMetadata.h>
 
 #include "svis/svis.h"
 #include "svis/imu_packet.h"
 #include "svis/strobe_packet.h"
-#include "svis/camera_strobe_packet.h"
-#include "svis/image.h"
-#include "svis/camera_info.h"
 #include "svis_ros/SvisImu.h"
 #include "svis_ros/SvisStrobe.h"
 #include "svis_ros/SvisTiming.h"
@@ -43,47 +39,47 @@ class SVISRos {
   SVISRos();
   void Run();
 
-  static volatile std::sig_atomic_t stop_signal_;
-
  private:
   void GetParams();
   void InitSubscribers();
   void InitPublishers();
 
   // callbacks
-  void CameraCallback(const sensor_msgs::Image::ConstPtr& image_msg,
-                      const sensor_msgs::CameraInfo::ConstPtr& info_msg);
+  void CameraSyncCallback(const sensor_msgs::Image::ConstPtr& image_msg,
+                          const sensor_msgs::CameraInfo::ConstPtr& info_msg,
+                          const shared_msgs::ImageMetadata::ConstPtr& metadata_msg);
 
   // publishers
   void PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets);
   void PublishImu(const svis::ImuPacket& imu_packet);
   void PublishStrobeRaw(const std::vector<svis::StrobePacket>& strobe_packets);
   void PublishTiming(const svis::Timing& timing);
-  void PublishCamera(std::vector<svis::CameraStrobePacket>& camera_strobe_packets);
   double TimeNow();
-  
-  void ConfigureCamera();
-
-  // conversions
-  std::shared_ptr<svis::Image> RosImageToSvis(const sensor_msgs::Image& ros_image);
-  const std::shared_ptr<sensor_msgs::Image> SvisToRosImage(const svis::Image& svis_image);
-  std::shared_ptr<svis::CameraInfo> RosCameraInfoToSvis(const sensor_msgs::CameraInfo& ros_info);
-  const std::shared_ptr<sensor_msgs::CameraInfo> SvisToRosCameraInfo(const svis::CameraInfo& svis_info);
 
   // ros
   ros::NodeHandle nh_;
   ros::NodeHandle pnh_;
-  image_transport::ImageTransport it_;
 
   // publishers
-  image_transport::CameraPublisher camera_pub_;
   ros::Publisher imu_pub_;
   ros::Publisher svis_imu_pub_;
   ros::Publisher svis_strobe_pub_;
   ros::Publisher svis_timing_pub_;
+  std::map<std::string, ros::Publisher> image_pubs_;
+  std::map<std::string, ros::Publisher> info_pubs_;
+  std::map<std::string, ros::Publisher> metadata_pubs_;
+  std::vector<std::string> sensor_names_;
 
   // subscribers
-  image_transport::CameraSubscriber camera_sub_;
+  std::vector<std::string> image_topics_;
+  std::vector<std::string> info_topics_;
+  std::vector<std::string> metadata_topics_;
+  std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::Image>>> image_sub_ptrs_;
+  std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::CameraInfo>>> info_sub_ptrs_;
+  std::vector<std::shared_ptr<message_filters::Subscriber<shared_msgs::ImageMetadata>>> metadata_sub_ptrs_;
+  std::vector<std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::Image,
+                                                                sensor_msgs::CameraInfo,
+                                                                shared_msgs::ImageMetadata>>> camera_sync_ptrs_;
 
   bool received_camera_ = false;
   svis::SVIS svis_;

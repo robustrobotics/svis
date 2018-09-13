@@ -2,17 +2,13 @@
 
 #pragma once
 
-#include "svis/image.h"
-#include "svis/camera_info.h"
 #include "svis/image_metadata.h"
 
 namespace svis {
 
-class CameraPacket {
- public:
+struct CameraPacket {
+  double timestamp;
   ImageMetadata metadata;
-  CameraInfo info;
-  Image image;
 };
 
 }  // namespace svis

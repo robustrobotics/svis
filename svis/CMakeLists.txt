@@ -66,7 +66,18 @@ install(FILES
 # Library: svis
 #-------------------------------------------------------------------------------
 add_library(${PROJECT_NAME} SHARED
+  src/svis/camera_packet.h
+  src/svis/camera_synchronizer.cc
+  src/svis/camera_synchronizer.h
+  src/svis/header.h
+  src/svis/header_packet.h
+  src/svis/image_metadata.h
+  src/svis/imu_packet.h
+  src/svis/strobe_packet.h
   src/svis/svis.cc
+  src/svis/svis.h
+  src/svis/sync_state.h
+  src/svis/timing.h
   )
 
 target_link_libraries(${PROJECT_NAME}
@@ -89,6 +100,7 @@ install(DIRECTORY src/${PROJECT_NAME} DESTINATION include
 #-------------------------------------------------------------------------------
 add_library(svis_hid SHARED
   src/svis_hid/svis_hid.c
+  src/svis_hid/svis_hid.h
   )
 
 target_link_libraries(svis_hid

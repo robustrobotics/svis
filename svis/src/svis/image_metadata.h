@@ -2,19 +2,16 @@
 
 #pragma once
 
+#include <string>
+
 namespace svis {
 
 struct ImageMetadata {
-  uint32_t timestamp = 0;
-  uint32_t gain = 0;
-  uint32_t shutter = 0;
-  uint32_t brightness = 0;
-  uint32_t exposure = 0;
-  uint32_t white_balance = 0;
-  uint32_t frame_counter = 0;
-  uint32_t strobe_pattern = 0;
-  uint32_t gpio_state = 0;
-  uint32_t roi_position = 0;
+  std::string sensor_name = "";
+  uint64_t frame_counter = 0;
+  uint64_t frame_timestamp = 0;  // [microseconds]
+  uint64_t sensor_timestamp = 0;  // [microseconds]
+  uint64_t exposure_time = 0;  // [microseconds]
 };
 
 }  // namespace svis_ros
