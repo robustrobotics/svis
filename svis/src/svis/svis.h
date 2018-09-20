@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>
 
 #include <chrono>
+#include <vector>
 #include <boost/circular_buffer.hpp>
 
 #include "svis/timing.h"

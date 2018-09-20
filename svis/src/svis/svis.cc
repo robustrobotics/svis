@@ -1,6 +1,8 @@
 // Copyright 2017 Massachusetts Institute of Technology
 
 #include <cstring>
+#include <cmath>
+#include <functional>
 
 #include "svis/svis.h"
 

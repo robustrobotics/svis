@@ -141,7 +141,7 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
   sensor_msgs::Imu imu;
 
   imu.header.stamp = ros::Time(imu_packet.timestamp_ros);
-  imu.header.frame_id = "body";
+  imu.header.frame_id = "svis_imu";
 
   // orientation
   imu.orientation.x = std::numeric_limits<double>::quiet_NaN();
@@ -251,7 +251,7 @@ void SVISRos::PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets) {
   }
 
   imu.header.stamp = ros::Time::now();
-  imu.header.frame_id = "svis_imu_frame";
+  imu.header.frame_id = "svis_imu";
   for (int i = 0; i < imu_packets.size(); i++) {
     imu.timestamp_ros_rx[i] = imu_packets[i].timestamp_ros_rx;
     imu.timestamp_ros[i] = imu_packets[i].timestamp_ros;

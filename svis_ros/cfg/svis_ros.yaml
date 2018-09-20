@@ -10,15 +10,15 @@ acc_sens: 1  # [0,3] accel full-scale range and sensitivity
 imu_filter_size: 5  # window size for low-pass filter on imu
 
 # input topics
-image_topics: [/camera/depth/image_rect_raw,
-               /camera/infra1/image_rect_raw,
-               /camera/infra2/image_rect_raw]
-info_topics: [/camera/depth/camera_info,
-              /camera/infra1/camera_info,
-              /camera/infra2/camera_info]
-metadata_topics: [/camera/depth/metadata,
-                  /camera/infra1/metadata,
-                  /camera/infra2/metadata]
+image_topics: [/realsense/depth/image_rect_raw,
+               /realsense/infra1/image_rect_raw,
+               /realsense/infra2/image_rect_raw]
+info_topics: [/realsense/depth/camera_info,
+              /realsense/infra1/camera_info,
+              /realsense/infra2/camera_info]
+metadata_topics: [/realsense/depth/metadata,
+                  /realsense/infra1/metadata,
+                  /realsense/infra2/metadata]
 
 # output topics
 sensor_names: [depth,

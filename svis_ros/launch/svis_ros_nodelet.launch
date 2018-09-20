@@ -5,6 +5,7 @@
   <arg name="manager" default="manager" />
   <arg name="standalone" default="true" />
   <arg name="param_file" default="svis_ros.yaml" />
+  <arg name="load_params" default="true" />
 
   <group ns="$(arg namespace)" >
     <!-- Manager -->
