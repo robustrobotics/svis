@@ -266,7 +266,6 @@
 <wire x1="-8.89" y1="17.78" x2="-1.27" y2="17.78" width="0.2032" layer="21"/>
 <wire x1="-1.27" y1="17.78" x2="-1.27" y2="16.51" width="0.2032" layer="21"/>
 <text x="-3.81" y="13.97" size="1.27" layer="25" font="vector">&gt;NAME</text>
-<text x="-3.81" y="-13.97" size="1.27" layer="27" font="vector">&gt;VALUE</text>
 </package>
 <package name="TEENSY_3.0-3.2&amp;LC_DIL+4">
 <pad name="GND" x="-7.62" y="16.51" drill="0.9652"/>
