@@ -207,7 +207,6 @@
 <wire x1="2.62" y1="2.62" x2="2.62" y2="-2.62" width="0.05" layer="39"/>
 <wire x1="2.62" y1="-2.62" x2="-2.62" y2="-2.62" width="0.05" layer="39"/>
 <wire x1="-2.62" y1="-2.62" x2="-2.62" y2="2.62" width="0.05" layer="39"/>
-<text x="-3.185090625" y="3.185090625" size="1.27403125" layer="25">&gt;NAME</text>
 <smd name="1" x="-1.97" y="1.25" dx="0.79" dy="0.26" layer="1"/>
 <smd name="2" x="-1.97" y="0.75" dx="0.79" dy="0.26" layer="1"/>
 <smd name="3" x="-1.97" y="0.25" dx="0.79" dy="0.26" layer="1"/>
@@ -250,7 +249,7 @@
 <smd name="7" x="3.5" y="0" dx="0.6" dy="1.55" layer="1"/>
 <smd name="8" x="4.5" y="0" dx="0.6" dy="1.55" layer="1"/>
 <smd name="9" x="5.5" y="0" dx="0.6" dy="1.55" layer="1"/>
-<text x="-4.445" y="1.27" size="1.27" layer="21">&gt;NAME</text>
+<text x="-4.445" y="2.54" size="1.27" layer="21">&gt;NAME</text>
 </package>
 </packages>
 <symbols>
@@ -877,7 +876,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND1" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="SUPPLY1" library="SparkFun-PowerSymbols" deviceset="3.3V" device=""/>
 <part name="TEENSY" library="teensy" deviceset="TEENSY_3.0_DIL" device=""/>
-<part name="GND2" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="SUPPLY2" library="SparkFun-PowerSymbols" deviceset="3.3V" device=""/>
 <part name="GND3" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="GND4" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
@@ -895,6 +893,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND7" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="CAM2" library="svis" deviceset="SM09B-SRSS-TB" device=""/>
 <part name="GND8" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
+<part name="GND9" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -906,7 +905,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="GND1" gate="1" x="177.8" y="73.66"/>
 <instance part="SUPPLY1" gate="G$1" x="177.8" y="101.6"/>
 <instance part="TEENSY" gate="G$1" x="152.4" y="73.66"/>
-<instance part="GND2" gate="1" x="78.74" y="35.56"/>
 <instance part="SUPPLY2" gate="G$1" x="93.98" y="78.74"/>
 <instance part="GND3" gate="1" x="17.78" y="53.34"/>
 <instance part="GND4" gate="1" x="93.98" y="43.18"/>
@@ -924,6 +922,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="GND7" gate="1" x="213.36" y="35.56"/>
 <instance part="CAM2" gate="G$1" x="200.66" y="93.98"/>
 <instance part="GND8" gate="1" x="213.36" y="78.74"/>
+<instance part="GND9" gate="1" x="78.74" y="35.56"/>
 </instances>
 <busses>
 </busses>
@@ -938,16 +937,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="177.8" y1="78.74" x2="177.8" y2="76.2" width="0.1524" layer="91"/>
 <wire x1="175.26" y1="78.74" x2="177.8" y2="78.74" width="0.1524" layer="91"/>
 <junction x="177.8" y="78.74"/>
-</segment>
-<segment>
-<pinref part="ICM20689" gate="G$1" pin="GND"/>
-<pinref part="GND2" gate="1" pin="GND"/>
-<wire x1="76.2" y1="43.18" x2="78.74" y2="43.18" width="0.1524" layer="91"/>
-<wire x1="78.74" y1="43.18" x2="78.74" y2="40.64" width="0.1524" layer="91"/>
-<pinref part="ICM20689" gate="G$1" pin="EPX_PAD"/>
-<wire x1="78.74" y1="40.64" x2="78.74" y2="38.1" width="0.1524" layer="91"/>
-<wire x1="76.2" y1="40.64" x2="78.74" y2="40.64" width="0.1524" layer="91"/>
-<junction x="78.74" y="40.64"/>
 </segment>
 <segment>
 <pinref part="ICM20689" gate="G$1" pin="FSYNC"/>
@@ -985,6 +974,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="210.82" y1="53.34" x2="213.36" y2="53.34" width="0.1524" layer="91"/>
 <wire x1="213.36" y1="53.34" x2="213.36" y2="48.26" width="0.1524" layer="91"/>
 <junction x="213.36" y="48.26"/>
+<pinref part="CAM1" gate="G$1" pin="P$9"/>
+<wire x1="210.82" y1="60.96" x2="213.36" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="213.36" y1="60.96" x2="213.36" y2="53.34" width="0.1524" layer="91"/>
+<junction x="213.36" y="53.34"/>
 </segment>
 <segment>
 <pinref part="CAM2" gate="G$1" pin="P$2"/>
@@ -999,6 +992,20 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="213.36" y1="96.52" x2="213.36" y2="91.44" width="0.1524" layer="91"/>
 <junction x="213.36" y="86.36"/>
 <junction x="213.36" y="91.44"/>
+<pinref part="CAM2" gate="G$1" pin="P$9"/>
+<wire x1="210.82" y1="104.14" x2="213.36" y2="104.14" width="0.1524" layer="91"/>
+<wire x1="213.36" y1="104.14" x2="213.36" y2="96.52" width="0.1524" layer="91"/>
+<junction x="213.36" y="96.52"/>
+</segment>
+<segment>
+<pinref part="ICM20689" gate="G$1" pin="EPX_PAD"/>
+<pinref part="GND9" gate="1" pin="GND"/>
+<wire x1="76.2" y1="40.64" x2="78.74" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="40.64" x2="78.74" y2="38.1" width="0.1524" layer="91"/>
+<pinref part="ICM20689" gate="G$1" pin="GND"/>
+<wire x1="76.2" y1="43.18" x2="78.74" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="43.18" x2="78.74" y2="40.64" width="0.1524" layer="91"/>
+<junction x="78.74" y="40.64"/>
 </segment>
 </net>
 <net name="3.3V" class="0">
@@ -1111,13 +1118,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <label x="127" y="50.8" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="CAM1_GND" class="0">
-<segment>
-<pinref part="CAM1" gate="G$1" pin="P$9"/>
-<wire x1="210.82" y1="60.96" x2="215.9" y2="60.96" width="0.1524" layer="91"/>
-<label x="215.9" y="60.96" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="CAM1_TX" class="0">
 <segment>
 <pinref part="CAM1" gate="G$1" pin="P$8"/>
@@ -1176,13 +1176,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="TEENSY" gate="G$1" pin="3/PWM"/>
 <wire x1="129.54" y1="93.98" x2="127" y2="93.98" width="0.1524" layer="91"/>
 <label x="127" y="93.98" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="CAM2_GND" class="0">
-<segment>
-<pinref part="CAM2" gate="G$1" pin="P$9"/>
-<wire x1="210.82" y1="104.14" x2="215.9" y2="104.14" width="0.1524" layer="91"/>
-<label x="215.9" y="104.14" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="CAM2_TX" class="0">
