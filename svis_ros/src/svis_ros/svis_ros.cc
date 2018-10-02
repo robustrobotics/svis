@@ -33,6 +33,8 @@ SVISRos::SVISRos()
 }
 
 void SVISRos::Run() {
+  sleep(5);
+  
   GetParams();
   InitSubscribers();
   InitPublishers();
@@ -156,8 +158,8 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
 
   // angular velocity [rad/s]
   imu.angular_velocity.x = imu_packet.gyro[0];
-  imu.angular_velocity.y = imu_packet.gyro[1];
-  imu.angular_velocity.z = imu_packet.gyro[2];
+  imu.angular_velocity.y = -imu_packet.gyro[1];
+  imu.angular_velocity.z = -imu_packet.gyro[2];
 
   // angular velocity covariance
   for (int i = 0; i < imu.angular_velocity_covariance.size(); i++) {
@@ -166,8 +168,8 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
 
   // linear acceleration [m/s^2]
   imu.linear_acceleration.x = imu_packet.acc[0];
-  imu.linear_acceleration.y = imu_packet.acc[1];
-  imu.linear_acceleration.z = imu_packet.acc[2];
+  imu.linear_acceleration.y = -imu_packet.acc[1];
+  imu.linear_acceleration.z = -imu_packet.acc[2];
 
   // acceleration covariance
   for (int i = 0; i < imu.linear_acceleration_covariance.size(); i++) {
