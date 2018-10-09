@@ -190,6 +190,24 @@
 <circle x="36" y="32" radius="3" width="0.254" layer="21"/>
 <hole x="36" y="4" drill="3.2"/>
 <circle x="36" y="4" radius="3" width="0.254" layer="21"/>
+<text x="31" y="1.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="31" y="1.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="28.5" y="18.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="30" y="4.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="26" y="2" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="26.5" y="0.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="31.5" y="1.5" size="1.778" layer="26" rot="MR0">Y &lt;--</text>
+<text x="25" y="2.5" size="1.778" layer="26" rot="MR90">--&gt; X</text>
+<text x="31" y="28.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="31" y="28.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="30" y="31.5" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="26" y="29" size="1.778" layer="16" rot="MR0">Y &lt;--</text>
+<text x="31.5" y="28.5" size="1.778" layer="26" rot="MR0">Y &lt;--</text>
+<text x="25" y="29.5" size="1.778" layer="26" rot="MR90">--&gt; X</text>
+<text x="12.5" y="28.5" size="1.778" layer="25">--&gt; Y</text>
+<text x="12.5" y="1.5" size="1.778" layer="25">--&gt; Y</text>
+<text x="13" y="2.5" size="1.778" layer="25" rot="R90">--&gt; X</text>
+<text x="13" y="29.5" size="1.778" layer="25" rot="R90">--&gt; X</text>
 </plain>
 <libraries>
 <library name="svis">
@@ -630,22 +648,19 @@ design rules under a new name.</description>
 <wire x1="6.03" y1="25.62" x2="6.03" y2="25.47" width="0.254" layer="1"/>
 <wire x1="6.03" y1="25.47" x2="13" y2="18.5" width="0.254" layer="1"/>
 <wire x1="13" y1="18.5" x2="16.5" y2="18.5" width="0.254" layer="1"/>
+<contactref element="C2" pad="2"/>
+<contactref element="C3" pad="2"/>
 </signal>
 <signal name="3.3V">
 <contactref element="TEENSY" pad="3.3V"/>
 <contactref element="R1" pad="2"/>
 <contactref element="R2" pad="2"/>
-<contactref element="C3" pad="1"/>
-<contactref element="C2" pad="1"/>
 <contactref element="ICM20689" pad="8"/>
 <contactref element="C4" pad="2"/>
 <contactref element="ICM20689" pad="22"/>
 <wire x1="12.5" y1="21.69" x2="8.57" y2="25.62" width="0.254" layer="1"/>
-<wire x1="21.15" y1="22.5" x2="21.15" y2="21.86" width="0.254" layer="16"/>
 <wire x1="21.15" y1="21.86" x2="20.25" y2="20.96" width="0.254" layer="16"/>
 <wire x1="20.25" y1="20.96" x2="20.25" y2="19.97" width="0.254" layer="16"/>
-<wire x1="18.85" y1="22.5" x2="21.15" y2="22.5" width="0.254" layer="16"/>
-<wire x1="18.85" y1="22.5" x2="18.85" y2="22.35" width="0.254" layer="16"/>
 <via x="16.5" y="20.5" extent="1-16" drill="0.6"/>
 <wire x1="26" y1="21.65" x2="26" y2="16.5" width="0.254" layer="1"/>
 <wire x1="26" y1="16.5" x2="24.5" y2="15" width="0.254" layer="1"/>
@@ -662,7 +677,6 @@ design rules under a new name.</description>
 <wire x1="13.96" y1="21.69" x2="14" y2="21.65" width="0.254" layer="1"/>
 <wire x1="25.35" y1="21" x2="26" y2="21.65" width="0.254" layer="1"/>
 <wire x1="25.35" y1="21" x2="18" y2="21" width="0.254" layer="1"/>
-<wire x1="18.85" y1="21.85" x2="18.85" y2="22.5" width="0.254" layer="16"/>
 <wire x1="14" y1="21.65" x2="15.35" y2="21.65" width="0.254" layer="1"/>
 <wire x1="15.35" y1="21.65" x2="16.5" y2="20.5" width="0.254" layer="1"/>
 <wire x1="16.5" y1="20.5" x2="17.5" y2="20.5" width="0.254" layer="1"/>
@@ -670,6 +684,17 @@ design rules under a new name.</description>
 <wire x1="16.5" y1="20.5" x2="17" y2="21" width="0.254" layer="16"/>
 <wire x1="17" y1="21" x2="18" y2="21" width="0.254" layer="16"/>
 <wire x1="18" y1="21" x2="18.85" y2="21.85" width="0.254" layer="16"/>
+<contactref element="C3" pad="1"/>
+<contactref element="C2" pad="1"/>
+<wire x1="18.85" y1="22.5" x2="21.15" y2="22.5" width="0.254" layer="16"/>
+<wire x1="18.85" y1="22.5" x2="18.85" y2="22.35" width="0.254" layer="16"/>
+<contactref element="ICM20689" pad="13"/>
+<wire x1="18.03" y1="16.75" x2="16.25" y2="16.75" width="0.254" layer="16"/>
+<wire x1="16.25" y1="16.75" x2="15" y2="18" width="0.254" layer="16"/>
+<wire x1="15" y1="19" x2="16.5" y2="20.5" width="0.254" layer="16"/>
+<wire x1="15" y1="19" x2="15" y2="18" width="0.254" layer="16"/>
+<wire x1="18.85" y1="21.85" x2="18.85" y2="22.35" width="0" layer="19" extent="16-16"/>
+<wire x1="21.15" y1="21.86" x2="21.15" y2="22.5" width="0" layer="19" extent="16-16"/>
 </signal>
 <signal name="VIN">
 <contactref element="TEENSY" pad="VIN"/>
@@ -703,20 +728,6 @@ design rules under a new name.</description>
 <wire x1="24" y1="23.5" x2="23.5" y2="24" width="0.254" layer="16"/>
 <wire x1="23.5" y1="24" x2="22.89" y2="24" width="0.254" layer="16"/>
 <wire x1="22.89" y1="24" x2="21.27" y2="25.62" width="0.254" layer="16"/>
-</signal>
-<signal name="N$2">
-<contactref element="ICM20689" pad="13"/>
-<contactref element="C3" pad="2"/>
-<contactref element="C2" pad="2"/>
-<wire x1="22.85" y1="22.5" x2="22.85" y2="23.15" width="0.254" layer="16"/>
-<wire x1="22.85" y1="23.15" x2="22.5" y2="23.5" width="0.254" layer="16"/>
-<wire x1="22.5" y1="23.5" x2="18.15" y2="23.5" width="0.254" layer="16"/>
-<wire x1="18.15" y1="23.5" x2="17.15" y2="22.5" width="0.254" layer="16"/>
-<wire x1="15" y1="18" x2="16.25" y2="16.75" width="0.254" layer="16"/>
-<wire x1="16.25" y1="16.75" x2="18.03" y2="16.75" width="0.254" layer="16"/>
-<wire x1="15" y1="21" x2="16.5" y2="22.5" width="0.254" layer="16"/>
-<wire x1="16.5" y1="22.5" x2="17.15" y2="22.5" width="0.254" layer="16"/>
-<wire x1="15" y1="18" x2="15" y2="21" width="0.254" layer="16"/>
 </signal>
 <signal name="N$1">
 <contactref element="C1" pad="1"/>
