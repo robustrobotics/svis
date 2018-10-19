@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.6.0">
+<eagle version="9.2.1">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
+<setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="0.5" unitdist="mm" unit="mm" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="mm" altunit="mm"/>
@@ -177,7 +178,6 @@
 <layer number="249" name="Edge" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="250" name="Descript" color="3" fill="1" visible="no" active="no"/>
 <layer number="251" name="SMDround" color="12" fill="11" visible="no" active="no"/>
-<layer number="254" name="cooling" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="255" name="routoute" color="7" fill="1" visible="yes" active="yes"/>
 </layers>
 <board>
@@ -190,22 +190,26 @@
 <circle x="36" y="32" radius="3" width="0.254" layer="21"/>
 <hole x="36" y="4" drill="3.2"/>
 <circle x="36" y="4" radius="3" width="0.254" layer="21"/>
-<text x="31.5" y="1.5" size="1.778" layer="26" rot="MR0">Y &lt;--</text>
-<text x="26.5" y="2.5" size="1.778" layer="25" rot="R90">--&gt; X</text>
-<text x="31.5" y="28.5" size="1.778" layer="26" rot="MR0">Y &lt;--</text>
-<text x="25" y="29.5" size="1.778" layer="26" rot="MR90">--&gt; X</text>
-<text x="26" y="28.5" size="1.778" layer="25">--&gt; Y</text>
-<text x="26" y="1.5" size="1.778" layer="25">--&gt; Y</text>
-<text x="26.5" y="2.5" size="1.778" layer="25" rot="R90">--&gt; X</text>
-<text x="25" y="29.5" size="1.778" layer="26" rot="MR90">--&gt; X</text>
-<text x="22.5" y="2" size="1.778" layer="25" rot="MR0">SVIS
-(2018/10/12)</text>
-<text x="22.5" y="29.5" size="1.778" layer="25" rot="MR0">SVIS
-(2018/10/12)</text>
-<text x="8.5" y="29.5" size="1.778" layer="25">SVIS
-(2018/10/12)</text>
-<text x="8.5" y="2" size="1.778" layer="25">SVIS
-(2018/10/12)</text>
+<text x="30.5" y="1.5" size="1.778" layer="26" font="vector" rot="MR0">Y&lt;-</text>
+<text x="26.5" y="2.5" size="1.778" layer="25" font="vector" rot="R90">-&gt;X</text>
+<text x="30.5" y="28.5" size="1.778" layer="26" font="vector" rot="MR0">Y&lt;-</text>
+<text x="25" y="29.5" size="1.778" layer="26" font="vector" rot="MR90">-&gt;X</text>
+<text x="26" y="28.5" size="1.778" layer="25" font="vector">-&gt;Y</text>
+<text x="26" y="1.5" size="1.778" layer="25" font="vector">-&gt;Y</text>
+<text x="26.5" y="2.5" size="1.778" layer="26" font="vector" rot="R90">-&gt;X</text>
+<text x="25" y="29.5" size="1.778" layer="25" font="vector" rot="MR90">-&gt;X</text>
+<text x="22.5" y="2" size="1.778" layer="26" font="vector" rot="MR0">SVIS
+10/19/18</text>
+<text x="22.5" y="29.5" size="1.778" layer="26" font="vector" rot="MR0">SVIS
+10/19/18</text>
+<text x="8.5" y="29.5" size="1.778" layer="25" font="vector">SVIS
+10/19/18</text>
+<text x="8.5" y="2" size="1.778" layer="25" font="vector">SVIS
+10/19/18</text>
+<wire x1="0" y1="0" x2="0" y2="36" width="0.254" layer="20"/>
+<wire x1="0" y1="36" x2="40" y2="36" width="0.254" layer="20"/>
+<wire x1="40" y1="36" x2="40" y2="0" width="0.254" layer="20"/>
+<wire x1="40" y1="0" x2="0" y2="0" width="0.254" layer="20"/>
 </plain>
 <libraries>
 <library name="svis">
@@ -404,14 +408,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <clearance class="0" value="0.205"/>
 </class>
 </classes>
-<designrules name="4pcb">
-<description language="de">&lt;b&gt;EAGLE Design Rules&lt;/b&gt;
-&lt;p&gt;
-Die Standard-Design-Rules sind so gewählt, dass sie für 
-die meisten Anwendungen passen. Sollte ihre Platine 
-besondere Anforderungen haben, treffen Sie die erforderlichen
-Einstellungen hier und speichern die Design Rules unter 
-einem neuen Namen ab.</description>
+<designrules name="sparkfun">
 <description language="en">&lt;b&gt;EAGLE Design Rules&lt;/b&gt;
 &lt;p&gt;
 The default Design Rules have been set to cover
@@ -420,25 +417,25 @@ may have different requirements, so please make the
 necessary adjustments and save your customized
 design rules under a new name.</description>
 <param name="layerSetup" value="(1*16)"/>
-<param name="mtCopper" value="0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm 0.035559375mm"/>
-<param name="mtIsolate" value="1.501140625mm 0.149859375mm 0.200659375mm 0.149859375mm 0.200659375mm 0.149859375mm 0.200659375mm 0.149859375mm 0.200659375mm 0.149859375mm 0.200659375mm 0.149859375mm 0.200659375mm 0.149859375mm 0.200659375mm"/>
-<param name="mdWireWire" value="6mil"/>
-<param name="mdWirePad" value="6mil"/>
-<param name="mdWireVia" value="6mil"/>
-<param name="mdPadPad" value="6mil"/>
-<param name="mdPadVia" value="6mil"/>
-<param name="mdViaVia" value="6mil"/>
-<param name="mdSmdPad" value="6mil"/>
-<param name="mdSmdVia" value="6mil"/>
-<param name="mdSmdSmd" value="6mil"/>
+<param name="mtCopper" value="0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm 0.035mm"/>
+<param name="mtIsolate" value="1.5mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm 0.15mm 0.2mm"/>
+<param name="mdWireWire" value="8mil"/>
+<param name="mdWirePad" value="8mil"/>
+<param name="mdWireVia" value="8mil"/>
+<param name="mdPadPad" value="8mil"/>
+<param name="mdPadVia" value="8mil"/>
+<param name="mdViaVia" value="8mil"/>
+<param name="mdSmdPad" value="8mil"/>
+<param name="mdSmdVia" value="8mil"/>
+<param name="mdSmdSmd" value="8mil"/>
 <param name="mdViaViaSameLayer" value="8mil"/>
 <param name="mnLayersViaInSmd" value="2"/>
-<param name="mdCopperDimension" value="15mil"/>
+<param name="mdCopperDimension" value="10mil"/>
 <param name="mdDrill" value="8mil"/>
 <param name="mdSmdStop" value="0mil"/>
-<param name="msWidth" value="10mil"/>
-<param name="msDrill" value="15mil"/>
-<param name="msMicroVia" value="9.98981875mm"/>
+<param name="msWidth" value="8mil"/>
+<param name="msDrill" value="20mil"/>
+<param name="msMicroVia" value="9.99mm"/>
 <param name="msBlindViaRatio" value="0.5"/>
 <param name="rvPadTop" value="0.25"/>
 <param name="rvPadInner" value="0.25"/>
@@ -447,15 +444,15 @@ design rules under a new name.</description>
 <param name="rvViaInner" value="0.25"/>
 <param name="rvMicroViaOuter" value="0.25"/>
 <param name="rvMicroViaInner" value="0.25"/>
-<param name="rlMinPadTop" value="10mil"/>
+<param name="rlMinPadTop" value="12mil"/>
 <param name="rlMaxPadTop" value="20mil"/>
 <param name="rlMinPadInner" value="10mil"/>
 <param name="rlMaxPadInner" value="20mil"/>
-<param name="rlMinPadBottom" value="10mil"/>
+<param name="rlMinPadBottom" value="12mil"/>
 <param name="rlMaxPadBottom" value="20mil"/>
-<param name="rlMinViaOuter" value="8mil"/>
+<param name="rlMinViaOuter" value="10mil"/>
 <param name="rlMaxViaOuter" value="20mil"/>
-<param name="rlMinViaInner" value="8mil"/>
+<param name="rlMinViaInner" value="10mil"/>
 <param name="rlMaxViaInner" value="20mil"/>
 <param name="rlMinMicroViaOuter" value="4mil"/>
 <param name="rlMaxMicroViaOuter" value="20mil"/>
@@ -472,7 +469,7 @@ design rules under a new name.</description>
 <param name="mlMaxStopFrame" value="4mil"/>
 <param name="mlMinCreamFrame" value="0mil"/>
 <param name="mlMaxCreamFrame" value="0mil"/>
-<param name="mlViaStopLimit" value="0mil"/>
+<param name="mlViaStopLimit" value="25mil"/>
 <param name="srRoundness" value="0"/>
 <param name="srMinRoundness" value="0mil"/>
 <param name="srMaxRoundness" value="0mil"/>
@@ -480,16 +477,23 @@ design rules under a new name.</description>
 <param name="slThermalsForVias" value="0"/>
 <param name="dpMaxLengthDifference" value="10mm"/>
 <param name="dpGapFactor" value="2.5"/>
-<param name="checkGrid" value="0"/>
 <param name="checkAngle" value="0"/>
 <param name="checkFont" value="1"/>
 <param name="checkRestrict" value="1"/>
+<param name="checkStop" value="0"/>
+<param name="checkValues" value="0"/>
+<param name="checkNames" value="1"/>
+<param name="checkWireStubs" value="1"/>
+<param name="checkPolygonWidth" value="0"/>
 <param name="useDiameter" value="13"/>
 <param name="maxErrors" value="50"/>
 </designrules>
 <autorouter>
 <pass name="Default">
 <param name="RoutingGrid" value="50mil"/>
+<param name="AutoGrid" value="1"/>
+<param name="Efforts" value="0"/>
+<param name="TopRouterVariant" value="1"/>
 <param name="tpViaShape" value="round"/>
 <param name="PrefDir.1" value="|"/>
 <param name="PrefDir.2" value="0"/>
@@ -581,47 +585,61 @@ design rules under a new name.</description>
 </pass>
 </autorouter>
 <elements>
-<element name="ICM20689" library="svis" package="QFN50P400X400X95-25N" value="ICM-20689" x="20" y="18" rot="MR0">
-<attribute name="PACKAGE" value="QFN-24 InvenSense" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
+<element name="ICM20689" library="svis" package="QFN50P400X400X95-25N" value="ICM-20689" x="20" y="18" smashed="yes" rot="MR0">
 <attribute name="AVAILABILITY" value="Unavailable" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
-<attribute name="MP" value="ICM-20689" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
-<attribute name="PRICE" value="None" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
 <attribute name="DESCRIPTION" value=" 6-Axis Drone/Vr/Iot Solution _Pi " x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
 <attribute name="MF" value="TDK-InvenSense" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
+<attribute name="MP" value="ICM-20689" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
+<attribute name="PACKAGE" value="QFN-24 InvenSense" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
+<attribute name="PRICE" value="None" x="20" y="18" size="1.778" layer="28" rot="MR0" display="off"/>
 </element>
-<element name="CAM1" library="svis" package="SM09B-SRSS-TB" value="SM09B-SRSS-TB" x="5.3" y="16.5" rot="MR90"/>
-<element name="TEENSY" library="teensy" package="TEENSY_3.0-3.2&amp;LC_DIL" value="TEENSY_3.0_DIL" x="20" y="18" rot="R90"/>
-<element name="R1" library="SparkFun-Resistors" package="0603" value="4.7k" x="14" y="22.5" rot="R270">
-<attribute name="PROD_ID" value="RES-07857" x="14" y="22.5" size="1.778" layer="27" rot="R270" display="off"/>
+<element name="CAM1" library="svis" package="SM09B-SRSS-TB" value="SM09B-SRSS-TB" x="5.3" y="16.5" smashed="yes" rot="MR90">
+<attribute name="NAME" x="7.84" y="12.055" size="1.27" layer="22" rot="MR90"/>
 </element>
-<element name="R2" library="SparkFun-Resistors" package="0603" value="4.7k" x="26" y="22.5" rot="R270">
-<attribute name="PROD_ID" value="RES-07857" x="26" y="22.5" size="1.778" layer="27" rot="R270" display="off"/>
+<element name="TEENSY" library="teensy" package="TEENSY_3.0-3.2&amp;LC_DIL" value="TEENSY_3.0_DIL" x="20" y="18" smashed="yes" rot="R90">
+<attribute name="NAME" x="6.03" y="14.19" size="1.27" layer="25" font="vector" rot="R90"/>
 </element>
-<element name="C2" library="SparkFun-Capacitors" package="0603" value="0.1uF" x="18" y="22.5" rot="MR0">
+<element name="R1" library="SparkFun-Resistors" package="0603" value="4.7k" x="14" y="21.5" smashed="yes" rot="R270">
+<attribute name="NAME" x="14.762" y="21.5" size="0.6096" layer="25" font="vector" ratio="20" rot="R270" align="bottom-center"/>
+<attribute name="PROD_ID" value="RES-07857" x="14" y="21.5" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="VALUE" x="13.238" y="21.5" size="0.6096" layer="27" font="vector" ratio="20" rot="R270" align="top-center"/>
+</element>
+<element name="R2" library="SparkFun-Resistors" package="0603" value="4.7k" x="26" y="21.5" smashed="yes" rot="R270">
+<attribute name="NAME" x="26.762" y="21.5" size="0.6096" layer="25" font="vector" ratio="20" rot="R270" align="bottom-center"/>
+<attribute name="PROD_ID" value="RES-07857" x="26" y="21.5" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="VALUE" x="25.238" y="21.5" size="0.6096" layer="27" font="vector" ratio="20" rot="R270" align="top-center"/>
+</element>
+<element name="C2" library="SparkFun-Capacitors" package="0603" value="0.1uF" x="18" y="22.5" smashed="yes" rot="MR0">
+<attribute name="NAME" x="18" y="23.262" size="0.6096" layer="26" font="vector" ratio="20" rot="MR0" align="bottom-center"/>
 <attribute name="PROD_ID" value="CAP-00810" x="18" y="22.5" size="1.778" layer="28" rot="MR0" display="off"/>
+<attribute name="VALUE" x="18" y="21.738" size="0.6096" layer="28" font="vector" ratio="20" rot="MR0" align="top-center"/>
 </element>
-<element name="C3" library="SparkFun-Capacitors" package="0603" value="2.2uF" x="22" y="22.5" rot="MR180">
+<element name="C3" library="SparkFun-Capacitors" package="0603" value="2.2uF" x="22" y="22.5" smashed="yes" rot="MR180">
+<attribute name="NAME" x="22" y="21.738" size="0.6096" layer="26" font="vector" ratio="20" rot="MR180" align="bottom-center"/>
 <attribute name="PROD_ID" value="CAP-07888" x="22" y="22.5" size="1.778" layer="28" rot="MR180" display="off"/>
+<attribute name="VALUE" x="22" y="23.262" size="0.6096" layer="28" font="vector" ratio="20" rot="MR180" align="top-center"/>
 </element>
-<element name="C1" library="SparkFun-Capacitors" package="0603" value="0.47uF" x="18" y="13.5" rot="MR0">
+<element name="C1" library="SparkFun-Capacitors" package="0603" value="0.47uF" x="18" y="13.5" smashed="yes" rot="MR0">
+<attribute name="NAME" x="18" y="14.262" size="0.6096" layer="26" font="vector" ratio="20" rot="MR0" align="bottom-center"/>
 <attribute name="PROD_ID" value="CAP-00810" x="18" y="13.5" size="1.778" layer="28" rot="MR0" display="off"/>
+<attribute name="VALUE" x="18" y="12.738" size="0.6096" layer="28" font="vector" ratio="20" rot="MR0" align="top-center"/>
 </element>
-<element name="C4" library="SparkFun-Capacitors" package="0603" value="10nF" x="22" y="13.5" rot="MR0">
+<element name="C4" library="SparkFun-Capacitors" package="0603" value="10nF" x="22" y="13.5" smashed="yes" rot="MR0">
+<attribute name="NAME" x="22" y="14.262" size="0.6096" layer="26" font="vector" ratio="20" rot="MR0" align="bottom-center"/>
 <attribute name="PROD_ID" value="CAP-00810" x="22" y="13.5" size="1.778" layer="28" rot="MR0" display="off"/>
+<attribute name="VALUE" x="22" y="12.738" size="0.6096" layer="28" font="vector" ratio="20" rot="MR0" align="top-center"/>
 </element>
-<element name="CAM2" library="svis" package="SM09B-SRSS-TB" value="SM09B-SRSS-TB" x="34.7" y="19.5" rot="MR270"/>
+<element name="CAM2" library="svis" package="SM09B-SRSS-TB" value="SM09B-SRSS-TB" x="34.7" y="19.5" smashed="yes" rot="MR270">
+<attribute name="NAME" x="32.16" y="23.945" size="1.27" layer="22" rot="MR270"/>
+</element>
 </elements>
 <signals>
 <signal name="GND">
 <polygon width="0.254" layer="16" rank="2">
-<vertex x="40" y="2"/>
-<vertex x="40" y="34" curve="89.730172"/>
-<vertex x="38" y="36"/>
-<vertex x="2" y="36" curve="90.330723"/>
-<vertex x="0" y="34"/>
-<vertex x="0" y="2" curve="89.770009"/>
-<vertex x="2" y="0"/>
-<vertex x="38" y="0" curve="90.138412"/>
+<vertex x="40" y="0"/>
+<vertex x="40" y="36"/>
+<vertex x="0" y="36"/>
+<vertex x="0" y="0"/>
 </polygon>
 <contactref element="TEENSY" pad="GND"/>
 <contactref element="TEENSY" pad="AGND"/>
@@ -638,7 +656,6 @@ design rules under a new name.</description>
 <wire x1="20.25" y1="16.03" x2="20.25" y2="16.75" width="0.254" layer="16"/>
 <wire x1="20.25" y1="16.75" x2="20" y2="17" width="0.254" layer="16"/>
 <contactref element="ICM20689" pad="25"/>
-<wire x1="17.25" y1="19.25" x2="16.5" y2="18.5" width="0" layer="19" extent="1-16"/>
 <via x="16.5" y="18.5" extent="1-16" drill="0.6"/>
 <contactref element="ICM20689" pad="18"/>
 <contactref element="CAM2" pad="9"/>
@@ -656,11 +673,11 @@ design rules under a new name.</description>
 <contactref element="ICM20689" pad="8"/>
 <contactref element="C4" pad="2"/>
 <contactref element="ICM20689" pad="22"/>
-<wire x1="12.5" y1="21.69" x2="8.57" y2="25.62" width="0.254" layer="1"/>
-<wire x1="21.15" y1="21.86" x2="20.25" y2="20.96" width="0.254" layer="16"/>
+<wire x1="20.25" y1="20.96" x2="21.15" y2="21.86" width="0.254" layer="16"/>
 <wire x1="20.25" y1="20.96" x2="20.25" y2="19.97" width="0.254" layer="16"/>
 <via x="16.5" y="20.5" extent="1-16" drill="0.6"/>
-<wire x1="26" y1="21.65" x2="26" y2="16.5" width="0.254" layer="1"/>
+<wire x1="26" y1="20.65" x2="26" y2="20.5" width="0.254" layer="1"/>
+<wire x1="26" y1="20.5" x2="26" y2="16.5" width="0.254" layer="1"/>
 <wire x1="26" y1="16.5" x2="24.5" y2="15" width="0.254" layer="1"/>
 <wire x1="20.75" y1="16.03" x2="20.75" y2="15.5" width="0.254" layer="16"/>
 <wire x1="20.75" y1="13.9" x2="21.15" y2="13.5" width="0.254" layer="16"/>
@@ -671,28 +688,25 @@ design rules under a new name.</description>
 <wire x1="21.25" y1="15" x2="20.75" y2="15.5" width="0.254" layer="16"/>
 <wire x1="20.75" y1="13.9" x2="20.75" y2="14.25" width="0.254" layer="16"/>
 <wire x1="20.75" y1="14.25" x2="21.5" y2="15" width="0.254" layer="16"/>
-<wire x1="12.5" y1="21.69" x2="13.96" y2="21.69" width="0.254" layer="1"/>
-<wire x1="13.96" y1="21.69" x2="14" y2="21.65" width="0.254" layer="1"/>
-<wire x1="25.35" y1="21" x2="26" y2="21.65" width="0.254" layer="1"/>
-<wire x1="25.35" y1="21" x2="18" y2="21" width="0.254" layer="1"/>
-<wire x1="14" y1="21.65" x2="15.35" y2="21.65" width="0.254" layer="1"/>
-<wire x1="15.35" y1="21.65" x2="16.5" y2="20.5" width="0.254" layer="1"/>
-<wire x1="16.5" y1="20.5" x2="17.5" y2="20.5" width="0.254" layer="1"/>
-<wire x1="17.5" y1="20.5" x2="18" y2="21" width="0.254" layer="1"/>
+<wire x1="14" y1="20.65" x2="16.35" y2="20.65" width="0.254" layer="1"/>
+<wire x1="16.35" y1="20.65" x2="16.5" y2="20.5" width="0.254" layer="1"/>
 <wire x1="16.5" y1="20.5" x2="17" y2="21" width="0.254" layer="16"/>
 <wire x1="17" y1="21" x2="18" y2="21" width="0.254" layer="16"/>
-<wire x1="18" y1="21" x2="18.85" y2="21.85" width="0.254" layer="16"/>
 <contactref element="C3" pad="1"/>
 <contactref element="C2" pad="1"/>
-<wire x1="18.85" y1="22.5" x2="21.15" y2="22.5" width="0.254" layer="16"/>
-<wire x1="18.85" y1="22.5" x2="18.85" y2="22.35" width="0.254" layer="16"/>
 <contactref element="ICM20689" pad="13"/>
 <wire x1="18.03" y1="16.75" x2="16.25" y2="16.75" width="0.254" layer="16"/>
 <wire x1="16.25" y1="16.75" x2="15.5" y2="17.5" width="0.254" layer="16"/>
 <wire x1="15.5" y1="19.5" x2="16.5" y2="20.5" width="0.254" layer="16"/>
 <wire x1="15.5" y1="19.5" x2="15.5" y2="17.5" width="0.254" layer="16"/>
-<wire x1="18.85" y1="21.85" x2="18.85" y2="22.35" width="0" layer="19" extent="16-16"/>
-<wire x1="21.15" y1="21.86" x2="21.15" y2="22.5" width="0" layer="19" extent="16-16"/>
+<wire x1="21.15" y1="21.86" x2="21.15" y2="22.5" width="0.254" layer="16"/>
+<wire x1="18.85" y1="22.5" x2="21.15" y2="22.5" width="0.254" layer="16"/>
+<wire x1="18" y1="21" x2="18.85" y2="21.85" width="0.254" layer="16"/>
+<wire x1="18.85" y1="21.85" x2="18.85" y2="22.5" width="0.254" layer="16"/>
+<wire x1="16.5" y1="20.5" x2="26" y2="20.5" width="0.254" layer="1"/>
+<wire x1="8.57" y1="25.62" x2="13" y2="21" width="0.254" layer="1"/>
+<wire x1="13" y1="21" x2="13.33" y2="20.65" width="0.254" layer="1"/>
+<wire x1="13.33" y1="20.65" x2="14" y2="20.65" width="0.254" layer="1"/>
 </signal>
 <signal name="VIN">
 <contactref element="TEENSY" pad="VIN"/>
@@ -707,14 +721,14 @@ design rules under a new name.</description>
 <wire x1="23.57" y1="20.57" x2="24.5" y2="21.5" width="0.254" layer="16"/>
 <wire x1="24.5" y1="21.5" x2="24.5" y2="24.93" width="0.254" layer="16"/>
 <wire x1="24.5" y1="24.93" x2="23.81" y2="25.62" width="0.254" layer="16"/>
-<wire x1="26" y1="23.35" x2="26" y2="23.43" width="0.254" layer="1"/>
+<wire x1="26" y1="22.35" x2="26" y2="23.43" width="0.254" layer="1"/>
 <wire x1="26" y1="23.43" x2="23.81" y2="25.62" width="0.254" layer="1"/>
 </signal>
 <signal name="IMU_SCL">
 <contactref element="ICM20689" pad="23"/>
 <contactref element="TEENSY" pad="19/A5"/>
 <contactref element="R1" pad="1"/>
-<wire x1="14" y1="23.35" x2="14" y2="23.5" width="0.254" layer="1"/>
+<wire x1="14" y1="22.35" x2="14" y2="23.5" width="0.254" layer="1"/>
 <wire x1="14" y1="23.5" x2="14.5" y2="24" width="0.254" layer="1"/>
 <wire x1="14.5" y1="24" x2="19.65" y2="24" width="0.254" layer="1"/>
 <wire x1="19.65" y1="24" x2="21.27" y2="25.62" width="0.254" layer="1"/>
@@ -830,6 +844,13 @@ design rules under a new name.</description>
 <signal name="N$4">
 </signal>
 </signals>
+<mfgpreviewcolors>
+<mfgpreviewcolor name="soldermaskcolor" color="0xC8008000"/>
+<mfgpreviewcolor name="silkscreencolor" color="0xFFFEFEFE"/>
+<mfgpreviewcolor name="backgroundcolor" color="0xFF282828"/>
+<mfgpreviewcolor name="coppercolor" color="0xFFFFBF00"/>
+<mfgpreviewcolor name="substratecolor" color="0xFF786E46"/>
+</mfgpreviewcolors>
 </board>
 </drawing>
 <compatibility>
