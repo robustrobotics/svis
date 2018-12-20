@@ -5,6 +5,7 @@
   <arg name="manager" default="manager" />
   <arg name="standalone" default="true" />
   <arg name="param_file" default="svis_ros.yaml" />
+  <arg name="load_params" default="true" />
 
   <group ns="$(arg namespace)" >
     <!-- Manager -->
@@ -17,7 +18,7 @@
 
     <!-- Nodelet -->
     <node pkg="nodelet" type="nodelet" name="svis_ros"
-          args="load svis_ros/SVISRosNodelet $(arg manager)" output="screen">
+          args="load svis_ros/SVISRosNodelet $(arg manager)">
     </node>
   </group>
 </launch>

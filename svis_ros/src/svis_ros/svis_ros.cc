@@ -33,6 +33,8 @@ SVISRos::SVISRos()
 }
 
 void SVISRos::Run() {
+  sleep(5);
+  
   GetParams();
   InitSubscribers();
   InitPublishers();
@@ -141,7 +143,7 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
   sensor_msgs::Imu imu;
 
   imu.header.stamp = ros::Time(imu_packet.timestamp_ros);
-  imu.header.frame_id = "body";
+  imu.header.frame_id = "svis_imu";
 
   // orientation
   imu.orientation.x = std::numeric_limits<double>::quiet_NaN();
@@ -156,8 +158,8 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
 
   // angular velocity [rad/s]
   imu.angular_velocity.x = imu_packet.gyro[0];
-  imu.angular_velocity.y = imu_packet.gyro[1];
-  imu.angular_velocity.z = imu_packet.gyro[2];
+  imu.angular_velocity.y = -imu_packet.gyro[1];
+  imu.angular_velocity.z = -imu_packet.gyro[2];
 
   // angular velocity covariance
   for (int i = 0; i < imu.angular_velocity_covariance.size(); i++) {
@@ -166,8 +168,8 @@ void SVISRos::PublishImu(const svis::ImuPacket& imu_packet) {
 
   // linear acceleration [m/s^2]
   imu.linear_acceleration.x = imu_packet.acc[0];
-  imu.linear_acceleration.y = imu_packet.acc[1];
-  imu.linear_acceleration.z = imu_packet.acc[2];
+  imu.linear_acceleration.y = -imu_packet.acc[1];
+  imu.linear_acceleration.z = -imu_packet.acc[2];
 
   // acceleration covariance
   for (int i = 0; i < imu.linear_acceleration_covariance.size(); i++) {
@@ -251,7 +253,7 @@ void SVISRos::PublishImuRaw(const std::vector<svis::ImuPacket>& imu_packets) {
   }
 
   imu.header.stamp = ros::Time::now();
-  imu.header.frame_id = "svis_imu_frame";
+  imu.header.frame_id = "svis_imu";
   for (int i = 0; i < imu_packets.size(); i++) {
     imu.timestamp_ros_rx[i] = imu_packets[i].timestamp_ros_rx;
     imu.timestamp_ros[i] = imu_packets[i].timestamp_ros;
