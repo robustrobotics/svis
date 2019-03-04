@@ -6,7 +6,7 @@
 
 // hardware
 #define LED_PIN 13  // pin for on-board led
-#define STROBE_PIN 5  // pin for camera strobe
+#define STROBE_PIN 4  // pin for camera strobe
 #define TRIGGER_PIN 2  // pin for camera trigger
 #define IMU_INT_PIN 20  // pin for imu interrupt
 
